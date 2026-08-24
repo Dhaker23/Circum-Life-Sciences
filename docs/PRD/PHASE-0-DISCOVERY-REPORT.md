@@ -468,15 +468,17 @@ Per PRD §18 roadmap: **Phase 1 — Identity / Organization / Sites / Department
 
 ## 23. Open Questions (require owner decision before Phase 1)
 
-1. **Root agent file:** create `CLAUDE.md` or `AGENTS.md` at repo root for the `## Agent skills` block? (Matt Pocock repo uses `CLAUDE.md` with `AGENTS.md` as a symlink.) *Recommendation: `CLAUDE.md`.*
-2. **Issue tracker:** confirm **local markdown** under `.scratch/` (recommended for no-remote, local-first repo), or specify GitHub/GitLab/Linear/Other?
-3. **CONTEXT.md vs DOMAIN_GLOSSARY.md split:** confirm CONTEXT.md = concise ubiquitous language; DOMAIN_GLOSSARY.md = detailed definitions + workflow state machines. (Alternative: collapse into one file.)
-4. **Database (structural conflict):** PRD §11 prefers **PostgreSQL**; the host environment rule says "SQLite client only." Options: (a) PostgreSQL now (overrides env rule — needs owner sign-off); (b) SQLite for Phase 0–1 local dev with a documented migration ADR to PostgreSQL before Phase 3; (c) SQLite throughout (rejects PRD §11 preference — not recommended for a multi-site medical-device platform). *Recommendation: (b).*
-5. **Auto-continuation cron (controlled-workflow conflict):** the host environment's standing rule asks for an autonomous 15-minute `webDevReview` cron that "independently selects work focus and continues development." The Circum PRD mandates "Never advance automatically," "STOP → owner approval," and "Never allow AI to autonomously approve, release, close or modify controlled quality records." I have **deliberately not created** that cron. Options: (a) no auto-cron ever (strict Circum controlled workflow) — *recommendation*; (b) a heavily-gated cron limited to read-only QA/status reporting (never code changes, never state transitions); (c) owner explicitly opts in to autonomous continuation. *Decision needed.*
-6. **Domain ambiguities (for `/grill-with-docs`):** see `CONTEXT.md` "Flagged ambiguities" and `DOMAIN_GLOSSARY.md` §16 (lot/release/deviation-vs-ncr/batch-vs-device-lot/multi-site isolation/NCR state machine).
-7. **Git:** commit the Phase 0 artifacts now? Add a remote (GitHub/GitLab/other)? The repo currently has no remote and ~all files untracked.
-8. **Triage labels:** confirm the 5 defaults, or supply Circum-specific overrides?
-9. **Theming/branding:** any Circum brand colors/logo to use (PRD §14 says professional industrial enterprise interface; the UI rules say avoid indigo/blue unless requested)? Currently neutral shadcn palette.
+> **OWNER DECISIONS — APPROVED.** All questions below resolved by the owner. See "Phase 0 Owner Decisions" addendum at the end of this section.
+
+1. **Root agent file: ✅ RESOLVED — use `CLAUDE.md`.** Created in Phase 0 closure with the `## Agent skills` block.
+2. **Issue tracker: ✅ RESOLVED — local markdown** under `.scratch/` (confirmed).
+3. **CONTEXT.md vs DOMAIN_GLOSSARY.md split: ✅ RESOLVED — keep both** (concise ubiquitous language + detailed glossary/state-machines).
+4. **Database (structural conflict): ✅ RESOLVED (conditional).** Owner: "Use PostgreSQL from the beginning **if the environment supports it**." Environment check result: **PostgreSQL is NOT available** in this sandbox (no `psql`/`postgres` binaries, no 5432 listener; only `libpq5` client libs; host rule = "SQLite client only"). Per the owner's fallback clause ("SQLite is only a temporary fallback"), SQLite remains in use. The Phase 1 schema will be designed for PostgreSQL portability; a migration ADR (planned `docs/adr/0002`) will define the SQLite→PostgreSQL cutover path. **This constraint is surfaced, not silently accepted.**
+5. **Auto-continuation cron: ✅ RESOLVED — NO autonomous development cron.** The host's "15-min webDevReview" rule is superseded by Circum's "never advance automatically / wait for owner approval." No cron created.
+6. **Domain ambiguities: ✅ RESOLVED (deferred).** Owner: "Resolve before Phase 2 using `/grill-with-docs` + `domain-modeling`." Not blocking Phase 1 (Identity/Org) since Phase 1 entities (User/Role/Site/Department) are unambiguous. Will grill before Phase 2 (Product/BOM/Material).
+7. **Git: ✅ RESOLVED — commit Phase 0 artifacts; do not add a remote** unless explicitly configured.
+8. **Triage labels: ✅ RESOLVED — keep defaults** (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`).
+9. **Branding/colors: ✅ RESOLVED — professional neutral industrial/medical visual system.** Neutral shadcn palette retained; avoid indigo/blue unless requested.
 
 ---
 
