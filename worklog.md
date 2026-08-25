@@ -427,3 +427,36 @@ Stage Summary:
 - **Domain decisions D1-D11 implemented exactly.** Never invent specifications. AI must never approve specs, disposition results, or override specifications.
 - **Status:** CONDITIONAL PASS. PHASE 5 STATUS: READY FOR OWNER REVIEW. STOPPED. Not starting Phase 6.
 - **Production blocker:** PostgreSQL migration (ADR-0002) required before production.
+
+---
+Task ID: p6-plan
+Agent: main-orchestrator (Z.ai Code)
+Task: Phase 5 approved/closed. Produce CIRCUM PHASE 6 DOMAIN & IMPLEMENTATION PLAN via grill-with-docs + domain-modeling + codebase-design. Identify every ambiguity. Do NOT implement. STOP.
+
+Work Log:
+- Analyzed PRD section 18 roadmap vs implemented Phases 1-5. CRITICAL FINDING: PRD Phase 4 (Traceability/Genealogy/Impact Analysis) was SKIPPED in our implementation sequence. We built genealogy DATA across Phases 2-5 but never built the dedicated query/reporting/impact-analysis LAYER. Our Phase 4 was NCR/Deviation/CAPA (PRD Phase 6); our Phase 5 was Laboratory (PRD Phase 5). The gap = PRD Phase 4.
+- Re-read PRD section 10 (Traceability genealogy chain), GLM section 10 (TRACEABILITY), existing genealogy implementation (only 1 basic query: getDeviceLotGenealogy in production service). Confirmed: all genealogy data relationships exist (44 models across Phases 1-5), but NO forward-trace API, NO backward-trace API, NO impact-analysis API, NO genealogy visualization, NO traceability audit.
+- Applied grill-with-docs + domain-modeling: identified 8 critical domain decisions (D1-D8) for the traceability layer.
+- Produced docs/PRD/PHASE-6-IMPLEMENTATION-PLAN.md (16 sections): context (why Phase 6 = Traceability), objectives, PRD traceability, domain model (D1-D8 proposed), minimal schema (1 new entity: TraceabilityQueryLog), API design (forward-trace, backward-trace, impact-analysis, genealogy tree, query-log), UI architecture, security/audit, multi-site (site-scoped queries), testing (9 critical tests + regression), migration, skills, files, risks (6), dependencies, acceptance criteria (15-point DoD), open questions (D1-D8).
+- Updated CONTEXT.md with Phase 6 proposed terms (Forward Trace, Backward Trace, Impact Analysis, TraceabilityQueryLog, Traceability Site Scoping).
+- Committed: 5959e7f.
+- Did NOT implement Phase 6.
+
+Stage Summary:
+- **Phase 6 Domain & Implementation Plan: PRODUCED** at docs/PRD/PHASE-6-IMPLEMENTATION-PLAN.md. Traceability/Genealogy/Impact Analysis layer over existing Phase 2-5 genealogy data.
+- **8 critical domain decisions (D1-D8) require owner confirmation:**
+  D1 Pure query layer + TraceabilityQueryLog (no snapshot)
+  D2 Forward-trace full chain, configurable depth
+  D3 Backward-trace full chain to Product
+  D4 Impact analysis = forward-trace; informational only; no auto-action; human required
+  D5 Customer/Project DEFER
+  D6 Cross-site site-scoped; stop at boundary; super-admin global
+  D7 TraceabilityQueryLog audit entity (append-only)
+  D8 AI read-only + suggest; no auto-action on impact
+- **Status:** PHASE 6 PLAN STATUS: WAITING FOR OWNER APPROVAL (and D1-D8). STOPPED.
+- Phases 0-5 = CLOSED/APPROVED. Carry-forward: PostgreSQL migration (production blocker).
+
+Unresolved issues / risks:
+1. **[Blocker]** Owner confirmation of D1-D8 before Phase 6 implementation.
+2. **[Blocker]** Owner approval of the Phase 6 Implementation Plan.
+3. **[High, on approval]** to-spec -> to-tickets -> TDD execution.
