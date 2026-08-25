@@ -460,3 +460,22 @@ Unresolved issues / risks:
 1. **[Blocker]** Owner confirmation of D1-D8 before Phase 6 implementation.
 2. **[Blocker]** Owner approval of the Phase 6 Implementation Plan.
 3. **[High, on approval]** to-spec -> to-tickets -> TDD execution.
+
+---
+Task ID: s0-s4 (Phase 6 implementation)
+Agent: main-orchestrator (Z.ai Code)
+Task: Execute Phase 6 (Traceability/Genealogy/Impact Analysis) per approved plan + owner-confirmed D1-D8. STOP. No Phase 7.
+
+Work Log:
+- Slice 0: spec/tickets. Schema: TraceabilityQueryLog entity (append-only, D7). No changes to existing 44 models (D1: pure query layer).
+- Slice 1: Domain: TraceabilityGraph contract (root, nodes, edges, boundaryMarkers, summary, authorizationLimited, truncated). computeSummary + emptyGraph helpers. Zod schemas. 2 traceability permissions (read + query-log.read; D8: AI read-only).
+- Slice 2: Service: forward-trace (BFS downstream from any entity), backward-trace (BFS upstream to Product), impact-analysis (forward-trace + scenario, D4: NO auto-action), genealogy-tree (bidirectional), query-log. Site-scoped with boundary markers (D6: "Additional related records exist outside your authorized scope" — no leaking). Every query logged to TraceabilityQueryLog (D7).
+- Slice 3: API: 5 routes (forward-trace, backward-trace, impact-analysis, genealogy, query-log). All POST, site-scoped, audited. UI: 3 pages (trace with entity selector + direction, impact with D4 informational-only notice, query-log). Sidebar Traceability nav. i18n FR/EN/AR.
+- Slice 4: Tests: 15 Phase 6 tests (T-TRACE-01 through T-TRACE-07, T-ISOL-06, T-AI-GUARD-03 + extras: graph contract, no mutation APIs, audit immutability). ALL 196 tests PASS (17+34+33+45+52+15). Lint 0 errors. Typecheck clean. Browser-verified: trace page, impact page (D4 notice), query-log page. Screenshot saved. Wrote docs/PRD/PHASE-6-VALIDATION-REPORT.md (CONDITIONAL PASS).
+- Committed.
+
+Stage Summary:
+- **Phase 6: IMPLEMENTED + VALIDATED.** Traceability/Genealogy/Impact Analysis. 1 new entity (TraceabilityQueryLog). 5 API routes. 3 UI pages. 2 permissions. 196/196 tests PASS. Browser-verified.
+- **D1-D8 implemented exactly.** Pure query layer (no snapshot). Impact analysis informational only (no auto-action). Site-scoped with boundary markers (no leaking). TraceabilityGraph contract stable across all endpoints.
+- **Status:** CONDITIONAL PASS. PHASE 6 STATUS: READY FOR OWNER REVIEW. STOPPED. Not starting Phase 7.
+- **Production blocker:** PostgreSQL migration (ADR-0002) required before production.
