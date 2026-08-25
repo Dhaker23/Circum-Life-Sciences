@@ -86,3 +86,40 @@ Stage Summary:
 - **Key decisions recorded:** (a) DB sessions over JWT for revocability + audit link; (b) Assignment as the unit of least-privilege with 3-layer enforcement where UI-hiding is explicitly NOT authorization; (c) audit immutability at both the repository-interface shape AND the DB trigger level (defense-in-depth against buggy paths and direct DB access); (d) least-privilege defaults with no broad admin grants for convenience; (e) the <module>.<resource>.<action> convention extends to later-phase modules without structural change.
 - **Surfaced (not blocking):** the PRD §3 / DOMAIN_GLOSSARY §1 "18 roles" count actually enumerates 19 distinct names; flagged in the matrix doc as a documentation item for owner confirmation. Does not affect the model, seed, or enforcement.
 - **Next actions (for orchestrator):** these ADRs unblock Phase 1 execution slices for auth (slice: next-auth DB session wiring), RBAC (slice: permission catalog + Assignment + can() + middleware guard), and audit (slice: AuditEvent model + repository + trigger migration). The rbac-matrix.md is the seed spec for the RolePermission seed migration. Consider committing the four docs together.
+
+---
+Task ID: s0-s10 (Phase 1 implementation)
+Agent: main-orchestrator (Z.ai Code) + adr-writer subagent (s1)
+Task: Execute Phase 1 (Identity/Org/RBAC/Auth/Audit/i18n/Shell) under mandatory Phase Gate. to-spec -> to-tickets -> TDD -> implement -> tests -> code-review -> validation. STOP. No Phase 2.
+
+Work Log:
+- Slice 0 (foundation): installed deps (@next-auth/prisma-adapter, @node-rs/argon2, vitest, playwright, msw, testing-library); tightened next.config.ts (ignoreBuildErrors:false, reactStrictMode:true, security headers), eslint.config.mjs (prefer-const/no-debugger/no-unreachable errors, no-explicit-any/no-unused-vars warnings), tsconfig.json (noImplicitAny:true, ES2022); added vitest.config.ts, playwright.config.ts, tests/setup.ts, tests/mocks/server.ts, .env.example; generated real NEXTAUTH_SECRET + AUTH_PEPPER in .env; added test/typecheck/db:seed scripts.
+- Slice 0b (to-spec/to-tickets): wrote .scratch/phase-1/{spec.md,tickets.md} (14 tracer-bullet tickets T01-T14).
+- Slice 1 (ADRs, subagent): ADR-0003 (next-auth sessions), ADR-0004 (RBAC scoping), ADR-0005 (audit immutability), docs/architecture/rbac-matrix.md (19 roles x permission groups, least-privilege). Flagged 18-vs-19 roles count (PRD lists 19 names incl. Super Admin); seeded all 19.
+- Slice 2 (schema): full Prisma schema (User, Employee separate from User per owner #4, Role, Permission, RolePermission, Assignment, Site, Department, Account, Session, VerificationToken, AuditEvent). prisma migrate dev -> migration 20260824235927_phase1_init. Appended SQLite triggers (audit_no_update/audit_no_delete RAISE ABORT) + WAL. Verified T-AUDIT-01 via scripts/verify-audit-triggers.ts (UPDATE+DELETE rejected).
+- Slice 3+4 (seed): prisma/seed.ts -> 24 permissions, 19 system roles, least-privilege RolePermission grants (no broad admin perms), 3 DEMO sites (CH/FR/TN, isDemo), 13 departments, 6 demo users (one per representative role, scoped), 5 demo employees (some linked to User, some not). All DEMO/TEST labelled.
+- Slice 5 (core lib): src/lib/{auth.ts (next-auth JWT+DB hybrid after v4 Credentials constraint), auth.password.ts (argon2id+pepper), auth.lockout.ts (5/15min + rate limiter), auth-context.ts (getAuthContext/requireAuthContext/requirePermission), rbac.ts (can/authorize/buildAuthContext/Scope/AuthContext), audit.ts (create/read ONLY, exportAuditEventsCsv), site-scope.ts (SiteScope/assertSiteAccess), errors.ts, api-envelope.ts, zod-schemas.ts, permissions.ts (catalog)}.
+- Slice 6 (modules): src/modules/{identity,organization,audit}/service/index.ts — repos take SiteScope, services call can()+audit(), 3-layer enforcement.
+- Slice 7 (API): /api/{auth/[...nextauth], me, identity/*, org/*, audit/*} — zod-validated, envelope, requirePermission-guarded. Removed Hello-World route. middleware.ts (locale+auth+RBAC, API returns 401 JSON not redirect).
+- Slice 8 (i18n+shell): next-intl (routing.ts, request.ts), messages/{en,fr,ar}.json, [locale]/layout.tsx (html/body + setRequestLocale + dir), LocaleDirection client component (syncs dir/lang on locale switch), providers.tsx (SessionProvider+ThemeProvider+QueryClientProvider), app/{app-sidebar,app-topbar,theme-toggle,users-table}.tsx, sign-in page, (app)/layout.tsx (shell+sticky footer), dashboard (KPI cards), users/roles/sites/departments/audit/settings pages.
+- Slice 9 (tests): tests/integration/critical-tests.test.ts — 17 tests covering all 7 critical tests (T-AUDIT-01/02, T-ISOL-01, T-LOCK-01, T-PEPPER-01, T-RBAC-01, T-SESSION-01, T-I18N-01). ALL PASS.
+- Slice 10 (gate): lint 0 errors (37 warnings, mostly pre-existing shadcn any), typecheck clean, 17/17 tests pass, browser-verified (agent-browser): sign-in admin -> dashboard -> users (6 demo) -> audit (identity.session.signin events + append-only notice) -> Arabic RTL switch (dir=rtl lang=ar) -> screenshot saved. Updated ADR-0003 with JWT+DB hybrid implementation note. Wrote docs/PRD/PHASE-1-VALIDATION-REPORT.md (CONDITIONAL PASS) + docs/operations/secrets.md.
+- Committed: ef6215c "Phase 1: Identity, Organization, RBAC, Auth, Audit, i18n, App Shell".
+
+Key issues resolved during build:
+- next-auth v4 Credentials requires JWT strategy (not database) -> JWT+DB hybrid: Session row created on sign-in, session() callback validates against DB every request (revocable+auditable, ADR-0003 updated).
+- next-intl getLocale() in root layout ran before setRequestLocale -> moved html/body to [locale]/layout.tsx.
+- RolePermission select on 'key' failed (key on Permission not join) -> nested include + normalize.
+
+Stage Summary:
+- **Phase 1: IMPLEMENTED + VALIDATED.** Identity, Organization, RBAC (19 roles, 24 perms, 3-layer), Auth (argon2id+pepper+lockout, JWT+DB hybrid revocable sessions), Multi-site isolation (SiteScope+assertSiteAccess), Audit (append-only DB triggers), i18n (FR/EN/AR+RTL), App shell. 17/17 critical tests PASS. Browser-verified. ADRs 0003-0005 + RBAC matrix + validation report.
+- **Status:** CONDITIONAL PASS. PHASE 1 GATE STATUS: READY FOR OWNER REVIEW. STOPPED. Not starting Phase 2.
+- **Known limitations (Phase 13 hardening):** audit site-scoping for non-global users is best-effort; in-memory rate limiter is per-process; session cache deferred; CSRF double-submit token deferred; idempotency-key deferred; Playwright E2E suite configured but only Vitest critical tests populated (manual browser verification done); SQLite temporary (PG migration required before prod per ADR-0002).
+- **No autonomous cron created** (owner #5). **No Phase 2 functionality** (owner #11). **No broad admin perms** (owner #1). **User != Employee** (owner #4). **Audit append-only tested** (owner #6). **Cross-site isolation tested** (owner #5).
+
+Unresolved issues / risks (priority for next phase):
+1. **[Blocker]** Owner approval of Phase 1 Validation Report before Phase 2.
+2. **[High, before production]** PostgreSQL migration (ADR-0002) — environment doesn't support PG; must occur before prod-critical operation.
+3. **[Medium]** Codify the manual browser golden path as a Playwright spec (T13 partial).
+4. **[Medium]** Rename middleware.ts -> proxy.ts (Next 16 deprecation, non-breaking).
+5. **[Low]** Address 37 ESLint warnings (mostly pre-existing shadcn any in ui/*).
