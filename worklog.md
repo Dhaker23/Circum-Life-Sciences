@@ -123,3 +123,32 @@ Unresolved issues / risks (priority for next phase):
 3. **[Medium]** Codify the manual browser golden path as a Playwright spec (T13 partial).
 4. **[Medium]** Rename middleware.ts -> proxy.ts (Next 16 deprecation, non-breaking).
 5. **[Low]** Address 37 ESLint warnings (mostly pre-existing shadcn any in ui/*).
+
+---
+Task ID: p2-plan
+Agent: main-orchestrator (Z.ai Code)
+Task: Phase 1 approved/closed. Produce CIRCUM PHASE 2 DOMAIN & IMPLEMENTATION PLAN (Product/Device/Revision/BOM/Material/MaterialLot/Supplier) via grill-with-docs + domain-modeling + codebase-design. Do NOT implement. STOP and wait for owner approval + domain decisions.
+
+Work Log:
+- Re-read PRD section 5 (Manufacturing master data) + section 10 (Traceability genealogy) + current CONTEXT.md/DOMAIN_GLOSSARY.md/Phase 1 schema to ground Phase 2.
+- Applied domain-modeling discipline: identified 5 critical domain ambiguities the PRD leaves open (Product-vs-Device, BOM revision/effectivity, Material Lot lifecycle, multi-site ownership, Supplier-Material cardinality). Per owner instruction "do not invent domain definitions; if an important ambiguity exists, STOP and ask", proposed canonical resolutions grounded in the PRD (not invented), each with rationale + alternative + recommendation, flagged for owner confirmation as D1-D5.
+- Produced docs/PRD/PHASE-2-IMPLEMENTATION-PLAN.md (17 sections): objectives, PRD traceability, domain model (the core, with D1-D5 proposed + state machines + entity defs), proposed Prisma schema (PG-portable: Product, ProductRevision, BOM, BOMLine, Material, MaterialSupplier, MaterialLot, Supplier), API design (manufacturing.* endpoints, explicit /transition for state machines, BOM immutability guard), UI architecture, security/audit (manufacturing.* permissions, 3-layer, audited transitions), multi-site isolation (MaterialLot site-scoped; catalog global), testing (T-ISOL-02, T-BOM-01, T-REV-01, T-LOT-01, T-QUANT-01 + unit/integration/API/regression), migration (additive phase2_manufacturing), skills mapping (grill-with-docs/domain-modeling/codebase-design/to-spec/to-tickets/tdd/implement/code-review), files/modules, risks (8), dependencies (none new), acceptance criteria (13-point DoD), test plan, open questions (D1-D5 + D6-D8).
+- Updated CONTEXT.md with "Phase 2 proposed terms" section (Device, Product Revision effectivity, Material Lot lifecycle, site ownership, Supplier-Material) marked PROPOSED pending confirmation.
+- Committed: a4bc804 "Phase 2: Domain & Implementation Plan (planning only, no implementation)".
+- Did NOT implement Phase 2. Did NOT modify schema, seed, or create .scratch/phase-2 tickets. Did NOT start Phase 2 implementation.
+
+Stage Summary:
+- **Phase 2 Domain & Implementation Plan: PRODUCED** at docs/PRD/PHASE-2-IMPLEMENTATION-PLAN.md. Comprehensive domain model + implementation approach for Product/Revision/BOM/Material/MaterialLot/Supplier.
+- **5 critical domain decisions (D1-D5) require owner confirmation** before any implementation:
+  D1 Device = conceptual (not a table); Product.deviceClass field
+  D2 BOM 1:1 with ProductRevision, frozen when Effective; changes -> new Revision
+  D3 Material Lot: RECEIVED->QUARANTINE->APPROVED->IN_USE->EXHAUSTED + REJECTED
+  D4 Global catalog (Product/Revision/Supplier/Material/BOM); site-owned MaterialLot
+  D5 Material M:N Supplier (preferred flag); MaterialLot 1:1 Supplier
+- **Status:** PHASE 2 PLAN STATUS: WAITING FOR OWNER APPROVAL (and D1-D5). STOPPED. Not implementing Phase 2.
+- Phase 1 = APPROVED/CLOSED. Carry-forward conditions recorded: SQLite temporary (PG before prod, ADR-0002); Playwright E2E backlog (auth/dashboard/RBAC/users/site-isolation/audit/RTL/logout); distributed rate limiting future; RLS hardening when PG; no Phase 2 business functionality during remediation; no autonomous development.
+
+Unresolved issues / risks (priority for next phase):
+1. **[Blocker]** Owner confirmation of D1-D5 domain decisions before Phase 2 implementation.
+2. **[Blocker]** Owner approval of the Phase 2 Implementation Plan.
+3. **[High, on approval]** to-spec -> to-tickets -> TDD execution of Phase 2 slices (schema migration, seed, services, API, UI, tests, gate, validation report).
