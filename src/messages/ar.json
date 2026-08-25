@@ -79,7 +79,8 @@
     "traceLog": "سجل الاستعلامات",
     "documents": "المستندات",
     "trainingRecords": "التدريب",
-    "supplierAudits": "تدقيق الموردين"
+    "supplierAudits": "تدقيق الموردين",
+    "equipment": "المعدات"
   },
   "users": {
     "title": "المستخدمون",
@@ -381,5 +382,9 @@
   "supplierAudit": {
     "title": "تدقيق الموردين",
     "subtitle": "تدقيق جودة الموردين الرسمي"
+  },
+  "equipment": {
+    "title": "المعدات",
+    "subtitle": "المعدات، الصيانة، المعايرة، التأهيل"
   }
 }

@@ -79,7 +79,8 @@
     "traceLog": "Journal Requetes",
     "documents": "Documents",
     "trainingRecords": "Formation",
-    "supplierAudits": "Audits Fournisseurs"
+    "supplierAudits": "Audits Fournisseurs",
+    "equipment": "Equipement"
   },
   "users": {
     "title": "Utilisateurs",
@@ -381,5 +382,9 @@
   "supplierAudit": {
     "title": "Audits Fournisseurs",
     "subtitle": "Audits qualite fournisseurs (site)"
+  },
+  "equipment": {
+    "title": "Equipement",
+    "subtitle": "Maitre equipement, maintenance, calibration (site)"
   }
 }

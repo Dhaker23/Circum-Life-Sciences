@@ -1,0 +1,13 @@
+"use client";
+import { useTranslations } from "next-intl";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+const OP_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = { OPERATIONAL: "default", MAINTENANCE: "secondary", OUT_OF_SERVICE: "destructive" };
+const CAL_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = { VALID: "default", EXPIRING: "secondary", EXPIRED: "destructive", OUT_OF_SERVICE: "destructive" };
+export default function EquipmentPage() {
+  const t = useTranslations("equipment");
+  const { data, isLoading } = useQuery({ queryKey: ["equipment"], queryFn: async () => { const res = await fetch("/api/equipment?pageSize=100", { credentials: "same-origin" }); if (!res.ok) throw new Error("Failed"); const json = await res.json(); return json.data as Array<{ id: string; code: string; name: string; equipmentType: string; operationalStatus: string; calibrationStatus: string; workCenter: { code: string; name: string } | null; site: { code: string } }>; } });
+  return (<div className="space-y-6"><div><h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1><p className="text-sm text-muted-foreground">{t("subtitle")}</p></div><Card><CardHeader><CardTitle className="text-base">{t("title")}</CardTitle></CardHeader><CardContent>{isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : data && data.length > 0 ? (<div className="max-h-[32rem] overflow-auto rounded-md border"><Table><TableHeader className="sticky top-0 bg-card"><TableRow><TableHead>Code</TableHead><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>WorkCenter</TableHead><TableHead>Op. Status</TableHead><TableHead>Cal. Status</TableHead></TableRow></TableHeader><TableBody>{data.map((e) => (<TableRow key={e.id}><TableCell className="font-mono text-xs">{e.code}</TableCell><TableCell className="text-xs">{e.name}</TableCell><TableCell className="text-xs">{e.equipmentType}</TableCell><TableCell className="text-xs">{e.workCenter?.code ?? "-"}</TableCell><TableCell><Badge variant={OP_VARIANT[e.operationalStatus] ?? "outline"}>{e.operationalStatus}</Badge></TableCell><TableCell><Badge variant={CAL_VARIANT[e.calibrationStatus] ?? "outline"}>{e.calibrationStatus}</Badge></TableCell></TableRow>))}</TableBody></Table></div>) : <p className="text-sm text-muted-foreground">No equipment found</p>}</CardContent></Card></div>);
+}

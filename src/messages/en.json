@@ -79,7 +79,8 @@
     "traceLog": "Query Log",
     "documents": "Documents",
     "trainingRecords": "Training",
-    "supplierAudits": "Supplier Audits"
+    "supplierAudits": "Supplier Audits",
+    "equipment": "Equipment"
   },
   "users": {
     "title": "Users",
@@ -381,5 +382,9 @@
   "supplierAudit": {
     "title": "Supplier Audits",
     "subtitle": "Formal supplier quality audits (site-owned, CAPA-linked)"
+  },
+  "equipment": {
+    "title": "Equipment",
+    "subtitle": "Equipment master, maintenance, calibration, and qualification (site-owned)"
   }
 }

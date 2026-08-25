@@ -60,6 +60,9 @@ model User {
   assessmentAssessors        Assessment[]           @relation("AssessmentAssessor") // Phase 7
   competencyAuthorizers      Competency[]           @relation("CompetencyAuthorizer") // Phase 7
   supplierAudits             SupplierAudit[]        @relation("SupplierAuditor") // Phase 7
+  maintenancePerformed       MaintenanceRecord[]    @relation("MaintenancePerformer") // Phase 8
+  calibrationsPerformed      CalibrationRecord[]    @relation("CalibrationPerformer") // Phase 8
+  qualificationsApproved     Qualification[]        @relation("QualificationApprover") // Phase 8
 
   @@index([status])
 }
@@ -178,26 +181,30 @@ model Site {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  departments     Department[]
-  assignments     Assignment[]
-  employees       Employee[]
-  materialLots    MaterialLot[] // Phase 2: site-owned lots
-  workCenters     WorkCenter[] // Phase 3
-  workOrders      WorkOrder[] // Phase 3
-  batches         ManufacturingBatch[] // Phase 3
-  deviceLots      DeviceLot[] // Phase 3
-  shifts          Shift[] // Phase 3
-  ncrs            NCR[] // Phase 4
-  deviations      Deviation[] // Phase 4
-  investigations  Investigation[] // Phase 4
-  capas           CAPA[] // Phase 4
-  changeControls  ChangeControl[] // Phase 4
-  riskAssessments RiskAssessment[] // Phase 4
-  samples         Sample[] // Phase 5
-  testResults     TestResult[] // Phase 5
-  inspections     Inspection[] // Phase 5
-  trainingRecords TrainingRecord[] // Phase 7
-  supplierAudits  SupplierAudit[] // Phase 7
+  departments        Department[]
+  assignments        Assignment[]
+  employees          Employee[]
+  materialLots       MaterialLot[] // Phase 2: site-owned lots
+  workCenters        WorkCenter[] // Phase 3
+  workOrders         WorkOrder[] // Phase 3
+  batches            ManufacturingBatch[] // Phase 3
+  deviceLots         DeviceLot[] // Phase 3
+  shifts             Shift[] // Phase 3
+  ncrs               NCR[] // Phase 4
+  deviations         Deviation[] // Phase 4
+  investigations     Investigation[] // Phase 4
+  capas              CAPA[] // Phase 4
+  changeControls     ChangeControl[] // Phase 4
+  riskAssessments    RiskAssessment[] // Phase 4
+  samples            Sample[] // Phase 5
+  testResults        TestResult[] // Phase 5
+  inspections        Inspection[] // Phase 5
+  trainingRecords    TrainingRecord[] // Phase 7
+  supplierAudits     SupplierAudit[] // Phase 7
+  equipment          Equipment[] // Phase 8
+  maintenanceRecords MaintenanceRecord[] // Phase 8
+  calibrationRecords CalibrationRecord[] // Phase 8
+  qualifications     Qualification[] // Phase 8
 
   @@index([status])
 }
@@ -527,6 +534,7 @@ model WorkCenter {
   site       Site                 @relation(fields: [siteId], references: [id], onDelete: Restrict)
   operations Operation[]
   executions OperationExecution[]
+  equipment  Equipment[]
 
   @@unique([siteId, code])
   @@index([siteId])
@@ -618,6 +626,7 @@ model OperationExecution {
   batchId            String
   operationId        String
   workCenterId       String? // actual WorkCenter (may differ from Operation default)
+  equipmentId        String? // Phase 8 D6: specific Equipment used
   startedAt          DateTime
   completedAt        DateTime?
   status             String    @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED | SKIPPED
@@ -631,6 +640,7 @@ model OperationExecution {
   batch      ManufacturingBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
   operation  Operation          @relation(fields: [operationId], references: [id], onDelete: Restrict)
   workCenter WorkCenter?        @relation(fields: [workCenterId], references: [id], onDelete: SetNull)
+  equipment  Equipment?         @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
   operator   Employee           @relation("ExecutionOperator", fields: [operatorEmployeeId], references: [id], onDelete: Restrict)
   logger     User?              @relation("ExecutionLogger", fields: [loggedByUserId], references: [id], onDelete: SetNull)
 
@@ -812,6 +822,7 @@ model Deviation {
   investigation        Investigation?   @relation("DeviationInvestigation", fields: [investigationId], references: [id], onDelete: SetNull)
   sourceInvestigations Investigation[]  @relation("InvestigationSourceDeviation") // reverse
   riskAssessments      RiskAssessment[] @relation("DeviationRisk") // reverse: RiskAssessments that link to this Deviation
+  qualifications       Qualification[]  @relation("QualificationDeviation") // Phase 8
 
   @@unique([siteId, code])
   @@index([siteId])
@@ -1173,12 +1184,15 @@ model ControlledDocument {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  approver          User?                @relation("DocApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
-  supersededBy      ControlledDocument?  @relation("DocSupersession", fields: [supersededById], references: [id], onDelete: NoAction)
-  supersededByThis  ControlledDocument[] @relation("DocSupersession")
-  requiredTrainings RequiredTraining[]
-  supplierAudits    SupplierAudit[]
-  ncrs              NCR[]                @relation("NcrDocument") // Phase 7 D3 reverse
+  approver           User?                @relation("DocApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  supersededBy       ControlledDocument?  @relation("DocSupersession", fields: [supersededById], references: [id], onDelete: NoAction)
+  supersededByThis   ControlledDocument[] @relation("DocSupersession")
+  requiredTrainings  RequiredTraining[]
+  supplierAudits     SupplierAudit[]
+  ncrs               NCR[]                @relation("NcrDocument") // Phase 7 D3 reverse
+  maintenanceRecords MaintenanceRecord[] // Phase 8
+  calibrationRecords CalibrationRecord[] // Phase 8
+  qualifications     Qualification[] // Phase 8
 
   @@index([status])
   @@index([documentType])
@@ -1299,4 +1313,126 @@ model SupplierAudit {
   @@index([supplierId])
   @@index([siteId])
   @@index([status])
+}
+
+// ============================================================================
+// Equipment / Maintenance / Calibration / Qualification (Phase 8)
+// ============================================================================
+
+model Equipment {
+  id                String   @id @default(cuid())
+  code              String
+  name              String
+  equipmentType     String
+  serialNumber      String?
+  manufacturer      String?
+  model             String?
+  workCenterId      String?
+  siteId            String
+  operationalStatus String   @default("OPERATIONAL")
+  calibrationStatus String   @default("VALID")
+  isDemo            Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  workCenter         WorkCenter?          @relation(fields: [workCenterId], references: [id], onDelete: SetNull)
+  site               Site                 @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  maintenanceRecords MaintenanceRecord[]
+  calibrationRecords CalibrationRecord[]
+  qualifications     Qualification[]
+  executions         OperationExecution[]
+
+  @@unique([siteId, code])
+  @@index([siteId])
+  @@index([operationalStatus])
+  @@index([calibrationStatus])
+}
+
+model MaintenanceRecord {
+  id                 String    @id @default(cuid())
+  code               String
+  equipmentId        String
+  siteId             String
+  maintenanceType    String    @default("PREVENTIVE")
+  scheduledDate      DateTime?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  performedByUserId  String?
+  findings           String?
+  partsReplaced      String?
+  downtimeHours      Decimal?
+  status             String    @default("SCHEDULED")
+  evidenceDocumentId String?
+  isDemo             Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  equipment        Equipment           @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+  site             Site                @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  performer        User?               @relation("MaintenancePerformer", fields: [performedByUserId], references: [id], onDelete: SetNull)
+  evidenceDocument ControlledDocument? @relation(fields: [evidenceDocumentId], references: [id], onDelete: SetNull)
+
+  @@unique([siteId, code])
+  @@index([equipmentId])
+  @@index([siteId])
+  @@index([status])
+}
+
+model CalibrationRecord {
+  id                 String   @id @default(cuid())
+  code               String
+  equipmentId        String
+  siteId             String
+  standard           String?
+  result             String
+  calibratedAt       DateTime @default(now())
+  nextCalibrationDue DateTime
+  performedByUserId  String?
+  notes              String?
+  evidenceDocumentId String?
+  isDemo             Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  equipment        Equipment           @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+  site             Site                @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  performer        User?               @relation("CalibrationPerformer", fields: [performedByUserId], references: [id], onDelete: SetNull)
+  evidenceDocument ControlledDocument? @relation(fields: [evidenceDocumentId], references: [id], onDelete: SetNull)
+
+  @@unique([siteId, code])
+  @@index([equipmentId])
+  @@index([siteId])
+  @@index([result])
+}
+
+model Qualification {
+  id                 String    @id @default(cuid())
+  code               String
+  equipmentId        String
+  siteId             String
+  qualificationType  String
+  protocol           String?
+  acceptanceCriteria String?
+  executionResult    String?
+  status             String    @default("REQUIREMENT")
+  deviationId        String?
+  approvedByUserId   String?
+  approvedAt         DateTime?
+  reportRef          String?
+  evidenceDocumentId String?
+  isDemo             Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  equipment        Equipment           @relation(fields: [equipmentId], references: [id], onDelete: Restrict)
+  site             Site                @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  deviation        Deviation?          @relation("QualificationDeviation", fields: [deviationId], references: [id], onDelete: SetNull)
+  approver         User?               @relation("QualificationApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  evidenceDocument ControlledDocument? @relation(fields: [evidenceDocumentId], references: [id], onDelete: SetNull)
+
+  @@unique([siteId, code])
+  @@index([equipmentId])
+  @@index([siteId])
+  @@index([status])
+  @@index([qualificationType])
 }

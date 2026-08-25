@@ -601,6 +601,9 @@ async function main() {
   // 12. Phase 7: Docs/Training/Audits (synthetic DEMO/TEST).
   await seedPhase7(siteByCode);
 
+  // 13. Phase 8: Equipment (synthetic DEMO/TEST).
+  await seedEquipment(siteByCode);
+
   // 7. Seed audit event (records that the seed ran).
   await db.auditEvent.create({
     data: {
@@ -784,4 +787,34 @@ async function seedPhase7(siteByCode: Record<string, Site>) {
 
   await db_.auditEvent.create({ data: { action: "system.seed.phase7", entityType: "System", entityId: "seed-p7", outcome: "SUCCESS", reason: "Phase 7 synthetic DEMO seed applied" } });
   console.log("  audit: phase7 seed-run event recorded");
+}
+
+// Phase 8: Equipment seed
+async function seedEquipment(siteByCode: Record<string, Site>) {
+  console.log("Seeding Phase 8 equipment DEMO data...");
+  const db_ = db;
+  const chSite = siteByCode["DEMO-CH-01"];
+  const wc = await db_.workCenter.findFirst({ where: { siteId: chSite.id } });
+  const eq = await db_.equipment.upsert({
+    where: { siteId_code: { siteId: chSite.id, code: "EQ-DEMO-001" } },
+    update: { name: "Demo Molding Machine (DEMO)", equipmentType: "Molding Machine", workCenterId: wc?.id ?? null, isDemo: true },
+    create: { code: "EQ-DEMO-001", name: "Demo Molding Machine (DEMO)", equipmentType: "Molding Machine", serialNumber: "MM-001", manufacturer: "DemoCorp", workCenterId: wc?.id ?? null, siteId: chSite.id, isDemo: true },
+  });
+  await db_.calibrationRecord.upsert({
+    where: { siteId_code: { siteId: chSite.id, code: "CAL-DEMO-001" } },
+    update: {},
+    create: { code: "CAL-DEMO-001", equipmentId: eq.id, siteId: chSite.id, standard: "ISO 9001 (DEMO)", result: "PASS", nextCalibrationDue: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000), isDemo: true },
+  });
+  await db_.maintenanceRecord.upsert({
+    where: { siteId_code: { siteId: chSite.id, code: "MAINT-DEMO-001" } },
+    update: { status: "COMPLETED", completedAt: new Date() },
+    create: { code: "MAINT-DEMO-001", equipmentId: eq.id, siteId: chSite.id, maintenanceType: "PREVENTIVE", status: "COMPLETED", completedAt: new Date(), findings: "Routine preventive maintenance (DEMO)", isDemo: true },
+  });
+  await db_.qualification.upsert({
+    where: { siteId_code: { siteId: chSite.id, code: "QUAL-DEMO-001" } },
+    update: { status: "REPORT" },
+    create: { code: "QUAL-DEMO-001", equipmentId: eq.id, siteId: chSite.id, qualificationType: "IQ", protocol: "Verify installation per spec (DEMO)", acceptanceCriteria: "All connections verified, power on, no alarms (DEMO)", executionResult: "Installation verified (DEMO)", status: "REPORT", approvedByUserId: null, approvedAt: new Date(), isDemo: true },
+  });
+  console.log("  equipment: 1, calibration: 1 (PASS), maintenance: 1 (COMPLETED), qualification: 1 (IQ, REPORT)");
+  await db_.auditEvent.create({ data: { action: "system.seed.equipment", entityType: "System", entityId: "seed-p8", outcome: "SUCCESS", reason: "Phase 8 synthetic DEMO seed applied" } });
 }
