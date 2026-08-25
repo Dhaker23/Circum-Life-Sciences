@@ -672,3 +672,41 @@ Stage Summary:
 - **Tests:** 333/333 PASS (294 Phase 1-10 regression + 39 Phase 11). Typecheck clean. Lint 0 errors/199 warnings. Browser-verified.
 - **Status:** CONDITIONAL PASS. PHASE 11 STATUS: READY FOR OWNER REVIEW. STOPPED. Not starting Phase 12.
 - **Production blocker (carry-forward):** PostgreSQL migration (ADR-0002). Phase 11 adds zero schema changes, so migration impact is nil.
+
+---
+Task ID: p12-plan
+Agent: main-orchestrator (Z.ai Code)
+Task: Phase 11 approved/closed. Produce CIRCUM PHASE 12 DOMAIN & IMPLEMENTATION PLAN (AI Assistant / RAG / Controlled Intelligence). Use grill-with-docs → domain-modeling → codebase-design. Do NOT implement. STOP.
+
+Work Log:
+- Inspected complete project state through Phase 11:
+  - Master PRD §9 (AI Assistant): 8 capabilities (factory/QMS Q&A, approved-document Q&A, batch investigation, root-cause hypotheses, recurrence detection, trend explanation, KPI analysis, report drafting, recommendations). Response structure: Answer/Evidence/Interpretation/Recommendation/Limitations. Explicit prohibitions (never release/approve/close/modify/fabricate). Human approval mandatory. Core workflows continue if AI unavailable (§12 Local-First).
+  - PRD §11: "provider-agnostic AI/RAG layer" + mentions "Python/FastAPI" + "Python analytics" (tension with existing TypeScript project — D2).
+  - PRD §18 Phase 12: "AI assistant / RAG / controlled intelligence."
+  - Existing ADRs (0001-0011): no AI-specific ADR; multi-site ownership (0007), audit immutability (0005), RBAC scoping (0004) apply.
+  - 67 Prisma models; ControlledDocument (Phase 7) has filePath+status (EFFECTIVE for RAG); Investigation (Phase 4) has rootCause/methodology; NCR/Deviation/CAPA polymorphic linkage (ADR-0011).
+  - Phase 11 analytics contracts (17 service functions) available for AI consumption: getOeeDashboard, getQualityDashboard, getCriticalProblemsDashboard, getRecurrenceReport, getActionEffectivenessReport, getOeeTrend, etc.
+  - Phase 10 lean contracts: computeOee, computeLeanMetrics, evaluateVsm.
+  - Phase 6 traceability: forwardTrace, backwardTrace, impactAnalysis, genealogyTree.
+  - z-ai-web-dev-sdk: ZERO existing usage in codebase (confirmed). Available via skills/LLM, skills/VLM, skills/web-search, skills/web-reader.
+  - AI permissions: none exist yet (no "ai.*" module). Existing permissions enforce "AI MUST NEVER" on human-only mutations (quality.capa.close, quality.deviation.approve, etc.).
+  - Tests: 333/333 pass. Lint: 0 errors/199 warnings. Typecheck: 0 Phase 11 errors (1 pre-existing vitest.config.ts issue, documented).
+  - Matt Pocock skills: grill-with-docs (relentless interview + ADR/glossary), domain-modeling (challenge terms, sharpen language), codebase-design (deep modules, seams).
+- Applied grill-with-docs + domain-modeling + codebase-design: identified the AI governance seam (User → AI API → Orchestration → Provider Seam → Structured Response → Audit). The AI is advisory-only; zero mutation permissions; operates in the user's context (site-scoped); Local-First fallback (AI unavailable = explicit, non-blocking).
+- Identified 14 domain decisions (D1-D14) requiring owner confirmation. Most critical/blocking:
+  - D1 (provider abstraction: TypeScript AiProvider interface + ZaiProvider default)
+  - D2 (TypeScript-only vs Python sidecar — PRD §11 mentions Python; owner must confirm no Python in Phase 12)
+  - D5 (RAG strategy: simple context-stuffing with token-limit + Limitations disclosure; no vector DB in Phase 12 — pgvector requires PostgreSQL which is deferred)
+  - D6 (Local-First fallback: AI advisory-only; unavailable state explicit + non-blocking)
+  - D9 (permissions: 3 ai.* perms; which roles get ai.chat?)
+  - D10 (system prompt content: hardcoded, versioned, with PRD §9 guardrails + prompt-injection defense)
+- Produced docs/PRD/PHASE-12-IMPLEMENTATION-PLAN.md (16 sections): context, objectives, PRD traceability (R1-R15), domain model (D1-D14), proposed schema (2 new entities: AiConversation + AiMessage, append-only, site-owned, user-scoped), API design (POST /api/ai/chat + conversation history + usage summary + health), UI architecture (dedicated /ai-assistant page + floating "Ask AI" button), testing (~30-40 new tests T-AI-GUARD-12/T-PROVIDER/T-CONV/T-AUDIT-12/T-RATE/T-LOCAL/T-CAP/T-RAG), AI governance (restated), Local-First (restated), security/data-integrity, technical-debt implications, OWNER DECISION REQUIRED summary, critical AI rule, no-invented-requirements, and the mandatory STOP.
+- Did NOT implement Phase 12. No migrations, no APIs, no UI, no schema changes.
+
+Stage Summary:
+- **Phase 12 Plan: PRODUCED.** AI Assistant / RAG / Controlled Intelligence. Advisory-only AI consuming Phase 1-11 trusted data + analytics contracts. 5-part structured response (Answer/Evidence/Interpretation/Recommendation/Limitations). Provider-agnostic seam (AiProvider interface + ZaiProvider default). Local-First (AI unavailable = explicit, non-blocking).
+- **14 decisions (D1-D14) require owner confirmation.** Most critical: D1 (provider abstraction), D2 (TypeScript-only), D5 (RAG strategy), D6 (Local-First fallback), D9 (permissions + role grants), D10 (system prompt content).
+- **Schema impact:** 2 new entities (AiConversation, AiMessage — append-only, site-owned, user-scoped). Reuses AuditEvent (action="ai.chat"). No changes to existing 67 models.
+- **Status:** WAITING FOR OWNER APPROVAL. STOPPED. Not starting Phase 12 implementation. Not starting Phase 13.
+- **Production blockers (carry-forward):** PostgreSQL migration (ADR-0002); distributed rate limiting (Phase 12 uses in-memory); vector search for RAG (deferred — needs pgvector); lint debt (199 warnings, must not grow uncontrolled).
+- **Autonomous cron conflict:** Host standing "15-min webDevReview cron" remains superseded by Circum Phase 0 Q5 owner-approved decision. No autonomous-continuation cron created.
