@@ -197,3 +197,25 @@ A managed record of a hazard: `severity` (1-5) × `probability` (1-5) = `riskPri
 
 **Polymorphic Quality Linkage** (PROPOSED D8)
 Quality records (NCR, Deviation) reference production entities via `entityType` + `entityId` strings (service-validated), not hard foreign keys. This avoids sparse nullable FKs to every production entity and stays extensible. The service layer validates the referenced entity exists and is at the same site. _Avoid_: generic "link" (use the entityType/entityId pattern).
+
+## Phase 5 proposed terms (domain-modeling, pending owner confirmation D1-D8)
+
+> Sharpened via `grill-with-docs` + `domain-modeling` for Phase 5 (Laboratory/Inspection/Testing/Specifications). These are PROPOSED resolutions grounded in the PRD; not yet confirmed. See `docs/PRD/PHASE-5-IMPLEMENTATION-PLAN.md` §3. **Owner constraint: "Never invent specifications. Never invent acceptance criteria. Do NOT invent terminology or entities."**
+
+**Specification** (PROPOSED D2, D7)
+The controlled acceptance criterion for a test or inspection. A standalone entity (not on Product Revision), referenced polymorphically. Fields: parameter (what's measured), unit, criterionType (PASS_FAIL / NUMERIC_RANGE / NUMERIC_MIN / NUMERIC_MAX / TEXT_MATCH), criterionValue (e.g., ">= 50"). State machine: DRAFT → APPROVED → EFFECTIVE → SUPERSEDED. Immutable when EFFECTIVE (like BOM, ADR-0006). **Never invented by software; never overridden by AI (PRD §9).** _Avoid_: spec, criterion (use Specification for the controlled record).
+
+**Test Method** (PROPOSED D3)
+The controlled *procedure* for performing a test (how to test). Distinct from Specification (method = how; spec = what's acceptable). A Test Method references one or more Specifications (a method may measure multiple parameters). State machine: DRAFT → APPROVED → EFFECTIVE → SUPERSEDED. Global. _Avoid_: procedure, protocol (use Test Method; Protocol is a Validation concept, Phase 8).
+
+**Sample** (PROPOSED D4)
+A physical sample drawn from a production entity (Batch/DeviceLot/MaterialLot) for laboratory testing. Site-owned. State machine: DRAWN → RECEIVED_IN_LAB → IN_TEST → CONSUMED / RETAINED. A Sample can have multiple TestResults (one sample tested for multiple parameters). _Avoid_: specimen (use Sample).
+
+**Test Result** (PROPOSED D5)
+The formal laboratory examination of a Sample, following a Test Method, producing a measured value evaluated against a Specification. State machine: SAMPLE_RECEIVED → IN_PROGRESS → RESULT_ENTERED → REVIEWED → DISPOSITIONED. Auto-evaluates PASS/FAIL when the measured value is entered. Disposition: PASS_RELEASE / FAIL_HOLD / FAIL_REJECT / CONDITIONAL_RELEASE. **Disposition requires authorized human action; AI must never disposition (PRD §9).** A failed result can link to an NCR. _Avoid_: lab report, analysis (use Test Result for the controlled record).
+
+**Inspection** (PROPOSED D1, D6)
+A shop-floor quality check (in-process or final), performed by an Operator/Inspector at the point of production. Distinct from a Laboratory Test (Inspection is simpler: no Sample, no Method, no formal review/disposition workflow). State machine: PENDING → PASSED / FAILED / CONDITIONAL. A failed Inspection can link to an NCR. _Avoid_: check, QC (use Inspection for the controlled record).
+
+**Inspection vs Laboratory Test** (PROPOSED D1)
+Inspection = quick shop-floor check (no sample, no method; pass/fail against a spec or free-text). Laboratory Test = formal lab examination (sample, method, measured result, review, disposition). Different workflows, different actors (Inspector vs Lab Technician). **They are separate entities.** _Avoid_: "quality check" as a generic term that conflates them.
