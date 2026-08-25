@@ -207,6 +207,11 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { key: "batchreview.read", module: "batchreview", description: "Read batch reviews (site-scoped)" },
   { key: "batchreview.transition", module: "batchreview", description: "Transition batch review state (QA review)" },
   { key: "batchreview.disposition", module: "batchreview", description: "Disposition a batch (human-only; AI MUST NEVER)" },
+  // lean (Phase 10; D7: AI read-only)
+  { key: "lean.read", module: "lean", description: "Read lean metrics, OEE, downtime, VSM" },
+  { key: "lean.downtime.create", module: "lean", description: "Create downtime events" },
+  { key: "lean.downtime.close", module: "lean", description: "Close downtime events (set endTime, compute duration)" },
+  { key: "lean.vsm.create", module: "lean", description: "Create VSMs and manage nodes/edges" },
 ];
 
 // Role system keys (stable enum-like strings). The 19 PRD roles (PRD §3).
@@ -343,6 +348,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.deviation.read", "quality.deviation.create",
     "quality.investigation.read", "quality.capa.read", "quality.change.read", "quality.risk.read",
     "traceability.read",
+    "lean.read", "lean.downtime.create", "lean.downtime.close",
     "session.sign-in", "session.sign-out",
   ],
   production_planner: [

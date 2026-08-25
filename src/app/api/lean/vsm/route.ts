@@ -1,0 +1,3 @@
+import { NextRequest } from "next/server"; import { ok, fail, parseOrThrow } from "@/lib/api-envelope"; import { requirePermission } from "@/lib/auth-context"; import { CreateVsmSchema } from "@/modules/lean/domain"; import * as svc from "@/modules/lean/service";
+export async function GET(_req: NextRequest) { try { const ctx = await requirePermission("lean.read"); return ok(await svc.listVsm(ctx)); } catch (e) { return fail(e); } }
+export async function POST(req: NextRequest) { try { const ctx = await requirePermission("lean.vsm.create"); const body = parseOrThrow(CreateVsmSchema, await req.json()); return ok(await svc.createVsm(ctx, body)); } catch (e) { return fail(e); } }

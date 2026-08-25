@@ -84,7 +84,10 @@
     "cleanroom": "Cleanroom",
     "packaging": "Packaging",
     "sterilization": "Sterilization",
-    "batchReview": "Batch Review"
+    "batchReview": "Batch Review",
+    "leanDowntime": "Downtime",
+    "leanOee": "OEE",
+    "leanVsm": "VSM"
   },
   "users": {
     "title": "Users",
@@ -409,5 +412,19 @@
     "subtitle": "QA review and batch disposition (human-only)",
     "dispositionGuard": "Batch disposition is HUMAN-ONLY. AI must never release product.",
     "noData": "No batches ready for review"
+  },
+  "lean": {
+    "downtime": {
+      "title": "Downtime Events",
+      "subtitle": "Equipment downtime tracking for OEE availability"
+    },
+    "oee": {
+      "title": "OEE",
+      "subtitle": "Overall Equipment Effectiveness computation"
+    },
+    "vsm": {
+      "title": "Value Stream Maps",
+      "subtitle": "Value stream mapping and analysis"
+    }
   }
 }

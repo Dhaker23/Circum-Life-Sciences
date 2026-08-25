@@ -1,0 +1,2 @@
+import { NextRequest } from "next/server"; import { ok, fail } from "@/lib/api-envelope"; import { requirePermission } from "@/lib/auth-context"; import * as svc from "@/modules/lean/service";
+export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) { try { const { id } = await params; const ctx = await requirePermission("lean.read"); return ok(await svc.evaluateVsm(ctx, id)); } catch (e) { return fail(e); } }

@@ -84,7 +84,10 @@
     "cleanroom": "Salle Blanche",
     "packaging": "Conditionnement",
     "sterilization": "Sterilisation",
-    "batchReview": "Revue Lot"
+    "batchReview": "Revue Lot",
+    "leanDowntime": "Arrets",
+    "leanOee": "TRS",
+    "leanVsm": "Flux Valeur"
   },
   "users": {
     "title": "Utilisateurs",
@@ -409,5 +412,19 @@
     "subtitle": "Revue QA et disposition (humain uniquement)",
     "dispositionGuard": "La disposition du lot est HUMAINE uniquement.",
     "noData": "Aucun lot pret pour revue"
+  },
+  "lean": {
+    "downtime": {
+      "title": "Evenements Arret",
+      "subtitle": "Suivi des arrets pour disponibilite OEE"
+    },
+    "oee": {
+      "title": "TRS",
+      "subtitle": "Calcul du Taux de Rendement Synthetique"
+    },
+    "vsm": {
+      "title": "Cartes Flux Valeur",
+      "subtitle": "Cartographie et analyse du flux de valeur"
+    }
   }
 }

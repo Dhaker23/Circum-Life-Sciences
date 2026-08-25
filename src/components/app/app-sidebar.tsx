@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings, Package, Boxes, Truck, Layers, ClipboardList, Factory, Clock, AlertTriangle, GitBranch, FileSearch, Wrench, Scale, FlaskConical, Microscope, TestTube, Beaker, CheckSquare, Network, AlertCircle, History, FileText, GraduationCap, ClipboardCheck, Cog, Wind, PackageCheck, Radiation, Gavel } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings, Package, Boxes, Truck, Layers, ClipboardList, Factory, Clock, AlertTriangle, GitBranch, FileSearch, Wrench, Scale, FlaskConical, Microscope, TestTube, Beaker, CheckSquare, Network, AlertCircle, History, FileText, GraduationCap, ClipboardCheck, Cog, Wind, PackageCheck, Radiation, Gavel, TrendingDown, GitGraph } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -76,6 +76,14 @@ const NAV: { section: string; items: NavItem[] }[] = [
       { href: "/lab/samples", labelKey: "nav.samples", icon: TestTube, permission: "lab.sample.read" },
       { href: "/lab/test-results", labelKey: "nav.testResults", icon: Beaker, permission: "lab.testresult.read" },
       { href: "/inspection/inspections", labelKey: "nav.inspections", icon: CheckSquare, permission: "inspection.read" },
+    ],
+  },
+  {
+    section: "lean",
+    items: [
+      { href: "/lean/downtime", labelKey: "nav.leanDowntime", icon: TrendingDown, permission: "lean.read" },
+      { href: "/lean/oee", labelKey: "nav.leanOee", icon: Scale, permission: "lean.read" },
+      { href: "/lean/vsm", labelKey: "nav.leanVsm", icon: GitGraph, permission: "lean.read" },
     ],
   },
   {

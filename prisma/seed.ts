@@ -607,6 +607,9 @@ async function main() {
   // 14. Phase 9: Cleanroom/Packaging/Sterilization/Batch Review (synthetic DEMO/TEST).
   await seedPhase9(siteByCode);
 
+  // 15. Phase 10: Lean/OEE/VSM (synthetic DEMO/TEST).
+  await seedLean(siteByCode);
+
   // 7. Seed audit event (records that the seed ran).
   await db.auditEvent.create({
     data: {
@@ -864,4 +867,35 @@ async function seedPhase9(siteByCode: Record<string, Site>) {
 
   await db_.auditEvent.create({ data: { action: "system.seed.phase9", entityType: "System", entityId: "seed-p9", outcome: "SUCCESS", reason: "Phase 9 synthetic DEMO seed applied" } });
   console.log("  audit: phase9 seed-run event recorded");
+}
+
+// Phase 10: Lean/OEE/VSM seed
+async function seedLean(siteByCode: Record<string, Site>) {
+  console.log("Seeding Phase 10 lean DEMO data...");
+  const db_ = db;
+  const chSite = siteByCode["DEMO-CH-01"];
+  const eq = await db_.equipment.findFirst({ where: { siteId: chSite.id } });
+  if (eq) {
+    const de = await db_.downtimeEvent.create({ data: { code: "DT-DEMO-001", equipmentId: eq.id, siteId: chSite.id, downtimeCategory: "CHANGEOVER", reason: "Material changeover (DEMO)", startTime: new Date(Date.now() - 3600000), endTime: new Date(Date.now() - 3000000), durationMinutes: 10, status: "CLOSED", isDemo: true } }).catch(() => null);
+    console.log("  downtime event: 1 (CLOSED, 10min, CHANGEOVER)");
+  }
+  const vsm = await db_.valueStreamMap.create({ data: { code: "VSM-DEMO-001", name: "Demo Catheter Value Stream (DEMO)", siteId: chSite.id, status: "ACTIVE", isDemo: true } }).catch(() => null);
+  if (vsm) {
+    const n1 = await db_.vsmNode.create({ data: { vsmId: vsm.id, sequence: 1, nodeType: "SUPPLIER", name: "Raw Material Supplier (DEMO)", leadTimeMinutes: 1440, valueAddedMinutes: 0} }).catch(() => null);
+    const n2 = await db_.vsmNode.create({ data: { vsmId: vsm.id, sequence: 2, nodeType: "PROCESS", name: "Molding (DEMO)", leadTimeMinutes: 30, valueAddedMinutes: 25} }).catch(() => null);
+    const n3 = await db_.vsmNode.create({ data: { vsmId: vsm.id, sequence: 3, nodeType: "INVENTORY", name: "WIP Buffer (DEMO)", leadTimeMinutes: 120, valueAddedMinutes: 0} }).catch(() => null);
+    const n4 = await db_.vsmNode.create({ data: { vsmId: vsm.id, sequence: 4, nodeType: "PROCESS", name: "Assembly (DEMO)", leadTimeMinutes: 45, valueAddedMinutes: 40} }).catch(() => null);
+    const n5 = await db_.vsmNode.create({ data: { vsmId: vsm.id, sequence: 5, nodeType: "CUSTOMER", name: "Customer (DEMO)", leadTimeMinutes: 0, valueAddedMinutes: 0} }).catch(() => null);
+    if (n1 && n2) await db_.vsmEdge.create({ data: { fromNodeId: n1.id, toNodeId: n2.id } }).catch(() => null);
+    if (n2 && n3) await db_.vsmEdge.create({ data: { fromNodeId: n2.id, toNodeId: n3.id } }).catch(() => null);
+    if (n3 && n4) await db_.vsmEdge.create({ data: { fromNodeId: n3.id, toNodeId: n4.id } }).catch(() => null);
+    if (n4 && n5) await db_.vsmEdge.create({ data: { fromNodeId: n4.id, toNodeId: n5.id } }).catch(() => null);
+    // Evaluate VSM
+    const totalLead = 1440 + 30 + 120 + 45 + 0;
+    const totalVA = 0 + 25 + 0 + 40 + 0;
+    await db_.valueStreamMap.update({ where: { id: vsm.id }, data: { totalLeadTimeMinutes: totalLead, totalValueAddedMinutes: totalVA, totalNonValueAddedMinutes: totalLead - totalVA, valueAddedRatio: totalVA / totalLead } });
+    console.log("  VSM: 1 (5 nodes, lead=1635m, VA=65m, ratio=4.0%)");
+  }
+  await db_.auditEvent.create({ data: { action: "system.seed.lean", entityType: "System", entityId: "seed-p10", outcome: "SUCCESS", reason: "Phase 10 synthetic DEMO seed applied" } });
+  console.log("  audit: phase10 seed-run event recorded");
 }
