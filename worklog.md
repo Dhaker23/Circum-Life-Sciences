@@ -574,3 +574,34 @@ Stage Summary:
 - **Metric sources verified:** Planned Time (Shift), Run Time (OperationExecution), Ideal Duration (Operation.estimatedDurationMinutes), Total Count (Batch.actualQuantity), Scrap (ProductionScrap), Rework (ProductionRework). No invented inputs.
 - **Status:** CONDITIONAL PASS. PHASE 10 STATUS: READY FOR OWNER REVIEW. STOPPED.
 - **Production blocker:** PostgreSQL migration (ADR-0002).
+
+---
+Task ID: p11-plan
+Agent: main-orchestrator (Z.ai Code)
+Task: Phase 10 approved/closed. Produce CIRCUM PHASE 11 DOMAIN & IMPLEMENTATION PLAN (Analytics/Reporting/Dashboards). Use grill-with-docs → domain-modeling → codebase-design. Do NOT implement. STOP.
+
+Work Log:
+- Inspected complete project state through Phase 10:
+  - Master PRD (upload/CIRCUM_MASTER_PRD_FINAL.md): §8 Analytics = Phase 11 scope (dashboards + reports lists), §7 Lean source, §9 AI governance, §14 UI/UX, §18 roadmap, §19/§20 Phase Gate.
+  - Phase 10 implementation plan + validation report: 4 entities (DowntimeEvent, ValueStreamMap, VsmNode, VsmEdge), 8 API routes, 3 UI pages, 4 lean perms, 294/294 tests pass, 0 errors/184 warnings. OEE computed on-demand from trusted data (no invention).
+  - Trusted computation contract (src/modules/lean/service/index.ts + domain/index.ts): computeOee() → OeeResult {availability, performance, quality, oee, sources{plannedTimeMinutes, downtimeMinutes, runTimeMinutes, idealDurationMinutes, totalCount, goodCount, scrapCount, reworkCount}, warnings[]}; computeLeanMetrics() → {taktTime(null), cycleTime, fpy, scrapRate, reworkRate, mtbf, mttr, paretoDowntime[], paretoScrap[], bottlenecks[], sources, warnings[]}; evaluateVsm() → {totalLeadTimeMinutes, totalValueAddedMinutes, totalNonValueAddedMinutes, valueAddedRatio, nodeCount}.
+  - RBAC pattern (src/lib/permissions.ts): {key, module, description}; modules identity/org/audit/session/manufacturing/lean/etc. NO analytics module exists yet (confirmed — grep returned nothing).
+  - Auth/audit/site-scope contracts: requirePermission(perm, targetSiteId?) → ctx; can(ctx, perm, siteId?); assertSiteAccess(ctx, siteId); siteScope(ctx)/siteIdFilter(ctx); audit({actorUserId, action, entityType, entityId, previousState, newState, reason, outcome, sessionId, ipAddress, userAgent}) append-only + DB triggers.
+  - API envelope: ok()/fail()/parseOrThrow(schema, body).
+  - ADR-0007 multi-site ownership: global catalog vs site-owned physical; cross-site leakage = CRITICAL DEFECT; RLS deferred to PostgreSQL (ADR-0002).
+  - ADR-0011 polymorphic quality linkage (NCR/Deviation → entityType/entityId).
+  - UI app structure: [locale]/(app)/<module>/...; lean/{downtime,oee,vsm} pages exist (Phase 10).
+  - Matt Pocock skills: grill-with-docs (relentless interview + ADR/glossary as we go), domain-modeling (challenge terms, sharpen language, scenarios, cross-reference code, offer ADRs sparingly), codebase-design (deep modules: small interface + deep implementation; seam discipline; interface = test surface).
+- Applied grill-with-docs + domain-modeling + codebase-design to identify Phase 11 scope, ambiguities, and the data-flow seam (Trusted Data → Phase 10 Computation → Phase 11 Analytics API → Dashboard UI; UI must NOT be a second source of truth).
+- Identified 15 domain decisions (D1-D15) requiring owner confirmation. Most critical/blocking: D1 (live vs snapshot trending — determines whether Phase 11 has any schema change), D3 (delivery performance — no shipment source exists; cannot be invented), D4 (critical problems RPN threshold), D5 (overdue actions entity set + age thresholds — requires schema audit), D7 (corporate aggregation authorization model), D11 (4 analytics perms; AI .read only), D13 (no AI feature in Phase 11 — scope boundary vs Phase 12).
+- Produced docs/PRD/PHASE-11-IMPLEMENTATION-PLAN.md (16 sections): context, objectives, PRD traceability (R1-R21), domain model (D1-D15), proposed schema (AnalyticsSnapshot ONLY if D1=hybrid/D2=confirmed; otherwise ZERO schema changes), API design (5 dashboards + 10 reports + VSM view + corporate summary + export + snapshot mgmt), UI architecture (9 dashboard pages + 10 report pages + VSM view + corporate page), testing (~35-45 new tests T-ANALYTICS/T-CRIT/T-OVERDUE/T-RECURRENCE/T-EFFECTIVENESS/T-DELIVERY/T-ISOL-11/T-AI-GUARD-08/T-AUDIT-11/T-SNAPSHOT-IMMUT/T-CACHE), the 28 planning-requirement checklist, technical-debt implications, OWNER DECISION REQUIRED summary, and the critical analytics/site/AI/no-invention rules restated.
+- Did NOT implement Phase 11. No migrations, no APIs, no UI, no schema changes.
+
+Stage Summary:
+- **Phase 11 Plan: PRODUCED.** Analytics/Reporting/Dashboards. Read-only presentation layer over Phase 1-10 trusted data + Phase 10 computation services (computeOee/computeLeanMetrics/evaluateVsm). UI must NOT re-implement KPI formulas.
+- **15 decisions (D1-D15) require owner confirmation.** Most critical: D1 (trend strategy), D3 (delivery stub), D4 (critical-problems RPN threshold), D5 (overdue-actions entity set), D7 (corporate aggregation), D11 (permissions), D13 (no AI in Phase 11).
+- **Schema impact:** AT MOST 1 new entity (AnalyticsSnapshot, only if D1=hybrid + D2=confirmed); possibly a minor Site.timezone addition (D14). If D1=live-only → ZERO schema changes (pure presentation layer).
+- **Status:** WAITING FOR OWNER APPROVAL. STOPPED. Not starting Phase 11 implementation. Not starting Phase 12.
+- **Production blockers (carry-forward):** PostgreSQL migration (ADR-0002); RLS for site isolation; distributed rate limiting; Playwright E2E coverage; deferred UI work; final security hardening; final production validation.
+- **Lint debt:** Phase 10 = 184 warnings. Phase 11 must not increase net; suppression forbidden.
+- **Conflict flagged:** Host standing "15-min webDevReview cron" rule is superseded by Circum Phase 0 Q5 owner-approved decision ("never advance automatically / wait for owner approval") per CLAUDE.md. No autonomous-continuation cron created for this planning task.
