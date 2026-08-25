@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings, Package, Boxes, Truck, Layers, ClipboardList, Factory, Clock } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings, Package, Boxes, Truck, Layers, ClipboardList, Factory, Clock, AlertTriangle, GitBranch, FileSearch, Wrench, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -47,6 +47,17 @@ const NAV: { section: string; items: NavItem[] }[] = [
       { href: "/production/batches", labelKey: "nav.batches", icon: Factory, permission: "production.batch.read" },
       { href: "/production/work-centers", labelKey: "nav.workCenters", icon: Building2, permission: "production.workcenter.read" },
       { href: "/production/shifts", labelKey: "nav.shifts", icon: Clock, permission: "production.shift.read" },
+    ],
+  },
+  {
+    section: "quality",
+    items: [
+      { href: "/quality/ncrs", labelKey: "nav.ncrs", icon: AlertTriangle, permission: "quality.ncr.read" },
+      { href: "/quality/deviations", labelKey: "nav.deviations", icon: GitBranch, permission: "quality.deviation.read" },
+      { href: "/quality/investigations", labelKey: "nav.investigations", icon: FileSearch, permission: "quality.investigation.read" },
+      { href: "/quality/capas", labelKey: "nav.capas", icon: Wrench, permission: "quality.capa.read" },
+      { href: "/quality/changes", labelKey: "nav.changes", icon: ClipboardList, permission: "quality.change.read" },
+      { href: "/quality/risks", labelKey: "nav.risks", icon: Scale, permission: "quality.risk.read" },
     ],
   },
   {

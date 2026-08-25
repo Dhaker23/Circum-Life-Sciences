@@ -30,15 +30,24 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  assignments        Assignment[]
-  sessions           Session[]
-  accounts           Account[]
-  auditEvents        AuditEvent[] // as actor (onDelete SetNull so audit outlives user)
-  employee           Employee? // optional 1:1 link (Employee optionally associated with User, ADR-0004/User-vs-Employee)
-  executionsLogged   OperationExecution[]  @relation("ExecutionLogger") // Phase 3
-  consumptionsLogged MaterialConsumption[] @relation("ConsumptionRecorder") // Phase 3
-  scrapsLogged       ProductionScrap[]     @relation("ScrapRecorder") // Phase 3
-  reworksLogged      ProductionRework[]    @relation("ReworkRecorder") // Phase 3
+  assignments                Assignment[]
+  sessions                   Session[]
+  accounts                   Account[]
+  auditEvents                AuditEvent[] // as actor (onDelete SetNull so audit outlives user)
+  employee                   Employee? // optional 1:1 link (Employee optionally associated with User, ADR-0004/User-vs-Employee)
+  executionsLogged           OperationExecution[]  @relation("ExecutionLogger") // Phase 3
+  consumptionsLogged         MaterialConsumption[] @relation("ConsumptionRecorder") // Phase 3
+  scrapsLogged               ProductionScrap[]     @relation("ScrapRecorder") // Phase 3
+  reworksLogged              ProductionRework[]    @relation("ReworkRecorder") // Phase 3
+  ncrsCreated                NCR[]                 @relation("NcrCreator") // Phase 4
+  ncrsAssigned               NCR[]                 @relation("NcrAssignee") // Phase 4
+  deviationsApproved         Deviation[]           @relation("DeviationApprover") // Phase 4
+  investigationsConducted    Investigation[]       @relation("InvestigationConductor") // Phase 4
+  capasImplemented           CAPA[]                @relation("CapaImplementer") // Phase 4
+  capasEffectivenessVerified CAPA[]                @relation("CapaEffectivenessVerifier") // Phase 4
+  capasClosed                CAPA[]                @relation("CapaCloser") // Phase 4
+  changesApproved            ChangeControl[]       @relation("ChangeApprover") // Phase 4
+  risksAssessed              RiskAssessment[]      @relation("RiskAssessor") // Phase 4
 
   @@index([status])
 }
@@ -154,15 +163,21 @@ model Site {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  departments  Department[]
-  assignments  Assignment[]
-  employees    Employee[]
-  materialLots MaterialLot[] // Phase 2: site-owned lots
-  workCenters  WorkCenter[] // Phase 3
-  workOrders   WorkOrder[] // Phase 3
-  batches      ManufacturingBatch[] // Phase 3
-  deviceLots   DeviceLot[] // Phase 3
-  shifts       Shift[] // Phase 3
+  departments     Department[]
+  assignments     Assignment[]
+  employees       Employee[]
+  materialLots    MaterialLot[] // Phase 2: site-owned lots
+  workCenters     WorkCenter[] // Phase 3
+  workOrders      WorkOrder[] // Phase 3
+  batches         ManufacturingBatch[] // Phase 3
+  deviceLots      DeviceLot[] // Phase 3
+  shifts          Shift[] // Phase 3
+  ncrs            NCR[] // Phase 4
+  deviations      Deviation[] // Phase 4
+  investigations  Investigation[] // Phase 4
+  capas           CAPA[] // Phase 4
+  changeControls  ChangeControl[] // Phase 4
+  riskAssessments RiskAssessment[] // Phase 4
 
   @@index([status])
 }
@@ -644,6 +659,7 @@ model ProductionScrap {
   id               String   @id @default(cuid())
   batchId          String?
   deviceLotId      String?
+  ncrId            String? // Phase 4 (D10): optional link to an NCR for traceability
   quantity         Decimal
   unit             String
   reason           String
@@ -653,16 +669,19 @@ model ProductionScrap {
 
   batch     ManufacturingBatch? @relation(fields: [batchId], references: [id], onDelete: Cascade)
   deviceLot DeviceLot?          @relation(fields: [deviceLotId], references: [id], onDelete: Cascade)
+  ncr       NCR?                @relation("ScrapNcr", fields: [ncrId], references: [id], onDelete: SetNull)
   recorder  User?               @relation("ScrapRecorder", fields: [recordedByUserId], references: [id], onDelete: SetNull)
 
   @@index([batchId])
   @@index([deviceLotId])
+  @@index([ncrId])
 }
 
 model ProductionRework {
   id                String    @id @default(cuid())
   batchId           String?
   deviceLotId       String?
+  ncrId             String? // Phase 4 (D10): optional link to an NCR for traceability
   quantity          Decimal
   unit              String
   reason            String
@@ -673,10 +692,12 @@ model ProductionRework {
 
   batch     ManufacturingBatch? @relation(fields: [batchId], references: [id], onDelete: Cascade)
   deviceLot DeviceLot?          @relation(fields: [deviceLotId], references: [id], onDelete: Cascade)
+  ncr       NCR?                @relation("ReworkNcr", fields: [ncrId], references: [id], onDelete: SetNull)
   recorder  User?               @relation("ReworkRecorder", fields: [recordedByUserId], references: [id], onDelete: SetNull)
 
   @@index([batchId])
   @@index([deviceLotId])
+  @@index([ncrId])
 }
 
 model Shift {
@@ -694,4 +715,208 @@ model Shift {
 
   @@unique([siteId, name])
   @@index([siteId])
+}
+
+// ============================================================================
+// Quality foundation (Phase 4, ADR-0010/0011)
+// D1: NCR (unplanned) != Deviation (planned). D2: Investigation != CAPA.
+// D2 MODIFICATION: CAPA uses polymorphic source (sourceType + sourceId) + optional investigationId.
+// D8: polymorphic linkage to production (entityType + entityId, service-validated).
+// D9: document references are strings (Phase 7 adds ControlledDocument FK).
+// Genealogy: NCR/Deviation/CAPA reference any production entity.
+// ============================================================================
+
+model NCR {
+  id                  String    @id @default(cuid())
+  code                String // unique per site
+  siteId              String // SITE-OWNED
+  concernsEntityType  String // BATCH | DEVICE_LOT | MATERIAL_LOT | WORK_ORDER | OPERATION_EXECUTION | PRODUCT_REVISION | MATERIAL | SUPPLIER
+  concernsEntityId    String
+  description         String
+  severity            String    @default("MAJOR") // MINOR | MAJOR | CRITICAL
+  status              String    @default("DRAFT") // DRAFT | CONTAINMENT | INVESTIGATION | DISPOSITION | CLOSED | CANCELLED
+  containmentAction   String?
+  disposition         String? // USE_AS_IS | REWORK | REGRADE | SCRAP | RETURN_TO_SUPPLIER
+  createdByUserId     String?
+  assignedToUserId    String?
+  investigationId     String?   @unique // linked when INVESTIGATION (1:1)
+  evidenceDocumentRef String? // D9: string ref; Phase 7 adds ControlledDocument FK
+  closedAt            DateTime?
+  closureNotes        String?
+  isDemo              Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  site                 Site               @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  creator              User?              @relation("NcrCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  assignee             User?              @relation("NcrAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  investigation        Investigation?     @relation("NcrInvestigation", fields: [investigationId], references: [id], onDelete: SetNull)
+  sourceInvestigations Investigation[]    @relation("InvestigationSourceNcr") // reverse: Investigations that reference this NCR as their source
+  scraps               ProductionScrap[]  @relation("ScrapNcr") // Phase 4 (D10)
+  reworks              ProductionRework[] @relation("ReworkNcr") // Phase 4 (D10)
+
+  @@unique([siteId, code])
+  @@index([siteId])
+  @@index([status])
+  @@index([concernsEntityType, concernsEntityId])
+}
+
+model Deviation {
+  id                  String    @id @default(cuid())
+  code                String // unique per site
+  siteId              String // SITE-OWNED
+  appliesToEntityType String // ROUTING | OPERATION | BOM | BOM_LINE | BATCH | PRODUCT_REVISION
+  appliesToEntityId   String
+  description         String
+  justification       String
+  impactAssessment    String?
+  status              String    @default("DRAFT") // DRAFT | ASSESSMENT | INVESTIGATION | REVIEW | CLOSED | REJECTED
+  approvedByUserId    String?
+  approvedAt          DateTime?
+  investigationId     String?   @unique // optional (D4, 1:1)
+  evidenceDocumentRef String?
+  validFrom           DateTime?
+  validUntil          DateTime? // D11: expiration does NOT auto-close; triggers controlled workflow
+  isDemo              Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  site                 Site             @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  approver             User?            @relation("DeviationApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  investigation        Investigation?   @relation("DeviationInvestigation", fields: [investigationId], references: [id], onDelete: SetNull)
+  sourceInvestigations Investigation[]  @relation("InvestigationSourceDeviation") // reverse
+  riskAssessments      RiskAssessment[] @relation("DeviationRisk") // reverse: RiskAssessments that link to this Deviation
+
+  @@unique([siteId, code])
+  @@index([siteId])
+  @@index([status])
+  @@index([appliesToEntityType, appliesToEntityId])
+}
+
+model Investigation {
+  id                  String    @id @default(cuid())
+  code                String // unique per site
+  siteId              String // SITE-OWNED
+  sourceType          String // NCR | DEVIATION
+  sourceNcrId         String?
+  sourceDeviationId   String?
+  methodology         String
+  findings            String?
+  rootCause           String?
+  concludedAt         DateTime?
+  status              String    @default("IN_PROGRESS") // IN_PROGRESS | CONCLUDED
+  conductedByUserId   String?
+  evidenceDocumentRef String?
+  isDemo              Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  site                     Site       @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  sourceNcr                NCR?       @relation("InvestigationSourceNcr", fields: [sourceNcrId], references: [id], onDelete: SetNull)
+  sourceDeviation          Deviation? @relation("InvestigationSourceDeviation", fields: [sourceDeviationId], references: [id], onDelete: SetNull)
+  ncrForInvestigation      NCR?       @relation("NcrInvestigation") // reverse of NCR.investigationId
+  deviationForInvestiation Deviation? @relation("DeviationInvestigation") // reverse of Deviation.investigationId
+  conductor                User?      @relation("InvestigationConductor", fields: [conductedByUserId], references: [id], onDelete: SetNull)
+  capas                    CAPA[]
+
+  @@unique([siteId, code])
+  @@index([siteId])
+  @@index([sourceType])
+}
+
+model CAPA {
+  id                            String    @id @default(cuid())
+  code                          String // unique per site
+  siteId                        String // SITE-OWNED
+  // D2 MODIFICATION: polymorphic source (not hard-FK to Investigation).
+  sourceType                    String // NCR | INVESTIGATION | AUDIT | TREND | COMPLAINT | OTHER
+  sourceId                      String // the source entity's ID
+  investigationId               String? // optional FK for the common NCR -> Investigation -> CAPA chain
+  type                          String    @default("CORRECTIVE") // CORRECTIVE | PREVENTIVE | BOTH
+  actionPlan                    String
+  implementationOwnerUserId     String?
+  implementedAt                 DateTime?
+  effectivenessVerification     String?
+  effectivenessVerifiedAt       DateTime?
+  effectivenessVerifiedByUserId String?
+  status                        String    @default("OPEN") // OPEN | ACTION_PLAN | IMPLEMENTATION | EFFECTIVENESS | CLOSED
+  closedByUserId                String?
+  closedAt                      DateTime?
+  evidenceDocumentRef           String?
+  isDemo                        Boolean   @default(false)
+  createdAt                     DateTime  @default(now())
+  updatedAt                     DateTime  @updatedAt
+
+  site                  Site           @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  investigation         Investigation? @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  implementer           User?          @relation("CapaImplementer", fields: [implementationOwnerUserId], references: [id], onDelete: SetNull)
+  effectivenessVerifier User?          @relation("CapaEffectivenessVerifier", fields: [effectivenessVerifiedByUserId], references: [id], onDelete: SetNull)
+  closer                User?          @relation("CapaCloser", fields: [closedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([siteId, code])
+  @@index([siteId])
+  @@index([status])
+  @@index([investigationId])
+  @@index([sourceType, sourceId])
+}
+
+model ChangeControl {
+  id                        String    @id @default(cuid())
+  code                      String // unique per site
+  siteId                    String // SITE-OWNED
+  changeType                String // PRODUCT | PROCESS | DOCUMENT | EQUIPMENT | OTHER
+  description               String
+  reason                    String
+  impactAssessment          String?
+  status                    String    @default("REQUEST") // REQUEST | IMPACT | RISK | APPROVAL | IMPLEMENTATION | VERIFICATION | EFFECTIVENESS | CLOSED | REJECTED
+  approvedByUserId          String?
+  approvedAt                DateTime?
+  implementationPlan        String?
+  verificationPlan          String?
+  effectivenessVerification String?
+  closedAt                  DateTime?
+  evidenceDocumentRef       String?
+  isDemo                    Boolean   @default(false)
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  site            Site             @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  approver        User?            @relation("ChangeApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  riskAssessments RiskAssessment[] @relation("ChangeRisk") // reverse: RiskAssessments that link to this Change
+
+  @@unique([siteId, code])
+  @@index([siteId])
+  @@index([status])
+  @@index([changeType])
+}
+
+model RiskAssessment {
+  id                    String   @id @default(cuid())
+  code                  String // unique per site
+  siteId                String // SITE-OWNED
+  subjectType           String // PRODUCT | PROCESS | EQUIPMENT | BATCH | DEVIATION | CHANGE
+  subjectId             String
+  hazard                String
+  severity              Int // 1-5 (D7/D12)
+  probability           Int // 1-5 (D7/D12)
+  riskPriorityNumber    Int // severity x probability (computed in service, 1-25)
+  mitigations           String
+  residualRisk          String?
+  status                String   @default("OPEN") // OPEN | MITIGATED | CLOSED
+  assessedByUserId      String?
+  linkedChangeControlId String?
+  linkedDeviationId     String?
+  isDemo                Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  site      Site           @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  assessor  User?          @relation("RiskAssessor", fields: [assessedByUserId], references: [id], onDelete: SetNull)
+  change    ChangeControl? @relation("ChangeRisk", fields: [linkedChangeControlId], references: [id], onDelete: SetNull)
+  deviation Deviation?     @relation("DeviationRisk", fields: [linkedDeviationId], references: [id], onDelete: SetNull)
+
+  @@unique([siteId, code])
+  @@index([siteId])
+  @@index([status])
+  @@index([subjectType, subjectId])
 }

@@ -59,6 +59,13 @@
     "batches": "Lots de fabrication",
     "workCenters": "Postes de travail",
     "shifts": "Equipes",
+    "quality": "Qualite",
+    "ncrs": "Non-conformites",
+    "deviations": "Deviations",
+    "investigations": "Investigations",
+    "capas": "CAPAs",
+    "changes": "Controle des changements",
+    "risks": "Evaluations des risques",
     "audit": "Piste d'audit",
     "events": "Evenements d'audit",
     "settings": "Parametres"
@@ -231,6 +238,51 @@
       "site": "Site",
       "hours": "Heures",
       "noData": "Aucune equipe trouvee"
+    }
+  },
+  "quality": {
+    "ncrs": {
+      "title": "Rapports de non-conformite",
+      "subtitle": "Non-conformites non planifiees (site, liees a la production)",
+      "code": "Code",
+      "severity": "Severite",
+      "concerns": "Concerne",
+      "site": "Site",
+      "noData": "Aucune NCR trouvee"
+    },
+    "deviations": {
+      "title": "Deviations",
+      "subtitle": "Departs planifies des processus approuves (site)",
+      "code": "Code",
+      "appliesTo": "S'applique a",
+      "noData": "Aucune deviation trouvee"
+    },
+    "investigations": {
+      "title": "Investigations (RCA)",
+      "subtitle": "Analyses de cause racine liees aux NCR ou deviations",
+      "noData": "Aucune investigation trouvee"
+    },
+    "capas": {
+      "title": "CAPAs",
+      "subtitle": "Actions correctives et preventives (site)",
+      "code": "Code",
+      "source": "Source",
+      "type": "Type",
+      "investigation": "Investigation",
+      "aiGuard": "Gouvernance IA: l'IA ne doit jamais fermer un CAPA. La fermeture necessite une verification d'efficacite humaine.",
+      "noData": "Aucun CAPA trouve"
+    },
+    "changes": {
+      "title": "Controle des changements",
+      "subtitle": "Changements gouvernes des produits/processus/documents/equipements",
+      "code": "Code",
+      "type": "Type",
+      "noData": "Aucun controle de changement trouve"
+    },
+    "risks": {
+      "title": "Evaluations des risques",
+      "subtitle": "Evaluations des dangers (severite x probabilite = RPN, 1-25)",
+      "noData": "Aucune evaluation de risque trouvee"
     }
   }
 }

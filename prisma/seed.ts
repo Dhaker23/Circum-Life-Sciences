@@ -380,6 +380,82 @@ async function seedProduction(siteByCode: Record<string, Site>) {
   console.log("  audit: phase3 seed-run event recorded");
 }
 
+// Phase 4: Quality foundation seed (synthetic DEMO/TEST).
+// NCR against a batch, Investigation (concluded), CAPA (with investigation), CAPA (without investigation, NCR-sourced),
+// Deviation (review), Change Control (approval), Risk Assessment. All isDemo=true.
+async function seedQuality(siteByCode: Record<string, Site>) {
+  console.log("Seeding Phase 4 quality DEMO data...");
+  const db_ = db;
+  const chSite = siteByCode["DEMO-CH-01"];
+
+  // Find a batch at CH site to link the NCR to
+  const batch = await db_.manufacturingBatch.findFirst({ where: { siteId: chSite.id } });
+  if (!batch) { console.log("  (skipped: no batch found at CH site)"); return; }
+
+  // NCR against the batch (CRITICAL, INVESTIGATION)
+  const ncr = await db_.nCR.upsert({
+    where: { siteId_code: { siteId: chSite.id, code: "NCR-CH-001" } },
+    update: { status: "INVESTIGATION", severity: "CRITICAL" },
+    create: { code: "NCR-CH-001", siteId: chSite.id, concernsEntityType: "BATCH", concernsEntityId: batch.id, description: "Demo: dimensional nonconformance found in batch (DEMO/TEST)", severity: "CRITICAL", status: "INVESTIGATION", isDemo: true },
+  });
+
+  // Investigation linked to the NCR (CONCLUDED)
+  const inv = await db_.investigation.upsert({
+    where: { siteId_code: { siteId: chSite.id, code: "INV-CH-001" } },
+    update: { status: "CONCLUDED", sourceNcrId: ncr.id },
+    create: { code: "INV-CH-001", siteId: chSite.id, sourceType: "NCR", sourceNcrId: ncr.id, methodology: "5-Why analysis (DEMO)", findings: "Molding temperature drift caused dimensional variation (DEMO)", rootCause: "Thermocouple calibration drift on molding station (DEMO)", status: "CONCLUDED", concludedAt: new Date(), isDemo: true },
+  });
+  // Link the NCR to the investigation
+  await db_.nCR.update({ where: { id: ncr.id }, data: { investigationId: inv.id } });
+
+  // CAPA #1: from the Investigation (IMPLEMENTATION)
+  await db_.cAPA.upsert({
+    where: { siteId_code: { siteId: chSite.id, code: "CAPA-CH-001" } },
+    update: { status: "IMPLEMENTATION" },
+    create: { code: "CAPA-CH-001", siteId: chSite.id, sourceType: "INVESTIGATION", sourceId: inv.id, investigationId: inv.id, type: "CORRECTIVE", actionPlan: "Recalibrate thermocouple and add daily verification check (DEMO)", status: "IMPLEMENTATION", isDemo: true },
+  });
+
+  // CAPA #2: NCR-sourced, WITHOUT an Investigation (D2 modification: CAPA does not hard-require Investigation)
+  await db_.cAPA.upsert({
+    where: { siteId_code: { siteId: chSite.id, code: "CAPA-CH-002" } },
+    update: { status: "ACTION_PLAN" },
+    create: { code: "CAPA-CH-002", siteId: chSite.id, sourceType: "NCR", sourceId: ncr.id, investigationId: null, type: "PREVENTIVE", actionPlan: "Add in-process dimensional check at start of shift (DEMO)", status: "ACTION_PLAN", isDemo: true },
+  });
+
+  // Deviation (REVIEW) for a substitute material
+  const material = await db_.material.findFirst();
+  if (material) {
+    await db_.deviation.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "DEV-CH-001" } },
+      update: { status: "REVIEW" },
+      create: { code: "DEV-CH-001", siteId: chSite.id, appliesToEntityType: "BOM", appliesToEntityId: material.id, description: "Demo: use alternate material due to supplier shortage (DEMO)", justification: "Approved alternate with equivalent specs (DEMO)", impactAssessment: "No quality impact; alternate is equivalent (DEMO)", status: "REVIEW", validFrom: new Date(), validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), isDemo: true },
+    });
+  }
+
+  // Change Control (APPROVAL)
+  await db_.changeControl.upsert({
+    where: { siteId_code: { siteId: chSite.id, code: "CHG-CH-001" } },
+    update: { status: "APPROVAL" },
+    create: { code: "CHG-CH-001", siteId: chSite.id, changeType: "PROCESS", description: "Demo: update molding temperature setpoint (DEMO)", reason: "Optimize cycle time (DEMO)", impactAssessment: "Requires re-qualification of molding process (DEMO)", status: "APPROVAL", isDemo: true },
+  });
+
+  // Risk Assessment
+  const product = await db_.product.findFirst();
+  if (product) {
+    await db_.riskAssessment.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "RISK-CH-001" } },
+      update: {},
+      create: { code: "RISK-CH-001", siteId: chSite.id, subjectType: "PRODUCT", subjectId: product.id, hazard: "Demo: biocompatibility incompatibility (DEMO)", severity: 4, probability: 2, riskPriorityNumber: 8, mitigations: "Biocompatibility testing per ISO 10993 (DEMO)", status: "MITIGATED", isDemo: true },
+    });
+  }
+
+  await db_.auditEvent.create({ data: { action: "system.seed.quality", entityType: "System", entityId: "seed-p4", outcome: "SUCCESS", reason: "Phase 4 synthetic DEMO seed applied", newState: { ncrs: 1, capas: 2 } } });
+  console.log("  NCR: 1 (CRITICAL, INVESTIGATION), Investigation: 1 (CONCLUDED)");
+  console.log("  CAPA: 2 (1 with investigation, 1 NCR-sourced without investigation [D2 mod])");
+  console.log("  Deviation: 1 (REVIEW), Change: 1 (APPROVAL), Risk: 1 (RPN=8)");
+  console.log("  audit: phase4 seed-run event recorded");
+}
+
 async function main() {
   console.log("Seeding Circum Phase 1 DEMO data (synthetic, clearly labelled)...");
 
@@ -515,6 +591,9 @@ async function main() {
 
   // 9. Phase 3: Production execution (synthetic DEMO/TEST).
   await seedProduction(siteByCode);
+
+  // 10. Phase 4: Quality foundation (synthetic DEMO/TEST).
+  await seedQuality(siteByCode);
 
   // 7. Seed audit event (records that the seed ran).
   await db.auditEvent.create({

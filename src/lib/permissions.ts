@@ -106,6 +106,33 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { key: "production.shift.read", module: "production", description: "Read shifts (site-scoped)" },
   { key: "production.shift.create", module: "production", description: "Create shifts (site-scoped)" },
   { key: "production.shift.update", module: "production", description: "Update shifts (site-scoped)" },
+  // quality — NCR (Phase 4, site-scoped)
+  { key: "quality.ncr.read", module: "quality", description: "Read NCRs (site-scoped)" },
+  { key: "quality.ncr.create", module: "quality", description: "Create NCRs (site-scoped)" },
+  { key: "quality.ncr.transition", module: "quality", description: "Transition NCR state (containment/investigation/disposition/closure)" },
+  // quality — Deviation (site-scoped)
+  { key: "quality.deviation.read", module: "quality", description: "Read deviations (site-scoped)" },
+  { key: "quality.deviation.create", module: "quality", description: "Create deviations (site-scoped)" },
+  { key: "quality.deviation.transition", module: "quality", description: "Transition deviation state (assessment/review/closure)" },
+  { key: "quality.deviation.approve", module: "quality", description: "Approve a deviation (human-only; AI MUST NEVER)" },
+  // quality — Investigation (site-scoped)
+  { key: "quality.investigation.read", module: "quality", description: "Read investigations (site-scoped)" },
+  { key: "quality.investigation.create", module: "quality", description: "Create investigations (site-scoped)" },
+  { key: "quality.investigation.conclude", module: "quality", description: "Conclude an investigation (human-only)" },
+  // quality — CAPA (site-scoped). D2 modification: CAPA source is polymorphic.
+  { key: "quality.capa.read", module: "quality", description: "Read CAPAs (site-scoped)" },
+  { key: "quality.capa.create", module: "quality", description: "Create CAPAs (site-scoped)" },
+  { key: "quality.capa.transition", module: "quality", description: "Transition CAPA state (action plan/implementation/effectiveness)" },
+  { key: "quality.capa.close", module: "quality", description: "Close a CAPA after human effectiveness verification (AI MUST NEVER)" },
+  // quality — Change Control (site-scoped)
+  { key: "quality.change.read", module: "quality", description: "Read change controls (site-scoped)" },
+  { key: "quality.change.create", module: "quality", description: "Create change controls (site-scoped)" },
+  { key: "quality.change.transition", module: "quality", description: "Transition change control state" },
+  { key: "quality.change.approve", module: "quality", description: "Approve a change control (human-only; AI MUST NEVER)" },
+  // quality — Risk Assessment (site-scoped)
+  { key: "quality.risk.read", module: "quality", description: "Read risk assessments (site-scoped)" },
+  { key: "quality.risk.create", module: "quality", description: "Create risk assessments (site-scoped)" },
+  { key: "quality.risk.update", module: "quality", description: "Update risk assessments (site-scoped)" },
 ];
 
 // Role system keys (stable enum-like strings). The 19 PRD roles (PRD §3).
@@ -163,6 +190,12 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "production.scrap.read", "production.scrap.create",
     "production.rework.read", "production.rework.create",
     "production.shift.read", "production.shift.create", "production.shift.update",
+    "quality.ncr.read", "quality.ncr.create", "quality.ncr.transition",
+    "quality.deviation.read", "quality.deviation.create", "quality.deviation.transition", "quality.deviation.approve",
+    "quality.investigation.read", "quality.investigation.create", "quality.investigation.conclude",
+    "quality.capa.read", "quality.capa.create", "quality.capa.transition", "quality.capa.close",
+    "quality.change.read", "quality.change.create", "quality.change.transition", "quality.change.approve",
+    "quality.risk.read", "quality.risk.create", "quality.risk.update",
     "session.sign-in", "session.sign-out",
   ],
   site_admin: [
@@ -205,6 +238,8 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "production.devicelot.read", "production.execution.read",
     "production.consumption.read", "production.reservation.read",
     "production.scrap.read", "production.rework.read", "production.shift.read",
+    "quality.ncr.read", "quality.deviation.read", "quality.investigation.read",
+    "quality.capa.read", "quality.change.read", "quality.risk.read",
     "session.sign-in", "session.sign-out",
   ],
   production_manager: [
@@ -222,6 +257,9 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "production.scrap.read", "production.scrap.create",
     "production.rework.read", "production.rework.create",
     "production.shift.read",
+    "quality.ncr.read", "quality.ncr.create",
+    "quality.deviation.read", "quality.deviation.create",
+    "quality.investigation.read", "quality.capa.read", "quality.change.read", "quality.risk.read",
     "session.sign-in", "session.sign-out",
   ],
   production_planner: [
@@ -277,6 +315,12 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "production.devicelot.read", "production.execution.read",
     "production.consumption.read", "production.reservation.read",
     "production.scrap.read", "production.rework.read", "production.shift.read",
+    "quality.ncr.read", "quality.ncr.create", "quality.ncr.transition",
+    "quality.deviation.read", "quality.deviation.create", "quality.deviation.transition",
+    "quality.investigation.read", "quality.investigation.create", "quality.investigation.conclude",
+    "quality.capa.read", "quality.capa.create", "quality.capa.transition", "quality.capa.close",
+    "quality.change.read", "quality.change.create", "quality.change.transition",
+    "quality.risk.read", "quality.risk.create", "quality.risk.update",
     "session.sign-in", "session.sign-out",
   ],
   qa_reviewer: [
@@ -284,6 +328,16 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "manufacturing.product.read", "manufacturing.revision.read", "manufacturing.bom.read",
     "manufacturing.material.read", "manufacturing.materiallot.read",
     "manufacturing.supplier.read",
+    "production.routing.read", "production.workcenter.read",
+    "production.workorder.read", "production.batch.read", "production.devicelot.read",
+    "production.execution.read", "production.consumption.read", "production.reservation.read",
+    "production.scrap.read", "production.rework.read", "production.shift.read",
+    "quality.ncr.read", "quality.ncr.transition",
+    "quality.deviation.read", "quality.deviation.transition", "quality.deviation.approve",
+    "quality.investigation.read", "quality.investigation.conclude",
+    "quality.capa.read", "quality.capa.transition", "quality.capa.close",
+    "quality.change.read", "quality.change.transition", "quality.change.approve",
+    "quality.risk.read", "quality.risk.update",
     "session.sign-in", "session.sign-out",
   ],
   quality_engineer: [
@@ -292,6 +346,16 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "manufacturing.bom.read",
     "manufacturing.material.read", "manufacturing.materiallot.read", "manufacturing.materiallot.transition",
     "manufacturing.supplier.read",
+    "production.routing.read", "production.workcenter.read",
+    "production.workorder.read", "production.batch.read", "production.batch.transition",
+    "production.devicelot.read", "production.execution.read",
+    "production.consumption.read", "production.scrap.read", "production.rework.read", "production.shift.read",
+    "quality.ncr.read", "quality.ncr.create", "quality.ncr.transition",
+    "quality.deviation.read", "quality.deviation.create", "quality.deviation.transition",
+    "quality.investigation.read", "quality.investigation.create", "quality.investigation.conclude",
+    "quality.capa.read", "quality.capa.create", "quality.capa.transition", "quality.capa.close",
+    "quality.change.read", "quality.change.create", "quality.change.transition",
+    "quality.risk.read", "quality.risk.create", "quality.risk.update",
     "session.sign-in", "session.sign-out",
   ],
   lab_technician: [
@@ -335,6 +399,8 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "production.workorder.read", "production.batch.read", "production.devicelot.read",
     "production.execution.read", "production.consumption.read", "production.reservation.read",
     "production.scrap.read", "production.rework.read", "production.shift.read",
+    "quality.ncr.read", "quality.deviation.read", "quality.investigation.read",
+    "quality.capa.read", "quality.change.read", "quality.risk.read",
     "session.sign-in", "session.sign-out",
   ],
   executive_viewer: [

@@ -59,6 +59,13 @@
     "batches": "Batches",
     "workCenters": "Work Centers",
     "shifts": "Shifts",
+    "quality": "Quality",
+    "ncrs": "NCRs",
+    "deviations": "Deviations",
+    "investigations": "Investigations",
+    "capas": "CAPAs",
+    "changes": "Change Control",
+    "risks": "Risk Assessments",
     "audit": "Audit Trail",
     "events": "Audit Events",
     "settings": "Settings"
@@ -231,6 +238,51 @@
       "site": "Site",
       "hours": "Hours",
       "noData": "No shifts found"
+    }
+  },
+  "quality": {
+    "ncrs": {
+      "title": "Nonconformity Reports",
+      "subtitle": "Unplanned nonconformities (site-owned, linked to production)",
+      "code": "Code",
+      "severity": "Severity",
+      "concerns": "Concerns",
+      "site": "Site",
+      "noData": "No NCRs found"
+    },
+    "deviations": {
+      "title": "Deviations",
+      "subtitle": "Planned departures from approved processes (site-owned)",
+      "code": "Code",
+      "appliesTo": "Applies to",
+      "noData": "No deviations found"
+    },
+    "investigations": {
+      "title": "Investigations (RCA)",
+      "subtitle": "Root-cause analyses linked to NCRs or Deviations",
+      "noData": "No investigations found"
+    },
+    "capas": {
+      "title": "CAPAs",
+      "subtitle": "Corrective and Preventive Actions (site-owned)",
+      "code": "Code",
+      "source": "Source",
+      "type": "Type",
+      "investigation": "Investigation",
+      "aiGuard": "AI governance: AI must never close a CAPA. Closure requires human effectiveness verification.",
+      "noData": "No CAPAs found"
+    },
+    "changes": {
+      "title": "Change Controls",
+      "subtitle": "Governed changes to products/processes/documents/equipment",
+      "code": "Code",
+      "type": "Type",
+      "noData": "No change controls found"
+    },
+    "risks": {
+      "title": "Risk Assessments",
+      "subtitle": "Hazard assessments (severity x probability = RPN, 1-25)",
+      "noData": "No risk assessments found"
     }
   }
 }
