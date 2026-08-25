@@ -73,7 +73,10 @@
     "testMethods": "طرق الاختبار",
     "samples": "العينات",
     "testResults": "نتائج الاختبار",
-    "inspections": "الفحوصات"
+    "inspections": "الفحوصات",
+    "traceTrace": "تتبع النسل",
+    "traceImpact": "تحليل التأثير",
+    "traceLog": "سجل الاستعلامات"
   },
   "users": {
     "title": "المستخدمون",
@@ -334,5 +337,32 @@
     "source": "المصدر",
     "evaluated": "المُقيّم",
     "noData": "لا توجد فحوصات"
+  },
+  "traceability": {
+    "trace": {
+      "title": "تتبع النسل",
+      "subtitle": "التتبع الأمامي والخلفي",
+      "entityType": "نوع الكيان",
+      "entityId": "معرف الكيان",
+      "direction": "الاتجاه",
+      "forward": "أمامي",
+      "backward": "خلفي",
+      "trace": "تتبع",
+      "authLimited": "صلاحية محدودة",
+      "truncated": "مقطوع",
+      "boundaryNotice": "توجد سجلات إضافية ذات صلة خارج نطاقك المصرح به."
+    },
+    "impact": {
+      "title": "تحليل التأثير",
+      "subtitle": "تتبع أمامي مع سيناريو",
+      "scenario": "السيناريو",
+      "analyze": "تحليل",
+      "informationalOnly": "تحليل التأثير معلوماتي فقط. لا ينشئ سجلات أو يوقف دفعات أو يطلق NCRs."
+    },
+    "queryLog": {
+      "title": "سجل استعلامات التتبع",
+      "subtitle": "سجل تدقيق لمن استعلم عن أي نسب",
+      "noData": "لا توجد استعلامات"
+    }
   }
 }

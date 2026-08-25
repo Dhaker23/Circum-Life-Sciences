@@ -73,7 +73,10 @@
     "testMethods": "Methodes de test",
     "samples": "Echantillons",
     "testResults": "Resultats de test",
-    "inspections": "Inspections"
+    "inspections": "Inspections",
+    "traceTrace": "Trace Genealogique",
+    "traceImpact": "Analyse Impact",
+    "traceLog": "Journal Requetes"
   },
   "users": {
     "title": "Utilisateurs",
@@ -334,5 +337,32 @@
     "source": "Source",
     "evaluated": "Evalue",
     "noData": "Aucune inspection"
+  },
+  "traceability": {
+    "trace": {
+      "title": "Trace Genealogique",
+      "subtitle": "Traceabilite avant et arriere",
+      "entityType": "Type Entite",
+      "entityId": "ID Entite",
+      "direction": "Direction",
+      "forward": "Avant",
+      "backward": "Arriere",
+      "trace": "Tracer",
+      "authLimited": "Auth Limitee",
+      "truncated": "Tronque",
+      "boundaryNotice": "Des enregistrements supplementaires existent hors de votre portee autorisee."
+    },
+    "impact": {
+      "title": "Analyse Impact",
+      "subtitle": "Trace avant avec scenario",
+      "scenario": "Scenario",
+      "analyze": "Analyser",
+      "informationalOnly": "L analyse d impact est INFORMATIONNELLE uniquement."
+    },
+    "queryLog": {
+      "title": "Journal des requetes",
+      "subtitle": "Audit de qui a interroge quelle genealogie",
+      "noData": "Aucune requete"
+    }
   }
 }

@@ -155,6 +155,9 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { key: "inspection.read", module: "inspection", description: "Read inspections (site-scoped)" },
   { key: "inspection.create", module: "inspection", description: "Record inspections (site-scoped)" },
   { key: "inspection.transition", module: "inspection", description: "Transition inspection state (pass/fail/conditional)" },
+  // traceability (Phase 6, D1: query layer; D8: AI read-only)
+  { key: "traceability.read", module: "traceability", description: "Read/query genealogy and traceability" },
+  { key: "traceability.query-log.read", module: "traceability", description: "Read traceability query log (audit)" },
 ];
 
 // Role system keys (stable enum-like strings). The 19 PRD roles (PRD §3).
@@ -219,6 +222,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.change.read", "quality.change.create", "quality.change.transition", "quality.change.approve",
     "quality.risk.read", "quality.risk.create", "quality.risk.update",
     "lab.specification.read", "lab.specification.create", "lab.specification.transition", "lab.specification.approve", "lab.testmethod.read", "lab.testmethod.create", "lab.testmethod.transition", "lab.sample.read", "lab.sample.create", "lab.sample.transition", "lab.testresult.read", "lab.testresult.create", "lab.testresult.transition", "lab.testresult.disposition", "inspection.read", "inspection.create", "inspection.transition",
+    "traceability.read", "traceability.query-log.read",
     "session.sign-in", "session.sign-out",
   ],
   site_admin: [
@@ -264,6 +268,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.ncr.read", "quality.deviation.read", "quality.investigation.read",
     "quality.capa.read", "quality.change.read", "quality.risk.read",
     "lab.specification.read", "lab.testmethod.read", "lab.sample.read", "lab.testresult.read", "inspection.read",
+    "traceability.read",
     "session.sign-in", "session.sign-out",
   ],
   production_manager: [
@@ -284,6 +289,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.ncr.read", "quality.ncr.create",
     "quality.deviation.read", "quality.deviation.create",
     "quality.investigation.read", "quality.capa.read", "quality.change.read", "quality.risk.read",
+    "traceability.read",
     "session.sign-in", "session.sign-out",
   ],
   production_planner: [
@@ -346,6 +352,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.change.read", "quality.change.create", "quality.change.transition",
     "quality.risk.read", "quality.risk.create", "quality.risk.update",
     "lab.specification.read", "lab.specification.create", "lab.specification.transition", "lab.specification.approve", "lab.testmethod.read", "lab.testmethod.create", "lab.testmethod.transition", "lab.sample.read", "lab.sample.create", "lab.sample.transition", "lab.testresult.read", "lab.testresult.create", "lab.testresult.transition", "lab.testresult.disposition", "inspection.read", "inspection.create", "inspection.transition",
+    "traceability.read", "traceability.query-log.read",
     "session.sign-in", "session.sign-out",
   ],
   qa_reviewer: [
@@ -364,6 +371,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.change.read", "quality.change.transition", "quality.change.approve",
     "quality.risk.read", "quality.risk.update",
     "lab.specification.read", "lab.specification.create", "lab.specification.transition", "lab.specification.approve", "lab.testmethod.read", "lab.testmethod.create", "lab.testmethod.transition", "lab.sample.read", "lab.testresult.read", "lab.testresult.transition", "lab.testresult.disposition", "inspection.read", "inspection.transition",
+    "traceability.read", "traceability.query-log.read",
     "session.sign-in", "session.sign-out",
   ],
   quality_engineer: [
@@ -383,6 +391,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.change.read", "quality.change.create", "quality.change.transition",
     "quality.risk.read", "quality.risk.create", "quality.risk.update",
     "lab.specification.read", "lab.specification.create", "lab.specification.transition", "lab.specification.approve", "lab.testmethod.read", "lab.testmethod.create", "lab.testmethod.transition", "lab.sample.read", "lab.sample.create", "lab.sample.transition", "lab.testresult.read", "lab.testresult.create", "lab.testresult.transition", "lab.testresult.disposition", "inspection.read", "inspection.create", "inspection.transition",
+    "traceability.read",
     "session.sign-in", "session.sign-out",
   ],
   lab_technician: [
@@ -430,6 +439,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.ncr.read", "quality.deviation.read", "quality.investigation.read",
     "quality.capa.read", "quality.change.read", "quality.risk.read",
     "lab.specification.read", "lab.testmethod.read", "lab.sample.read", "lab.testresult.read", "inspection.read",
+    "traceability.read", "traceability.query-log.read",
     "session.sign-in", "session.sign-out",
   ],
   executive_viewer: [

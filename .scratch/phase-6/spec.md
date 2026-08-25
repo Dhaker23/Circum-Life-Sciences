@@ -1,0 +1,2 @@
+# Phase 6 — Spec
+Phase 6 = Traceability/Genealogy/Impact Analysis (PRD Phase 4 gap fill). Pure query layer + TraceabilityQueryLog. D1-D8 confirmed. TraceabilityGraph contract (root, nodes, edges, relationshipType, boundary markers, summary, authorizationLimited, truncated). No new entities except TraceabilityQueryLog. No auto-action on impact analysis. Site-scoped with boundary markers (no leaking). AI read-only. Customer/Project deferred.

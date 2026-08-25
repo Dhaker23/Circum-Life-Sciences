@@ -73,7 +73,10 @@
     "testMethods": "Test Methods",
     "samples": "Samples",
     "testResults": "Test Results",
-    "inspections": "Inspections"
+    "inspections": "Inspections",
+    "traceTrace": "Genealogy Trace",
+    "traceImpact": "Impact Analysis",
+    "traceLog": "Query Log"
   },
   "users": {
     "title": "Users",
@@ -334,5 +337,32 @@
     "source": "Source",
     "evaluated": "Evaluated",
     "noData": "No inspections"
+  },
+  "traceability": {
+    "trace": {
+      "title": "Genealogy Trace",
+      "subtitle": "Forward and backward traceability through the production genealogy",
+      "entityType": "Entity Type",
+      "entityId": "Entity ID",
+      "direction": "Direction",
+      "forward": "Forward",
+      "backward": "Backward",
+      "trace": "Trace",
+      "authLimited": "Auth Limited",
+      "truncated": "Truncated",
+      "boundaryNotice": "Additional related records exist outside your authorized scope."
+    },
+    "impact": {
+      "title": "Impact Analysis",
+      "subtitle": "Forward trace with a scenario (recall, quarantine, deviation, audit)",
+      "scenario": "Scenario",
+      "analyze": "Analyze",
+      "informationalOnly": "Impact analysis is INFORMATIONAL ONLY. It does not automatically create records, hold batches, or trigger NCRs. Human action is required."
+    },
+    "queryLog": {
+      "title": "Traceability Query Log",
+      "subtitle": "Audit record of who queried what genealogy, when",
+      "noData": "No queries logged"
+    }
   }
 }

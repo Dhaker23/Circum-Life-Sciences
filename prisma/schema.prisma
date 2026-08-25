@@ -35,25 +35,26 @@ model User {
   accounts                   Account[]
   auditEvents                AuditEvent[] // as actor (onDelete SetNull so audit outlives user)
   employee                   Employee? // optional 1:1 link (Employee optionally associated with User, ADR-0004/User-vs-Employee)
-  executionsLogged           OperationExecution[]  @relation("ExecutionLogger") // Phase 3
-  consumptionsLogged         MaterialConsumption[] @relation("ConsumptionRecorder") // Phase 3
-  scrapsLogged               ProductionScrap[]     @relation("ScrapRecorder") // Phase 3
-  reworksLogged              ProductionRework[]    @relation("ReworkRecorder") // Phase 3
-  ncrsCreated                NCR[]                 @relation("NcrCreator") // Phase 4
-  ncrsAssigned               NCR[]                 @relation("NcrAssignee") // Phase 4
-  deviationsApproved         Deviation[]           @relation("DeviationApprover") // Phase 4
-  investigationsConducted    Investigation[]       @relation("InvestigationConductor") // Phase 4
-  capasImplemented           CAPA[]                @relation("CapaImplementer") // Phase 4
-  capasEffectivenessVerified CAPA[]                @relation("CapaEffectivenessVerifier") // Phase 4
-  capasClosed                CAPA[]                @relation("CapaCloser") // Phase 4
-  changesApproved            ChangeControl[]       @relation("ChangeApprover") // Phase 4
-  risksAssessed              RiskAssessment[]      @relation("RiskAssessor") // Phase 4
-  specsApproved              Specification[]       @relation("SpecApprover") // Phase 5
-  samplesDrawn               Sample[]              @relation("SampleDrawnBy") // Phase 5
-  testsPerformed             TestResult[]          @relation("TestPerformedBy") // Phase 5
-  testsReviewed              TestResult[]          @relation("TestReviewedBy") // Phase 5
-  testsDispositioned         TestResult[]          @relation("TestDispositionedBy") // Phase 5
-  inspectionsLogged          Inspection[]          @relation("InspectionLogger") // Phase 5
+  executionsLogged           OperationExecution[]   @relation("ExecutionLogger") // Phase 3
+  consumptionsLogged         MaterialConsumption[]  @relation("ConsumptionRecorder") // Phase 3
+  scrapsLogged               ProductionScrap[]      @relation("ScrapRecorder") // Phase 3
+  reworksLogged              ProductionRework[]     @relation("ReworkRecorder") // Phase 3
+  ncrsCreated                NCR[]                  @relation("NcrCreator") // Phase 4
+  ncrsAssigned               NCR[]                  @relation("NcrAssignee") // Phase 4
+  deviationsApproved         Deviation[]            @relation("DeviationApprover") // Phase 4
+  investigationsConducted    Investigation[]        @relation("InvestigationConductor") // Phase 4
+  capasImplemented           CAPA[]                 @relation("CapaImplementer") // Phase 4
+  capasEffectivenessVerified CAPA[]                 @relation("CapaEffectivenessVerifier") // Phase 4
+  capasClosed                CAPA[]                 @relation("CapaCloser") // Phase 4
+  changesApproved            ChangeControl[]        @relation("ChangeApprover") // Phase 4
+  risksAssessed              RiskAssessment[]       @relation("RiskAssessor") // Phase 4
+  specsApproved              Specification[]        @relation("SpecApprover") // Phase 5
+  samplesDrawn               Sample[]               @relation("SampleDrawnBy") // Phase 5
+  testsPerformed             TestResult[]           @relation("TestPerformedBy") // Phase 5
+  testsReviewed              TestResult[]           @relation("TestReviewedBy") // Phase 5
+  testsDispositioned         TestResult[]           @relation("TestDispositionedBy") // Phase 5
+  inspectionsLogged          Inspection[]           @relation("InspectionLogger") // Phase 5
+  traceabilityQueries        TraceabilityQueryLog[] @relation("TraceabilityQueryActor") // Phase 6
 
   @@index([status])
 }
@@ -1104,4 +1105,31 @@ model Inspection {
   @@index([siteId])
   @@index([status])
   @@index([sourceEntityType, sourceEntityId])
+}
+
+// ============================================================================
+// Traceability (Phase 6, ADR-0014/0015)
+// D1: Pure query layer. D6: site-scoped with boundary markers. D7: append-only audit.
+// PRD section 10: Traceability errors are critical defects.
+// ============================================================================
+
+model TraceabilityQueryLog {
+  id                String   @id @default(cuid())
+  queryType         String // FORWARD_TRACE | BACKWARD_TRACE | IMPACT_ANALYSIS | GENEALOGY_TREE
+  rootEntityType    String // MATERIAL_LOT | BATCH | DEVICE_LOT | WORK_ORDER | PRODUCT | PRODUCT_REVISION | MATERIAL | TEST_RESULT | INSPECTION | NCR
+  rootEntityId      String
+  requestedDepth    Int?
+  scenario          String? // RECALL | QUARANTINE | DEVIATION | AUDIT (for impact analysis)
+  filters           Json?
+  requestedByUserId String?
+  authorizedScope   String? // "*" (global) or site ID
+  resultSummary     Json? // { affectedBatches: N, affectedDeviceLots: N, ... } (D7: no full result duplication)
+  executedAt        DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  requester User? @relation("TraceabilityQueryActor", fields: [requestedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([requestedByUserId])
+  @@index([rootEntityType, rootEntityId])
+  @@index([executedAt])
 }
