@@ -212,6 +212,13 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { key: "lean.downtime.create", module: "lean", description: "Create downtime events" },
   { key: "lean.downtime.close", module: "lean", description: "Close downtime events (set endTime, compute duration)" },
   { key: "lean.vsm.create", module: "lean", description: "Create VSMs and manage nodes/edges" },
+  // analytics (Phase 11; D11: AI gets analytics.read ONLY; D13: no AI feature in Phase 11)
+  // D7: corporate.read is human-only (Executive Viewer / super_admin). D9: export human-only.
+  // D2: snapshot.create declared but NOT implemented (live computation preferred); reserved for future.
+  { key: "analytics.read", module: "analytics", description: "Read dashboards & reports for authorized sites (AI: yes, read-only)" },
+  { key: "analytics.export", module: "analytics", description: "Export reports as CSV (human-only; AI MUST NEVER)" },
+  { key: "analytics.corporate.read", module: "analytics", description: "Read corporate-aggregated (cross-site) analytics (human-only; AI MUST NEVER)" },
+  { key: "analytics.snapshot.create", module: "analytics", description: "Create an AnalyticsSnapshot (human-only; RESERVED - not implemented in Phase 11)" },
 ];
 
 // Role system keys (stable enum-like strings). The 19 PRD roles (PRD §3).
@@ -279,6 +286,8 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "traceability.read", "traceability.query-log.read",
     "docs.document.read", "docs.document.create", "docs.document.transition", "docs.document.approve", "training.required.read", "training.required.create", "training.record.read", "training.record.create", "training.record.transition", "training.assessment.create", "training.competency.read", "training.competency.authorize", "supplieraudit.read", "supplieraudit.create", "supplieraudit.transition",
     "equipment.read", "equipment.create", "equipment.update", "equipment.maintenance.read", "equipment.maintenance.create", "equipment.maintenance.transition", "equipment.calibration.read", "equipment.calibration.create", "equipment.qualification.read", "equipment.qualification.create", "equipment.qualification.transition", "equipment.qualification.approve",
+    "lean.read", "lean.downtime.create", "lean.downtime.close", "lean.vsm.create",
+    "analytics.read", "analytics.export", "analytics.corporate.read", "analytics.snapshot.create",
     "session.sign-in", "session.sign-out",
   ],
   site_admin: [
@@ -306,6 +315,8 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "production.scrap.read", "production.scrap.create",
     "production.rework.read", "production.rework.create",
     "production.shift.read", "production.shift.create", "production.shift.update",
+    "lean.read",
+    "analytics.read", "analytics.export",
     "session.sign-in", "session.sign-out",
   ],
   plant_manager: [
@@ -327,6 +338,8 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "traceability.read",
     "docs.document.read", "training.required.read", "training.record.read", "training.competency.read", "supplieraudit.read",
     "equipment.read", "equipment.maintenance.read", "equipment.calibration.read", "equipment.qualification.read",
+    "lean.read",
+    "analytics.read", "analytics.export",
     "session.sign-in", "session.sign-out",
   ],
   production_manager: [
@@ -349,6 +362,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.investigation.read", "quality.capa.read", "quality.change.read", "quality.risk.read",
     "traceability.read",
     "lean.read", "lean.downtime.create", "lean.downtime.close",
+    "analytics.read", "analytics.export",
     "session.sign-in", "session.sign-out",
   ],
   production_planner: [
@@ -414,6 +428,8 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "traceability.read", "traceability.query-log.read",
     "docs.document.read", "docs.document.create", "docs.document.transition", "docs.document.approve", "training.required.read", "training.required.create", "training.record.read", "training.record.create", "training.record.transition", "training.assessment.create", "training.competency.read", "training.competency.authorize", "supplieraudit.read", "supplieraudit.create", "supplieraudit.transition",
     "equipment.read", "equipment.create", "equipment.update", "equipment.maintenance.read", "equipment.maintenance.create", "equipment.maintenance.transition", "equipment.calibration.read", "equipment.calibration.create", "equipment.qualification.read", "equipment.qualification.create", "equipment.qualification.transition", "equipment.qualification.approve",
+    "lean.read",
+    "analytics.read", "analytics.export",
     "session.sign-in", "session.sign-out",
   ],
   qa_reviewer: [
@@ -433,6 +449,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.risk.read", "quality.risk.update",
     "lab.specification.read", "lab.specification.create", "lab.specification.transition", "lab.specification.approve", "lab.testmethod.read", "lab.testmethod.create", "lab.testmethod.transition", "lab.sample.read", "lab.testresult.read", "lab.testresult.transition", "lab.testresult.disposition", "inspection.read", "inspection.transition",
     "traceability.read", "traceability.query-log.read",
+    "analytics.read",
     "session.sign-in", "session.sign-out",
   ],
   quality_engineer: [
@@ -455,6 +472,8 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "traceability.read",
     "docs.document.read", "docs.document.create", "docs.document.transition", "docs.document.approve", "training.required.read", "training.required.create", "training.record.read", "training.record.create", "training.record.transition", "training.assessment.create", "training.competency.read", "training.competency.authorize", "supplieraudit.read", "supplieraudit.create", "supplieraudit.transition",
     "equipment.read", "equipment.create", "equipment.update", "equipment.maintenance.read", "equipment.maintenance.create", "equipment.maintenance.transition", "equipment.calibration.read", "equipment.calibration.create", "equipment.qualification.read", "equipment.qualification.create", "equipment.qualification.transition", "equipment.qualification.approve",
+    "lean.read",
+    "analytics.read", "analytics.export",
     "session.sign-in", "session.sign-out",
   ],
   lab_technician: [
@@ -470,6 +489,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "identity.user.read", "org.site.read", "org.department.read", "org.employee.read",
     "manufacturing.product.read", "manufacturing.material.read", "manufacturing.materiallot.read",
     "equipment.read", "equipment.create", "equipment.update", "equipment.maintenance.read", "equipment.maintenance.create", "equipment.maintenance.transition", "equipment.calibration.read", "equipment.calibration.create", "equipment.qualification.read", "equipment.qualification.create", "equipment.qualification.transition", "equipment.qualification.approve",
+    "analytics.read",
     "session.sign-in", "session.sign-out",
   ],
   maintenance_technician: [
@@ -487,6 +507,8 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
   ],
   lean_manager: [
     "org.site.read", "org.department.read", "audit.read",
+    "lean.read",
+    "analytics.read", "analytics.export",
     "session.sign-in", "session.sign-out",
   ],
   auditor: [
@@ -506,9 +528,16 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "traceability.read", "traceability.query-log.read",
     "docs.document.read", "training.required.read", "training.record.read", "training.competency.read", "supplieraudit.read",
     "equipment.read", "equipment.maintenance.read", "equipment.calibration.read", "equipment.qualification.read",
+    "lean.read",
+    "analytics.read", "analytics.export",
     "session.sign-in", "session.sign-out",
   ],
   executive_viewer: [
+    "analytics.read", "analytics.corporate.read",
+    "org.site.read",
+    "manufacturing.product.read", "production.workorder.read", "production.batch.read",
+    "quality.ncr.read", "quality.deviation.read", "quality.capa.read", "quality.change.read", "quality.risk.read",
+    "lean.read",
     "session.sign-in", "session.sign-out",
   ],
 };

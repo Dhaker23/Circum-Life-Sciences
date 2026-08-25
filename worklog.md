@@ -605,3 +605,47 @@ Stage Summary:
 - **Production blockers (carry-forward):** PostgreSQL migration (ADR-0002); RLS for site isolation; distributed rate limiting; Playwright E2E coverage; deferred UI work; final security hardening; final production validation.
 - **Lint debt:** Phase 10 = 184 warnings. Phase 11 must not increase net; suppression forbidden.
 - **Conflict flagged:** Host standing "15-min webDevReview cron" rule is superseded by Circum Phase 0 Q5 owner-approved decision ("never advance automatically / wait for owner approval") per CLAUDE.md. No autonomous-continuation cron created for this planning task.
+
+---
+Task ID: s6-ui
+Agent: s6-ui (Z.ai Code)
+Task: Phase 11 Analytics UI — build 19 client-side dashboard/report/VSM/corporate pages under src/app/[locale]/(app)/analytics/. The analytics API, shared UI components, and i18n strings were already built. UI must NEVER compute KPIs client-side; every page must fetch from the API and render results with proper data-state handling (calculated/unavailable/incomplete/warning), WarningBanner, MetaFooter, and recharts.
+
+Work Log:
+- Read worklog.md, CLAUDE.md, the existing dashboards/page.tsx (template pattern), src/components/analytics/index.tsx (shared components: KpiCard, WarningBanner, MetaFooter, AnalyticsSkeleton, ErrorState, PageHeader, DateRangePicker, SiteSelector, LimitationsNotice), src/modules/analytics/service/index.ts (17 service functions), and src/modules/analytics/domain/index.ts (KPI_SOURCES, AnalyticsMeta, all result interfaces, Zod schemas).
+- Verified API routes exist for all 17 endpoints under /api/analytics/{dashboard,reports,corporate,export,vsm}/. Verified sites list endpoint is /api/org/sites (NOT /api/organization/sites which the existing dashboards/page.tsx template incorrectly uses — used correct path /api/org/sites on all new pages).
+- Verified i18n strings exist under "analytics" namespace in src/messages/{en,fr,ar}.json (dashboards.*, reports.*, vsm.*, corporate.*, common.*).
+- Created 19 page files under src/app/[locale]/(app)/analytics/:
+  - dashboards/production/page.tsx — BarChart (planned vs actual by day) + 3 KPI cards (planned/actual/variance). POST /api/analytics/dashboard/production.
+  - dashboards/oee/page.tsx — Gauge-style display (4 horizontal progress bars with green/amber/red thresholds for OEE/availability/performance/quality) + source breakdown Table (plannedTimeMinutes/downtimeMinutes/runTimeMinutes/idealDurationMinutes/totalCount/goodCount/scrapCount/reworkCount). POST /api/analytics/dashboard/oee.
+  - dashboards/quality/page.tsx — 9 KPI cards (FPY/rejectRate/scrapRate/reworkRate/openNcrs/openDeviations/openCapas/testPass/testFail) + PieChart pass/fail (green/red). Rates converted from 0-1 to %. NULL → "Data unavailable" state. POST /api/analytics/dashboard/quality.
+  - dashboards/downtime/page.tsx — ComposedChart Pareto (Bar totalDurationMinutes + Line cumulativePercent with dual Y-axis) + 4 KPI cards. POST /api/analytics/dashboard/downtime.
+  - dashboards/bottlenecks/page.tsx — Ranked Table (workCenterCode/equipmentCode/oee badge/avgCycleTime) with sticky header + max-h-96 scroll. POST /api/analytics/dashboard/bottlenecks.
+  - dashboards/critical-problems/page.tsx — Threshold KPI + items Table (type badge/code/status/rpn/riskAssessmentCode/associationPath). POST /api/analytics/dashboard/critical-problems with body {siteId}.
+  - dashboards/overdue-actions/page.tsx — 4 KPI cards (calibration/maintenance/training/total) + items Table (type/code/dueDate/daysOverdue/detail) + LimitationsNotice for CAPA + ChangeControl. POST /api/analytics/dashboard/overdue-actions with body {siteId}.
+  - dashboards/delivery/page.tsx — Stub page rendering "Data Unavailable" with the API's warning message displayed prominently. POST /api/analytics/dashboard/delivery.
+  - reports/page.tsx — Index page with 6 navigation cards (icon + label + description + arrow), linking to each report page.
+  - reports/oee-trend/page.tsx — LineChart (4 series oee/availability/performance/quality in distinct colors, values ×100, Y-axis 0-100%) with granularity Select (HOUR/DAY/WEEK/MONTH) + CSV export button. POST /api/analytics/reports/oee-trend.
+  - reports/quality-trend/page.tsx — LineChart (3 series fpy/scrapRate/reworkRate) with granularity + CSV export. POST /api/analytics/reports/quality-trend.
+  - reports/downtime-pareto/page.tsx — Same Pareto ComposedChart as the dashboard but in report context, plus CSV export. POST /api/analytics/reports/downtime-pareto.
+  - reports/equipment-performance/page.tsx — Per-equipment Table (code+name/availability/performance/quality/oee badge/runTimeMinutes) with sticky header + CSV export. POST /api/analytics/reports/equipment-performance.
+  - reports/recurrence/page.tsx — 3 KPI cards (recurring subjects/total occurrences/linked CAPAs) + items Table (subject badge+label/occurrences/dates chips/linked CAPA count) + CSV export. POST /api/analytics/reports/recurrence.
+  - reports/action-effectiveness/page.tsx — 3 KPI cards (closed CAPAs/recurrence count/effectiveness rate) + items Table (capaCode/closedAt/effectivenessOutcome badge/recurrence-since-close badge) + CSV export. POST /api/analytics/reports/action-effectiveness.
+  - vsm/page.tsx — VSM list Select (fetch GET /api/lean/vsm) + visualization. Fetches GET /api/analytics/vsm/[id]. Totals KPI row (leadTime/valueAdded/nonValueAdded/vaRatio with warning state if ratio<30%) + left-to-right horizontal scrollable node flow (cards with nodeType badge, sequence, name, leadTime, valueAdded, connected by ArrowRight icons). Read-only.
+  - corporate/page.tsx — DateRangePicker + multi-select Checkbox grid (8 metrics: oee/availability/performance/quality/openNcrs/openDeviations/openCapas/totalDowntimeMinutes) + KPI cards for each selected metric (with proper % suffix for ratio metrics, "Data unavailable" state for null aggregates) + contributingSiteCount KPI + note Card with "Audited" badge + MetaFooter. Handles 403 (analytics.corporate.read) with a dedicated locked-state card.
+- All pages follow the established pattern: "use client" directive, useTranslations("analytics"), useState for siteId + range, useQuery for sites + useQuery for analytics data (POST), AnalyticsSkeleton for loading, ErrorState for errors, WarningBanner + MetaFooter always shown when data present. credentials:"same-origin" on all fetches. Default date range = last 7 days (or 30 days for recurrence/action-effectiveness reports).
+- CSV export on report pages: POST /api/analytics/export with {reportType, params, format:"csv"}, response is a CSV blob via URL.createObjectURL + temporary <a> click + revokeObjectURL. Filename derived from reportType + ISO date.
+- Colors: used Tailwind theme colors hsl(var(--primary)) for primary charts, hsl(var(--accent-foreground)) for secondary series, amber #f59e0b for cumulative lines, green #10b981 / red #ef4444 for pass/fail. No indigo/blue.
+- Recharts usage: BarChart (production), PieChart (quality), ComposedChart with Bar+Line (downtime pareto), LineChart with multi-series (oee-trend, quality-trend). All wrapped in ResponsiveContainer with h-80 or h-64 heights.
+- Tables: shadcn Table with sticky headers (sticky top-0 bg-card) and max-h-96 overflow-y-auto for long lists.
+- Ran `bunx tsc --noEmit 2>&1 | grep -v vitest` — ZERO TypeScript errors on the new pages. Only pre-existing vitest.config.ts poolOptions error remains (unrelated, pre-existing).
+- Ran `bun run lint` — ZERO lint warnings/errors on the new pages. Removed an unused KpiCard import from dashboards/oee/page.tsx after initial creation. Pre-existing warnings in dashboards/page.tsx (template file) and modules/analytics/service/index.ts remain untouched.
+
+Stage Summary:
+- **Phase 11 Analytics UI: COMPLETE.** All 19 page files created under src/app/[locale]/(app)/analytics/. They consume the already-built analytics API (17 routes) and shared UI components (KpiCard, WarningBanner, MetaFooter, etc.) without ever computing KPIs client-side.
+- **Architecture rules respected:** (1) UI never computes KPIs — every value comes from API; (2) data-state handled correctly (calculated/unavailable/warning) — null values render "Data unavailable" instead of 0; (3) WarningBanner shows on every page; (4) MetaFooter with computedAt + live-computation badge on every page; (5) recharts used for all charts; (6) responsive grids (sm:grid-cols-2 lg:grid-cols-4); (7) "use client" directive on all pages; (8) RBAC enforced by API; (9) corporate page handles 403 forbidden with explicit locked-state UI.
+- **Typecheck: PASS.** Zero new TS errors. Lint: PASS. Zero new lint warnings (after removing one unused import).
+- **Note on sites API path:** The task description and the existing dashboards/page.tsx template reference `/api/organization/sites?pageSize=100`, but the actual API route is `/api/org/sites` (no pagination param). All 19 new pages use the correct `/api/org/sites` path. The pre-existing dashboards/page.tsx template file was left untouched (its bug is pre-existing and out of scope).
+- **Sidebar:** Already wired (app-sidebar.tsx links to /analytics/dashboards, /analytics/reports, /analytics/vsm, /analytics/corporate with the correct permission gates).
+- **Production blockers (carry-forward, unchanged):** PostgreSQL migration (ADR-0002); RLS for site isolation; Playwright EE coverage; final security hardening.
+- **Lint debt:** Unchanged (no new warnings introduced).

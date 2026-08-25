@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings, Package, Boxes, Truck, Layers, ClipboardList, Factory, Clock, AlertTriangle, GitBranch, FileSearch, Wrench, Scale, FlaskConical, Microscope, TestTube, Beaker, CheckSquare, Network, AlertCircle, History, FileText, GraduationCap, ClipboardCheck, Cog, Wind, PackageCheck, Radiation, Gavel, TrendingDown, GitGraph } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings, Package, Boxes, Truck, Layers, ClipboardList, Factory, Clock, AlertTriangle, GitBranch, FileSearch, Wrench, Scale, FlaskConical, Microscope, TestTube, Beaker, CheckSquare, Network, AlertCircle, History, FileText, GraduationCap, ClipboardCheck, Cog, Wind, PackageCheck, Radiation, Gavel, TrendingDown, GitGraph, BarChart3, PieChart, Activity, Building, FileBarChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -84,6 +84,15 @@ const NAV: { section: string; items: NavItem[] }[] = [
       { href: "/lean/downtime", labelKey: "nav.leanDowntime", icon: TrendingDown, permission: "lean.read" },
       { href: "/lean/oee", labelKey: "nav.leanOee", icon: Scale, permission: "lean.read" },
       { href: "/lean/vsm", labelKey: "nav.leanVsm", icon: GitGraph, permission: "lean.read" },
+    ],
+  },
+  {
+    section: "analytics",
+    items: [
+      { href: "/analytics/dashboards", labelKey: "nav.analyticsDashboards", icon: BarChart3, permission: "analytics.read" },
+      { href: "/analytics/reports", labelKey: "nav.analyticsReports", icon: FileBarChart, permission: "analytics.read" },
+      { href: "/analytics/vsm", labelKey: "nav.analyticsVsm", icon: PieChart, permission: "analytics.read" },
+      { href: "/analytics/corporate", labelKey: "nav.analyticsCorporate", icon: Building, permission: "analytics.corporate.read" },
     ],
   },
   {
