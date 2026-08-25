@@ -219,3 +219,22 @@ A shop-floor quality check (in-process or final), performed by an Operator/Inspe
 
 **Inspection vs Laboratory Test** (PROPOSED D1)
 Inspection = quick shop-floor check (no sample, no method; pass/fail against a spec or free-text). Laboratory Test = formal lab examination (sample, method, measured result, review, disposition). Different workflows, different actors (Inspector vs Lab Technician). **They are separate entities.** _Avoid_: "quality check" as a generic term that conflates them.
+
+## Phase 6 proposed terms (domain-modeling, pending owner confirmation D1-D8)
+
+> Sharpened via `grill-with-docs` + `domain-modeling` for Phase 6 (Traceability / Genealogy / Impact Analysis — PRD Roadmap Phase 4, filling the gap). These are PROPOSED; not yet confirmed. See `docs/PRD/PHASE-6-IMPLEMENTATION-PLAN.md` §3.
+
+**Forward Trace** (PROPOSED D2)
+Given a starting entity (MaterialLot, Material, Product, ProductRevision, WorkOrder, Batch), trace downstream through the genealogy chain to all affected entities (Batches, DeviceLots, TestResults, Inspections, NCRs, Scraps, Reworks). Configurable depth. Site-scoped. _Avoid_: downstream search, forward lookup (use Forward Trace).
+
+**Backward Trace** (PROPOSED D3)
+Given a terminal entity (DeviceLot, Batch, TestResult, Inspection, NCR), trace upstream through the genealogy chain to all source entities (MaterialLots, Materials, Suppliers, BOM, ProductRevision, Product, WorkOrder, Routing, Operations). Full chain to Product. Site-scoped. _Avoid_: upstream search, reverse lookup (use Backward Trace).
+
+**Impact Analysis** (PROPOSED D4)
+A forward trace with a scenario (RECALL, QUARANTINE, DEVIATION, AUDIT). Computes the set of all affected entities. **Informational only** — does NOT automatically create records, hold batches, or trigger NCRs. Human action is required to act on results. AI must never act on impact analysis results (PRD §9). _Avoid_: risk assessment (use Impact Analysis; Risk Assessment is a Phase 4 Quality entity).
+
+**TraceabilityQueryLog** (PROPOSED D7)
+An append-only audit record of who queried what genealogy, when. Captures: actor, query type (forward/backward/impact), start entity, scenario, result summary, site, timestamp. Regulatory expectation (who investigated genealogy and when). Readable by `audit.read` / `traceability.query-log.read` permission. _Avoid_: trace log, query history (use TraceabilityQueryLog).
+
+**Traceability Site Scoping** (PROPOSED D6)
+Traceability queries respect the user's `resolvedSites`. A user scoped to Site A can only trace genealogy for entities at Site A. If the chain reaches a different site, the trace stops at the boundary (no leakage). Super Admin (global) can trace across all sites. _Avoid_: cross-site genealogy (use site-scoped; cross-site is a stop condition, not a feature).
