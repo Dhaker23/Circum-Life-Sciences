@@ -172,3 +172,28 @@ A record of non-conforming output (scrapped quantity + reason) against a Batch/D
 
 **Rework** (PROPOSED D8)
 A record of re-processing a quantity (Batch/DeviceLot) that did not conform. Does NOT decrement good output (units may become good after re-processing). Full rework workflow with Deviation is Phase 6. _Avoid_: repair (use Rework; Repair is a maintenance concept, Phase 8).
+
+## Phase 4 proposed terms (domain-modeling, pending owner confirmation D1-D9)
+
+> Sharpened via `grill-with-docs` + `domain-modeling` for Phase 4 (Quality foundation: NCR, Deviation, Investigation, CAPA, Risk, Change Control). These are PROPOSED resolutions grounded in the PRD; not yet confirmed. See `docs/PRD/PHASE-4-IMPLEMENTATION-PLAN.md` §3. **Owner constraint: NCR ≠ Deviation ≠ CAPA. Investigation ≠ CAPA. Do NOT create duplicate/overlapping entities.**
+
+**NCR (Nonconformity Report)** (PROPOSED D1, D3)
+An **unplanned** discovery that something does not conform to requirements (reactive). Records the nonconformity, links to the production entity it concerns (Batch/DeviceLot/MaterialLot/etc.), and drives containment → investigation → disposition → closure. State machine: `DRAFT → CONTAINMENT → INVESTIGATION → DISPOSITION → CLOSED` (+CANCELLED). _Avoid_: defect, finding (use NCR for the controlled record).
+
+**Deviation** (PROPOSED D1, D4)
+A **planned** departure from an approved process/spec/BOM/routing, requested *before* execution (proactive, pre-authorized). Records what the departure is, why, the impact, and QA approval. State machine: `DRAFT → ASSESSMENT → INVESTIGATION → REVIEW → CLOSED` (+REJECTED). Investigation is optional (trivial deviations may skip it). _Avoid_: exception, waiver (use Deviation).
+
+**Investigation (RCA)** (PROPOSED D2)
+A **distinct entity** (not a state inside CAPA or NCR). The structured root-cause analysis. Links to a source NCR or Deviation. Finds the root cause; *may* produce one or more CAPAs. State: `IN_PROGRESS → CONCLUDED`. _Avoid_: analysis, review (use Investigation for the RCA controlled record). **Investigation ≠ CAPA** (investigation finds the cause; CAPA acts on it).
+
+**CAPA (Corrective and Preventive Action)** (PROPOSED D2, D5)
+Actions to correct and prevent recurrence, linked to an Investigation. State machine: `OPEN → ACTION_PLAN → IMPLEMENTATION → EFFECTIVENESS → CLOSED`. **Closure requires effectiveness verification by a human** (PRD §9: AI must never close CAPA). One Investigation may yield multiple CAPAs (corrective + preventive). _Avoid_: action, fix (use CAPA for the controlled record).
+
+**Change Control** (PROPOSED D6)
+A controlled record governing changes to products/processes/documents/equipment. State machine: `REQUEST → IMPACT → RISK → APPROVAL → IMPLEMENTATION → VERIFICATION → EFFECTIVENESS → CLOSED` (+REJECTED). **Implementation requires human approval** (PRD §9: AI must never approve a change). Links to a RiskAssessment at the RISK step. _Avoid_: change request, ECR (use Change Control).
+
+**RiskAssessment** (PROPOSED D7)
+A managed record of a hazard: `severity` (1-5) × `probability` (1-5) = `riskPriorityNumber` (RPN, 1-25), plus mitigations and residual risk. References a subject (PRODUCT/PROCESS/EQUIPMENT/BATCH/DEVIATION/CHANGE). Status: `OPEN → MITIGATED → CLOSED`. Foundation for risk-based decisions in Deviation and Change Control. _Avoid_: risk (use RiskAssessment for the record; "risk" is the concept).
+
+**Polymorphic Quality Linkage** (PROPOSED D8)
+Quality records (NCR, Deviation) reference production entities via `entityType` + `entityId` strings (service-validated), not hard foreign keys. This avoids sparse nullable FKs to every production entity and stays extensible. The service layer validates the referenced entity exists and is at the same site. _Avoid_: generic "link" (use the entityType/entityId pattern).
