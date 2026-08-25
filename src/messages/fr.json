@@ -76,7 +76,10 @@
     "inspections": "Inspections",
     "traceTrace": "Trace Genealogique",
     "traceImpact": "Analyse Impact",
-    "traceLog": "Journal Requetes"
+    "traceLog": "Journal Requetes",
+    "documents": "Documents",
+    "trainingRecords": "Formation",
+    "supplierAudits": "Audits Fournisseurs"
   },
   "users": {
     "title": "Utilisateurs",
@@ -364,5 +367,19 @@
       "subtitle": "Audit de qui a interroge quelle genealogie",
       "noData": "Aucune requete"
     }
+  },
+  "docs": {
+    "title": "Documents Controles",
+    "subtitle": "Cycle de vie des documents (global)"
+  },
+  "training": {
+    "records": {
+      "title": "Dossiers de Formation",
+      "subtitle": "Dossiers de formation (site)"
+    }
+  },
+  "supplierAudit": {
+    "title": "Audits Fournisseurs",
+    "subtitle": "Audits qualite fournisseurs (site)"
   }
 }

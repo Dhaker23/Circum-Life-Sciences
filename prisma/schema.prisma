@@ -55,6 +55,11 @@ model User {
   testsDispositioned         TestResult[]           @relation("TestDispositionedBy") // Phase 5
   inspectionsLogged          Inspection[]           @relation("InspectionLogger") // Phase 5
   traceabilityQueries        TraceabilityQueryLog[] @relation("TraceabilityQueryActor") // Phase 6
+  docsApproved               ControlledDocument[]   @relation("DocApprover") // Phase 7
+  trainingTrainers           TrainingRecord[]       @relation("TrainingTrainer") // Phase 7
+  assessmentAssessors        Assessment[]           @relation("AssessmentAssessor") // Phase 7
+  competencyAuthorizers      Competency[]           @relation("CompetencyAuthorizer") // Phase 7
+  supplierAudits             SupplierAudit[]        @relation("SupplierAuditor") // Phase 7
 
   @@index([status])
 }
@@ -78,10 +83,12 @@ model Employee {
   userId String? @unique // optional link to a User account
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  site        Site                 @relation(fields: [siteId], references: [id], onDelete: Restrict)
-  department  Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  executions  OperationExecution[] @relation("ExecutionOperator") // Phase 3 (D4: operator)
-  inspections Inspection[]         @relation("InspectionInspector") // Phase 5
+  site            Site                 @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  department      Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  executions      OperationExecution[] @relation("ExecutionOperator") // Phase 3 (D4: operator)
+  inspections     Inspection[]         @relation("InspectionInspector") // Phase 5
+  trainingRecords TrainingRecord[] // Phase 7
+  competencies    Competency[] // Phase 7
 
   @@index([siteId])
   @@index([departmentId])
@@ -189,6 +196,8 @@ model Site {
   samples         Sample[] // Phase 5
   testResults     TestResult[] // Phase 5
   inspections     Inspection[] // Phase 5
+  trainingRecords TrainingRecord[] // Phase 7
+  supplierAudits  SupplierAudit[] // Phase 7
 
   @@index([status])
 }
@@ -425,7 +434,8 @@ model MaterialLot {
   status                String    @default("RECEIVED") // RECEIVED | QUARANTINE | APPROVED | IN_USE | EXHAUSTED | REJECTED
   receivedAt            DateTime  @default(now())
   expiryDate            DateTime?
-  certificateOfAnalysis String? // string ref only (D7 deferred; full doc control in Phase 7)
+  certificateOfAnalysis String? // legacy string ref
+  controlledDocumentId  String? // Phase 7 D3: nullable FK to ControlledDocument
   isDemo                Boolean   @default(false)
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
@@ -457,6 +467,7 @@ model Supplier {
 
   lots      MaterialLot[]
   materials MaterialSupplier[]
+  audits    SupplierAudit[] // Phase 7
 
   @@index([qualificationStatus])
 }
@@ -738,35 +749,37 @@ model Shift {
 // ============================================================================
 
 model NCR {
-  id                  String    @id @default(cuid())
-  code                String // unique per site
-  siteId              String // SITE-OWNED
-  concernsEntityType  String // BATCH | DEVICE_LOT | MATERIAL_LOT | WORK_ORDER | OPERATION_EXECUTION | PRODUCT_REVISION | MATERIAL | SUPPLIER
-  concernsEntityId    String
-  description         String
-  severity            String    @default("MAJOR") // MINOR | MAJOR | CRITICAL
-  status              String    @default("DRAFT") // DRAFT | CONTAINMENT | INVESTIGATION | DISPOSITION | CLOSED | CANCELLED
-  containmentAction   String?
-  disposition         String? // USE_AS_IS | REWORK | REGRADE | SCRAP | RETURN_TO_SUPPLIER
-  createdByUserId     String?
-  assignedToUserId    String?
-  investigationId     String?   @unique // linked when INVESTIGATION (1:1)
-  evidenceDocumentRef String? // D9: string ref; Phase 7 adds ControlledDocument FK
-  closedAt            DateTime?
-  closureNotes        String?
-  isDemo              Boolean   @default(false)
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  id                   String    @id @default(cuid())
+  code                 String // unique per site
+  siteId               String // SITE-OWNED
+  concernsEntityType   String // BATCH | DEVICE_LOT | MATERIAL_LOT | WORK_ORDER | OPERATION_EXECUTION | PRODUCT_REVISION | MATERIAL | SUPPLIER
+  concernsEntityId     String
+  description          String
+  severity             String    @default("MAJOR") // MINOR | MAJOR | CRITICAL
+  status               String    @default("DRAFT") // DRAFT | CONTAINMENT | INVESTIGATION | DISPOSITION | CLOSED | CANCELLED
+  containmentAction    String?
+  disposition          String? // USE_AS_IS | REWORK | REGRADE | SCRAP | RETURN_TO_SUPPLIER
+  createdByUserId      String?
+  assignedToUserId     String?
+  investigationId      String?   @unique // linked when INVESTIGATION (1:1)
+  evidenceDocumentRef  String? // D9: legacy string ref
+  controlledDocumentId String? // Phase 7 D3: nullable FK to ControlledDocument
+  closedAt             DateTime?
+  closureNotes         String?
+  isDemo               Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
-  site                 Site               @relation(fields: [siteId], references: [id], onDelete: Restrict)
-  creator              User?              @relation("NcrCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  assignee             User?              @relation("NcrAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
-  investigation        Investigation?     @relation("NcrInvestigation", fields: [investigationId], references: [id], onDelete: SetNull)
-  sourceInvestigations Investigation[]    @relation("InvestigationSourceNcr") // reverse: Investigations that reference this NCR as their source
-  scraps               ProductionScrap[]  @relation("ScrapNcr") // Phase 4 (D10)
-  reworks              ProductionRework[] @relation("ReworkNcr") // Phase 4 (D10)
-  testResults          TestResult[]       @relation("TestResultNcr") // Phase 5
-  inspections          Inspection[]       @relation("InspectionNcr") // Phase 5
+  site                 Site                @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  creator              User?               @relation("NcrCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  assignee             User?               @relation("NcrAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  investigation        Investigation?      @relation("NcrInvestigation", fields: [investigationId], references: [id], onDelete: SetNull)
+  sourceInvestigations Investigation[]     @relation("InvestigationSourceNcr") // reverse: Investigations that reference this NCR as their source
+  scraps               ProductionScrap[]   @relation("ScrapNcr") // Phase 4 (D10)
+  reworks              ProductionRework[]  @relation("ReworkNcr") // Phase 4 (D10)
+  testResults          TestResult[]        @relation("TestResultNcr") // Phase 5
+  inspections          Inspection[]        @relation("InspectionNcr") // Phase 5
+  controlledDocument   ControlledDocument? @relation("NcrDocument", fields: [controlledDocumentId], references: [id], onDelete: SetNull) // Phase 7 D3
 
   @@unique([siteId, code])
   @@index([siteId])
@@ -860,11 +873,12 @@ model CAPA {
   createdAt                     DateTime  @default(now())
   updatedAt                     DateTime  @updatedAt
 
-  site                  Site           @relation(fields: [siteId], references: [id], onDelete: Restrict)
-  investigation         Investigation? @relation(fields: [investigationId], references: [id], onDelete: SetNull)
-  implementer           User?          @relation("CapaImplementer", fields: [implementationOwnerUserId], references: [id], onDelete: SetNull)
-  effectivenessVerifier User?          @relation("CapaEffectivenessVerifier", fields: [effectivenessVerifiedByUserId], references: [id], onDelete: SetNull)
-  closer                User?          @relation("CapaCloser", fields: [closedByUserId], references: [id], onDelete: SetNull)
+  site                  Site            @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  investigation         Investigation?  @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  implementer           User?           @relation("CapaImplementer", fields: [implementationOwnerUserId], references: [id], onDelete: SetNull)
+  effectivenessVerifier User?           @relation("CapaEffectivenessVerifier", fields: [effectivenessVerifiedByUserId], references: [id], onDelete: SetNull)
+  closer                User?           @relation("CapaCloser", fields: [closedByUserId], references: [id], onDelete: SetNull)
+  supplierAudits        SupplierAudit[] @relation("SupplierAuditCapa") // Phase 7
 
   @@unique([siteId, code])
   @@index([siteId])
@@ -972,16 +986,17 @@ model Specification {
 }
 
 model TestMethod {
-  id            String   @id @default(cuid())
-  code          String   @unique
-  name          String
-  description   String?
-  equipmentType String? // string ref (Equipment master is Phase 8)
-  documentRef   String? // D9: string ref; Phase 7 adds ControlledDocument FK
-  status        String   @default("DRAFT") // DRAFT | APPROVED | EFFECTIVE | SUPERSEDED
-  isDemo        Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  code                 String   @unique
+  name                 String
+  description          String?
+  equipmentType        String? // string ref (Equipment master is Phase 8)
+  documentRef          String? // legacy
+  controlledDocumentId String? // Phase 7 D3
+  status               String   @default("DRAFT") // DRAFT | APPROVED | EFFECTIVE | SUPERSEDED
+  isDemo               Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   specs       TestMethodSpec[]
   testResults TestResult[]
@@ -1132,4 +1147,156 @@ model TraceabilityQueryLog {
   @@index([requestedByUserId])
   @@index([rootEntityType, rootEntityId])
   @@index([executedAt])
+}
+
+// ============================================================================
+// Document Control / Training / Supplier Audits (Phase 7)
+// D1: Metadata + file ref (no binary). D2: New row per revision; immutable when Effective.
+// D3: Nullable FK alongside existing string refs. D4: 4 training entities.
+// D6: No auto-RBAC. D7: SupplierAudit formal record; no auto qualification change.
+// ============================================================================
+
+model ControlledDocument {
+  id               String    @id @default(cuid())
+  code             String    @unique
+  title            String
+  documentType     String    @default("SOP") // SOP | WORK_INSTRUCTION | SPECIFICATION | PROTOCOL | REPORT | FORM | OTHER
+  version          String
+  filePath         String?
+  status           String    @default("DRAFT") // DRAFT | REVIEW | APPROVED | EFFECTIVE | SUPERSEDED | OBSOLETE
+  approvedByUserId String?
+  approvedAt       DateTime?
+  effectiveFrom    DateTime?
+  supersededById   String?
+  description      String?
+  isDemo           Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  approver          User?                @relation("DocApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  supersededBy      ControlledDocument?  @relation("DocSupersession", fields: [supersededById], references: [id], onDelete: NoAction)
+  supersededByThis  ControlledDocument[] @relation("DocSupersession")
+  requiredTrainings RequiredTraining[]
+  supplierAudits    SupplierAudit[]
+  ncrs              NCR[]                @relation("NcrDocument") // Phase 7 D3 reverse
+
+  @@index([status])
+  @@index([documentType])
+}
+
+model RequiredTraining {
+  id                   String   @id @default(cuid())
+  code                 String   @unique
+  title                String
+  description          String?
+  documentId           String?
+  validityPeriodMonths Int?
+  status               String   @default("ACTIVE")
+  isDemo               Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  document        ControlledDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  trainingRecords TrainingRecord[]
+  competencies    Competency[]
+
+  @@index([status])
+}
+
+model TrainingRecord {
+  id                 String    @id @default(cuid())
+  code               String
+  employeeId         String
+  requiredTrainingId String?
+  siteId             String
+  trainedByUserId    String?
+  trainedAt          DateTime  @default(now())
+  status             String    @default("SCHEDULED") // SCHEDULED | COMPLETED | EXPIRED
+  expiresAt          DateTime?
+  notes              String?
+  isDemo             Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  employee         Employee          @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  requiredTraining RequiredTraining? @relation(fields: [requiredTrainingId], references: [id], onDelete: SetNull)
+  site             Site              @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  trainer          User?             @relation("TrainingTrainer", fields: [trainedByUserId], references: [id], onDelete: SetNull)
+  assessment       Assessment?
+  competencies     Competency[]
+
+  @@unique([siteId, code])
+  @@index([employeeId])
+  @@index([siteId])
+  @@index([status])
+}
+
+model Assessment {
+  id               String   @id @default(cuid())
+  trainingRecordId String   @unique
+  assessedByUserId String?
+  assessedAt       DateTime @default(now())
+  result           String // PASS | FAIL
+  score            String?
+  notes            String?
+  createdAt        DateTime @default(now())
+
+  trainingRecord TrainingRecord @relation(fields: [trainingRecordId], references: [id], onDelete: Cascade)
+  assessor       User?          @relation("AssessmentAssessor", fields: [assessedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([trainingRecordId])
+}
+
+model Competency {
+  id                 String    @id @default(cuid())
+  employeeId         String
+  requiredTrainingId String?
+  trainingRecordId   String?
+  competencyLevel    String    @default("AUTHORIZED") // AUTHORIZED | CONDITIONAL | NOT_AUTHORIZED
+  authorizedByUserId String?
+  authorizedAt       DateTime?
+  expiresAt          DateTime?
+  status             String    @default("ACTIVE") // ACTIVE | EXPIRED | REVOKED
+  isDemo             Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  employee         Employee          @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  requiredTraining RequiredTraining? @relation(fields: [requiredTrainingId], references: [id], onDelete: SetNull)
+  trainingRecord   TrainingRecord?   @relation(fields: [trainingRecordId], references: [id], onDelete: SetNull)
+  authorizer       User?             @relation("CompetencyAuthorizer", fields: [authorizedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([employeeId])
+  @@index([status])
+}
+
+model SupplierAudit {
+  id                  String    @id @default(cuid())
+  code                String
+  supplierId          String
+  siteId              String
+  auditType           String    @default("PERIODIC") // INITIAL | PERIODIC | FOR_CAUSE | FOLLOW_UP
+  scheduledDate       DateTime?
+  completedDate       DateTime?
+  auditorUserId       String?
+  findings            String?
+  result              String? // PASS | CONDITIONAL_PASS | FAIL
+  capaId              String?
+  qualificationImpact String    @default("NO_CHANGE") // NO_CHANGE | UPGRADE_TO_APPROVED | DOWNGRADE_TO_CONDITIONAL | DISQUALIFY
+  status              String    @default("SCHEDULED") // SCHEDULED | IN_PROGRESS | COMPLETED | CLOSED
+  evidenceDocumentId  String?
+  isDemo              Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  supplier         Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  site             Site                @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  auditor          User?               @relation("SupplierAuditor", fields: [auditorUserId], references: [id], onDelete: SetNull)
+  capa             CAPA?               @relation("SupplierAuditCapa", fields: [capaId], references: [id], onDelete: SetNull)
+  evidenceDocument ControlledDocument? @relation(fields: [evidenceDocumentId], references: [id], onDelete: SetNull)
+
+  @@unique([siteId, code])
+  @@index([supplierId])
+  @@index([siteId])
+  @@index([status])
 }

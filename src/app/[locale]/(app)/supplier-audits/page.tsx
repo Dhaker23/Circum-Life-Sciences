@@ -1,0 +1,13 @@
+"use client";
+import { useTranslations } from "next-intl";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+const SA_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = { SCHEDULED: "outline", IN_PROGRESS: "secondary", COMPLETED: "default", CLOSED: "secondary" };
+const RESULT_VARIANT: Record<string, "default" | "secondary" | "destructive"> = { PASS: "default", CONDITIONAL_PASS: "secondary", FAIL: "destructive" };
+export default function SupplierAuditsPage() {
+  const t = useTranslations("supplierAudit");
+  const { data, isLoading } = useQuery({ queryKey: ["supplier-audits"], queryFn: async () => { const res = await fetch("/api/supplier-audits?pageSize=100", { credentials: "same-origin" }); if (!res.ok) throw new Error("Failed"); const json = await res.json(); return json.data as Array<{ id: string; code: string; auditType: string; status: string; result: string | null; qualificationImpact: string; supplier: { code: string; name: string }; site: { code: string } }>; } });
+  return (<div className="space-y-6"><div><h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1><p className="text-sm text-muted-foreground">{t("subtitle")}</p></div><Card><CardHeader><CardTitle className="text-base">{t("title")}</CardTitle></CardHeader><CardContent>{isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : data && data.length > 0 ? (<div className="max-h-[32rem] overflow-auto rounded-md border"><Table><TableHeader className="sticky top-0 bg-card"><TableRow><TableHead>Code</TableHead><TableHead>Supplier</TableHead><TableHead>Type</TableHead><TableHead>Result</TableHead><TableHead>Qual. Impact</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{data.map((a) => (<TableRow key={a.id}><TableCell className="font-mono text-xs">{a.code}</TableCell><TableCell className="text-xs"><span className="font-mono">{a.supplier.code}</span> {a.supplier.name}</TableCell><TableCell className="text-xs">{a.auditType}</TableCell><TableCell>{a.result ? <Badge variant={RESULT_VARIANT[a.result] ?? "outline"}>{a.result}</Badge> : "-"}</TableCell><TableCell className="text-xs">{a.qualificationImpact}</TableCell><TableCell><Badge variant={SA_VARIANT[a.status] ?? "outline"}>{a.status}</Badge></TableCell></TableRow>))}</TableBody></Table></div>) : <p className="text-sm text-muted-foreground">No supplier audits found</p>}</CardContent></Card></div>);
+}

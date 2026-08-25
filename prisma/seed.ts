@@ -598,6 +598,9 @@ async function main() {
   // 11. Phase 5: Laboratory/Inspection (synthetic DEMO/TEST).
   await seedLaboratory(siteByCode);
 
+  // 12. Phase 7: Docs/Training/Audits (synthetic DEMO/TEST).
+  await seedPhase7(siteByCode);
+
   // 7. Seed audit event (records that the seed ran).
   await db.auditEvent.create({
     data: {
@@ -718,4 +721,67 @@ async function seedLaboratory(siteByCode: Record<string, Site>) {
 
   await db_.auditEvent.create({ data: { action: "system.seed.laboratory", entityType: "System", entityId: "seed-p5", outcome: "SUCCESS", reason: "Phase 5 synthetic DEMO seed applied", newState: { specs: specs.length } } });
   console.log("  audit: phase5 seed-run event recorded");
+}
+
+// Phase 7: Document Control / Training / Supplier Audits seed
+async function seedPhase7(siteByCode: Record<string, Site>) {
+  console.log("Seeding Phase 7 docs/training/audits DEMO data...");
+  const db_ = db;
+  const chSite = siteByCode["DEMO-CH-01"];
+
+  // Controlled Documents (EFFECTIVE)
+  const doc1 = await db_.controlledDocument.upsert({
+    where: { code: "DOC-DEMO-001" },
+    update: { status: "EFFECTIVE", effectiveFrom: new Date("2025-01-01") },
+    create: { code: "DOC-DEMO-001", title: "Molding Process SOP (DEMO)", documentType: "SOP", version: "1.0", filePath: "/docs/sop-molding-v1.pdf", status: "EFFECTIVE", effectiveFrom: new Date("2025-01-01"), isDemo: true },
+  });
+  const doc2 = await db_.controlledDocument.upsert({
+    where: { code: "DOC-DEMO-002" },
+    update: { status: "EFFECTIVE", effectiveFrom: new Date("2025-01-01") },
+    create: { code: "DOC-DEMO-002", title: "Visual Inspection Work Instruction (DEMO)", documentType: "WORK_INSTRUCTION", version: "2.1", filePath: "/docs/wi-visual-v2.pdf", status: "EFFECTIVE", effectiveFrom: new Date("2025-01-01"), isDemo: true },
+  });
+  console.log(`  documents: 2 (EFFECTIVE)`);
+
+  // Required Training
+  const rt1 = await db_.requiredTraining.upsert({
+    where: { code: "RT-DEMO-001" },
+    update: { documentId: doc1.id },
+    create: { code: "RT-DEMO-001", title: "Molding Process Training (DEMO)", description: "Training on molding SOP", documentId: doc1.id, validityPeriodMonths: 24, status: "ACTIVE", isDemo: true },
+  });
+  console.log(`  required trainings: 1`);
+
+  // Training Record (COMPLETED) + Assessment (PASS) + Competency (AUTHORIZED)
+  const emp = await db_.employee.findFirst({ where: { site: { code: "DEMO-CH-01" } } });
+  if (emp) {
+    const tr = await db_.trainingRecord.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "TR-DEMO-001" } },
+      update: { status: "COMPLETED", requiredTrainingId: rt1.id },
+      create: { code: "TR-DEMO-001", employeeId: emp.id, requiredTrainingId: rt1.id, siteId: chSite.id, status: "COMPLETED", isDemo: true },
+    });
+    await db_.assessment.upsert({
+      where: { trainingRecordId: tr.id },
+      update: { result: "PASS" },
+      create: { trainingRecordId: tr.id, result: "PASS", score: "95%" },
+    });
+    await db_.competency.upsert({
+      where: { id: "competency-demo-001" },
+      update: {},
+      create: { id: "competency-demo-001", employeeId: emp.id, requiredTrainingId: rt1.id, trainingRecordId: tr.id, competencyLevel: "AUTHORIZED", authorizedByUserId: null, authorizedAt: new Date(), status: "ACTIVE", isDemo: true },
+    });
+    console.log(`  training record: 1 (COMPLETED), assessment: PASS, competency: AUTHORIZED`);
+  }
+
+  // Supplier Audit (COMPLETED)
+  const supplier = await db_.supplier.findFirst();
+  if (supplier) {
+    await db_.supplierAudit.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "SA-DEMO-001" } },
+      update: { status: "COMPLETED", result: "CONDITIONAL_PASS", qualificationImpact: "NO_CHANGE", completedDate: new Date() },
+      create: { code: "SA-DEMO-001", supplierId: supplier.id, siteId: chSite.id, auditType: "PERIODIC", status: "COMPLETED", result: "CONDITIONAL_PASS", findings: "Minor documentation gaps found (DEMO)", qualificationImpact: "NO_CHANGE", completedDate: new Date(), evidenceDocumentId: doc2.id, isDemo: true },
+    });
+    console.log(`  supplier audit: 1 (COMPLETED, CONDITIONAL_PASS, qual impact: NO_CHANGE)`);
+  }
+
+  await db_.auditEvent.create({ data: { action: "system.seed.phase7", entityType: "System", entityId: "seed-p7", outcome: "SUCCESS", reason: "Phase 7 synthetic DEMO seed applied" } });
+  console.log("  audit: phase7 seed-run event recorded");
 }

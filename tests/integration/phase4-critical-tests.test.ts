@@ -170,7 +170,7 @@ describe("T-AI-GUARD-01: AI governance (PRD section 9)", () => {
     expect(approvePerms.length).toBeGreaterThan(0); // these exist
     // All require a human actor (the service layer checks ctx.user.id from the session).
     // This test documents the contract; the enforcement is in the service layer.
-    approvePerms.forEach((p) => expect(p.key).toMatch(/(quality\.(deviation\.approve|change\.approve|capa\.close)|lab\.(specification\.approve|testresult\.disposition))/));
+    approvePerms.forEach((p) => expect(p.key).toMatch(/(quality\.(deviation\.approve|change\.approve|capa\.close)|lab\.(specification\.approve|testresult\.disposition)|docs\.document\.approve|training\.competency\.authorize)/));
   });
   it("CAPA closure guard rejects without human verifier", () => {
     expect(() => assertCapaClosureAllowed({ effectivenessVerification: "evidence", effectivenessVerifiedByUserId: null })).toThrow(StateTransitionError);

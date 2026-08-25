@@ -158,6 +158,24 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   // traceability (Phase 6, D1: query layer; D8: AI read-only)
   { key: "traceability.read", module: "traceability", description: "Read/query genealogy and traceability" },
   { key: "traceability.query-log.read", module: "traceability", description: "Read traceability query log (audit)" },
+  // docs — Controlled Documents (Phase 7, global, D2 immutable when Effective)
+  { key: "docs.document.read", module: "docs", description: "Read controlled documents" },
+  { key: "docs.document.create", module: "docs", description: "Create controlled documents" },
+  { key: "docs.document.transition", module: "docs", description: "Transition document state (review/approve/effective/supersede/obsolete)" },
+  { key: "docs.document.approve", module: "docs", description: "Approve a document (human-only; AI MUST NEVER)" },
+  // training (Phase 7)
+  { key: "training.required.read", module: "training", description: "Read required training templates" },
+  { key: "training.required.create", module: "training", description: "Create required training templates" },
+  { key: "training.record.read", module: "training", description: "Read training records (site-scoped)" },
+  { key: "training.record.create", module: "training", description: "Create training records (site-scoped)" },
+  { key: "training.record.transition", module: "training", description: "Transition training record state (complete/expire)" },
+  { key: "training.assessment.create", module: "training", description: "Record an assessment" },
+  { key: "training.competency.read", module: "training", description: "Read competencies" },
+  { key: "training.competency.authorize", module: "training", description: "Authorize a competency (human-only; AI MUST NEVER)" },
+  // supplier audits (Phase 7, site-scoped)
+  { key: "supplieraudit.read", module: "supplieraudit", description: "Read supplier audits (site-scoped)" },
+  { key: "supplieraudit.create", module: "supplieraudit", description: "Create supplier audits (site-scoped)" },
+  { key: "supplieraudit.transition", module: "supplieraudit", description: "Transition supplier audit state" },
 ];
 
 // Role system keys (stable enum-like strings). The 19 PRD roles (PRD §3).
@@ -223,6 +241,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.risk.read", "quality.risk.create", "quality.risk.update",
     "lab.specification.read", "lab.specification.create", "lab.specification.transition", "lab.specification.approve", "lab.testmethod.read", "lab.testmethod.create", "lab.testmethod.transition", "lab.sample.read", "lab.sample.create", "lab.sample.transition", "lab.testresult.read", "lab.testresult.create", "lab.testresult.transition", "lab.testresult.disposition", "inspection.read", "inspection.create", "inspection.transition",
     "traceability.read", "traceability.query-log.read",
+    "docs.document.read", "docs.document.create", "docs.document.transition", "docs.document.approve", "training.required.read", "training.required.create", "training.record.read", "training.record.create", "training.record.transition", "training.assessment.create", "training.competency.read", "training.competency.authorize", "supplieraudit.read", "supplieraudit.create", "supplieraudit.transition",
     "session.sign-in", "session.sign-out",
   ],
   site_admin: [
@@ -269,6 +288,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.capa.read", "quality.change.read", "quality.risk.read",
     "lab.specification.read", "lab.testmethod.read", "lab.sample.read", "lab.testresult.read", "inspection.read",
     "traceability.read",
+    "docs.document.read", "training.required.read", "training.record.read", "training.competency.read", "supplieraudit.read",
     "session.sign-in", "session.sign-out",
   ],
   production_manager: [
@@ -353,6 +373,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.risk.read", "quality.risk.create", "quality.risk.update",
     "lab.specification.read", "lab.specification.create", "lab.specification.transition", "lab.specification.approve", "lab.testmethod.read", "lab.testmethod.create", "lab.testmethod.transition", "lab.sample.read", "lab.sample.create", "lab.sample.transition", "lab.testresult.read", "lab.testresult.create", "lab.testresult.transition", "lab.testresult.disposition", "inspection.read", "inspection.create", "inspection.transition",
     "traceability.read", "traceability.query-log.read",
+    "docs.document.read", "docs.document.create", "docs.document.transition", "docs.document.approve", "training.required.read", "training.required.create", "training.record.read", "training.record.create", "training.record.transition", "training.assessment.create", "training.competency.read", "training.competency.authorize", "supplieraudit.read", "supplieraudit.create", "supplieraudit.transition",
     "session.sign-in", "session.sign-out",
   ],
   qa_reviewer: [
@@ -392,6 +413,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.risk.read", "quality.risk.create", "quality.risk.update",
     "lab.specification.read", "lab.specification.create", "lab.specification.transition", "lab.specification.approve", "lab.testmethod.read", "lab.testmethod.create", "lab.testmethod.transition", "lab.sample.read", "lab.sample.create", "lab.sample.transition", "lab.testresult.read", "lab.testresult.create", "lab.testresult.transition", "lab.testresult.disposition", "inspection.read", "inspection.create", "inspection.transition",
     "traceability.read",
+    "docs.document.read", "docs.document.create", "docs.document.transition", "docs.document.approve", "training.required.read", "training.required.create", "training.record.read", "training.record.create", "training.record.transition", "training.assessment.create", "training.competency.read", "training.competency.authorize", "supplieraudit.read", "supplieraudit.create", "supplieraudit.transition",
     "session.sign-in", "session.sign-out",
   ],
   lab_technician: [
@@ -440,6 +462,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.capa.read", "quality.change.read", "quality.risk.read",
     "lab.specification.read", "lab.testmethod.read", "lab.sample.read", "lab.testresult.read", "inspection.read",
     "traceability.read", "traceability.query-log.read",
+    "docs.document.read", "training.required.read", "training.record.read", "training.competency.read", "supplieraudit.read",
     "session.sign-in", "session.sign-out",
   ],
   executive_viewer: [

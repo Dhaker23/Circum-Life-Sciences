@@ -76,7 +76,10 @@
     "inspections": "Inspections",
     "traceTrace": "Genealogy Trace",
     "traceImpact": "Impact Analysis",
-    "traceLog": "Query Log"
+    "traceLog": "Query Log",
+    "documents": "Documents",
+    "trainingRecords": "Training",
+    "supplierAudits": "Supplier Audits"
   },
   "users": {
     "title": "Users",
@@ -364,5 +367,19 @@
       "subtitle": "Audit record of who queried what genealogy, when",
       "noData": "No queries logged"
     }
+  },
+  "docs": {
+    "title": "Controlled Documents",
+    "subtitle": "Controlled document lifecycle (global, immutable when Effective)"
+  },
+  "training": {
+    "records": {
+      "title": "Training Records",
+      "subtitle": "Employee training and competency records (site-owned)"
+    }
+  },
+  "supplierAudit": {
+    "title": "Supplier Audits",
+    "subtitle": "Formal supplier quality audits (site-owned, CAPA-linked)"
   }
 }
