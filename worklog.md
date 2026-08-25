@@ -254,3 +254,34 @@ Stage Summary:
   - docs/adr/0009-workcenter-vs-equipment-phasing.md (Phase 3 = WorkCenter site-owned location/station; Phase 8 = Equipment master + maintenance + calibration per PRD §18; Equipment composes with WorkCenter at Phase 8 via WorkCenter 1:N Equipment, no production-domain restructuring; OperationExecution gains additive nullable equipmentId at Phase 8; Operation.workCenterId optional default + OperationExecution.workCenterId actual may override; onDelete:Restrict preserves genealogy; tested via T-EXEC-01 + cross-site T-ISOL-03)
 - **Key decisions recorded:** (a) ManufacturingBatch 1:N DeviceLot, the owner-forbidden "Batch = Device Lot" assumption is structurally excluded, Device Lot is the unit that goes to downstream processing (sterilization/packaging/shipment) and Batch is the unit for Phase 9 Batch Review; (b) WorkCenter is the Phase 3 execution-location concept (where work happens) and Equipment is the Phase 8 asset-management concept (which machine, with maintenance/calibration status), the two compose rather than replace; (c) Phase 3 genealogy records the WorkCenter dimension of traceability (PRD §10), the Equipment dimension is a Phase 8 contribution accepted as a scope boundary; (d) both ADRs end with compliance notes (engineering controls / architectural phasing, not Part 11 / ISO 13485 claims, PRD §17).
 - **Next actions (for orchestrator):** these ADRs unblock Phase 3 execution slices for the production-domain schema (slice: prisma schema for Routing/Operation/WorkCenter/WorkOrder/ManufacturingBatch/DeviceLot/OperationExecution/MaterialConsumption/MaterialReservation/ProductionScrap/ProductionRework/Shift with siteId on all site-owned entities, compound unique (siteId, code) on WorkCenter, DeviceLot.batchId non-nullable onDelete:Restrict, no equipmentId on OperationExecution in Phase 3), the DeviceLot split service (slice: splitBatch method that validates quantity sum, auto-create single Device Lot on Batch completion, audited), and the WorkCenter service (slice: site-owned CRUD with SiteScope + assertSiteAccess, INACTIVE guard on new assignments, onDelete:Restrict preservation). Consider committing the two ADRs together with the Phase 3 implementation kickoff. Remaining Phase 3 decisions D2, D4, D5, D6, D7, D8 are owner-confirmed per the task brief but not yet recorded as ADRs; orchestrator may choose to record them as ADRs (e.g. a single ADR-0010 for the Phase 3 state machines D7, or one-per-decision) before or alongside Phase 3 execution.
+
+---
+Task ID: s0-s10 (Phase 3 implementation)
+Agent: main-orchestrator (Z.ai Code) + adr-writer subagent (s1)
+Task: Execute Phase 3 (Work Order/Routing/Operation/Work Center/Batch/DeviceLot/Execution/Consumption/Reservation/Scrap/Rework/Shift) per approved plan + owner-confirmed D1-D11. to-spec -> to-tickets -> domain-modeling -> codebase-design -> tdd -> implement -> regression -> validation. STOP. No Phase 4.
+
+Work Log:
+- Slice 0-1 (spec/tickets + ADRs): .scratch/phase-3/{spec.md,tickets.md}; ADR-0008 (Batch 1:N DeviceLot), ADR-0009 (WorkCenter now, Equipment Phase 8).
+- Slice 2 (schema): 12 new models in prisma/schema.prisma (Routing, Operation, WorkCenter, WorkOrder, ManufacturingBatch, DeviceLot, OperationExecution, MaterialConsumption, MaterialReservation, ProductionScrap, ProductionRework, Shift). Added quantityReserved to MaterialLot, relations to ProductRevision/Employee/User/Site. Migration 20260825013201_phase3_production + db push for Operation @@unique([routingId,sequence]).
+- Slice 3 (permissions): 33 production.* permissions + least-privilege grants to all 19 roles.
+- Slice 4 (domain): state machines (WO: PLANNED->RELEASED->IN_PRODUCTION->COMPLETED->CLOSED +CANCELLED/ON_HOLD; Batch: PLANNED->IN_PRODUCTION->COMPLETED->READY_FOR_REVIEW +ON_HOLD; DeviceLot: CREATED->IN_PROCESS->COMPLETED), routing immutability (assertRoutingEditable: DRAFT/IN_REVIEW only), consumption quantity (reject over-consumption), reservation invariant (available+reserved<=received). All zod schemas.
+- Slice 5 (service): production module with can()+audit()+SiteScope. Transactional consumption (re-read inside tx). Reservation updates quantityReserved. Every transition audited. WO only for EFFECTIVE revisions. Operator=Employee, Logger=User.
+- Slice 6 (API): 28 route files under /api/production/** with /transition endpoints.
+- Slice 7 (UI): 4 pages (work-orders, batches, work-centers, shifts) + sidebar Production nav + i18n FR/EN/AR.
+- Slice 8 (seed): work centers (2), shifts (2/site), routing+3 operations, 2 WOs (IN_PRODUCTION + PLANNED), 2 batches (IN_PRODUCTION + READY_FOR_REVIEW), 3 device lots, 1 consumption, 1 execution, 1 scrap. All isDemo.
+- Slice 9 (tests): tests/integration/phase3-critical-tests.test.ts — 33 tests: T-WO-01, T-BATCH-01, T-LOT-02, T-CONS-01, T-RES-01, T-ROUTE-01, T-ISOL-03, T-EXEC-01, T-SCRAP-01 + genealogy + regression. ALL 84 tests PASS (17+34+33).
+- Slice 10 (gate): lint 0 errors (63 warnings), typecheck clean, 84/84 tests pass. Browser-verified: admin sees WO-CH-001+WO-TN-001, BATCH-CH-001+002, work centers, shifts; QM-CH sees ONLY WO-CH-001 (cross-site isolation T-ISOL-03). Screenshot saved. Wrote docs/PRD/PHASE-3-VALIDATION-REPORT.md (CONDITIONAL PASS).
+- Committed (Phase 3 implementation).
+
+Stage Summary:
+- **Phase 3: IMPLEMENTED + VALIDATED.** Manufacturing execution: Work Order, Routing, Operation, Work Center, Manufacturing Batch (1:N DeviceLot), production execution (OperationExecution, MaterialConsumption/Reservation, Scrap/Rework), Shifts. 12 entities, 28 API routes, 4 UI pages, 33 permissions. 84/84 tests PASS. Browser-verified incl. cross-site isolation. ADRs 0008-0009 + validation report.
+- **Domain decisions D1-D11 implemented exactly as owner-confirmed.** Genealogy chain preserved. No Phase 4 functionality.
+- **Status:** CONDITIONAL PASS. PHASE 3 STATUS: READY FOR OWNER REVIEW. STOPPED. Not starting Phase 4.
+- **Known limitations (Phase 13 hardening):** audit site-scoping best-effort (RLS when PG); quantity CHECK constraints (service-enforced, PG will add); routing immutability service-enforced; Playwright E2E backlog; no Equipment (Phase 8); no Batch Review/Release (Phase 9); no OEE (Phase 10); no Customer/Project (D11).
+- **Production blocker:** PostgreSQL migration (ADR-0002) required before production.
+
+Unresolved issues / risks (priority for next phase):
+1. **[Blocker]** Owner approval of Phase 3 Validation Report before Phase 4.
+2. **[High, before production]** PostgreSQL migration (ADR-0002).
+3. **[Medium]** Transition buttons UI (WO/batch/device-lot state transitions; API ready, UI deferred).
+4. **[Medium]** Playwright E2E for production flows (backlog).
