@@ -518,3 +518,15 @@ Stage Summary:
 - **Phase 8 Plan: PRODUCED.** Equipment master + Maintenance + Calibration + Qualification (IQ/OQ/PQ). 4 new entities. Links to WorkCenter + OperationExecution.
 - **7 decisions (D1-D7) require owner confirmation.**
 - **Status:** WAITING FOR OWNER APPROVAL. STOPPED.
+
+---
+Task ID: s1-s6 (Phase 8 implementation)
+Agent: main-orchestrator (Z.ai Code)
+Task: Execute Phase 8 (Equipment/Maintenance/Calibration/Qualification) per approved plan + owner-confirmed D1-D7. STOP. No Phase 9.
+
+Stage Summary:
+- **Phase 8: IMPLEMENTED + VALIDATED.** 4 entities, 9 API routes, 1 UI page, 13 permissions. 248/248 tests PASS. Browser-verified.
+- **D1-D7 implemented exactly.** Equipment M:1 WorkCenter. Calibration status stored (D2). Equipment qualification only (D3). Single Qualification entity with IQ/OQ/PQ (D4). No auto-actions (D5). OperationExecution.equipmentId genealogy (D6). All site-owned (D7).
+- **Critical constraints enforced:** OUT_OF_SERVICE guard. Same-site validation. Human-only qualification approval. Acceptance criteria never invented. AI governance.
+- **Status:** CONDITIONAL PASS. PHASE 8 STATUS: READY FOR OWNER REVIEW. STOPPED.
+- **Production blocker:** PostgreSQL migration (ADR-0002).
