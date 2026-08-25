@@ -249,6 +249,137 @@ async function seedManufacturing(siteByCode: Record<string, Site>) {
   console.log("  audit: phase2 seed-run event recorded");
 }
 
+// Phase 3: Production execution seed (synthetic DEMO/TEST).
+// WorkCenters, Shifts, Routings+Operations (for EFFECTIVE revisions), Work Orders,
+// Manufacturing Batches (one with Device Lots split, one IN_PRODUCTION with consumption),
+// OperationExecution, MaterialConsumption, Scrap/Rework. All isDemo=true.
+async function seedProduction(siteByCode: Record<string, Site>) {
+  console.log("Seeding Phase 3 production DEMO data...");
+  const db_ = db;
+
+  // WorkCenters (2 per site)
+  const wcByCode: Record<string, { id: string; code: string }> = {};
+  for (const siteCode of Object.keys(siteByCode)) {
+    const site = siteByCode[siteCode];
+    for (const wcDef of [{ code: `WC-${siteCode.slice(-2)}-ASM`, name: "Assembly Station" }, { code: `WC-${siteCode.slice(-2)}-MOLD`, name: "Molding Line" }]) {
+      const wc = await db_.workCenter.upsert({
+        where: { siteId_code: { siteId: site.id, code: wcDef.code } },
+        update: { name: wcDef.name, isDemo: true, status: "ACTIVE" },
+        create: { code: wcDef.code, name: wcDef.name, siteId: site.id, isDemo: true, status: "ACTIVE" },
+      });
+      wcByCode[wcDef.code] = wc;
+    }
+  }
+  console.log(`  work centers: ${Object.keys(wcByCode).length}`);
+
+  // Shifts (2 per site)
+  for (const siteCode of Object.keys(siteByCode)) {
+    const site = siteByCode[siteCode];
+    for (const sh of [{ name: "Morning", startTime: "06:00", endTime: "14:00" }, { name: "Night", startTime: "14:00", endTime: "22:00" }]) {
+      await db_.shift.upsert({
+        where: { siteId_name: { siteId: site.id, name: sh.name } },
+        update: { startTime: sh.startTime, endTime: sh.endTime, isDemo: true },
+        create: { siteId: site.id, name: sh.name, startTime: sh.startTime, endTime: sh.endTime, isDemo: true },
+      });
+    }
+  }
+  console.log(`  shifts: 2 per site`);
+
+  // Routings + Operations for each EFFECTIVE product revision (DEV-DEMO-001 REV-A)
+  const effRev = await db_.productRevision.findFirst({ where: { status: "EFFECTIVE" }, include: { product: true } });
+  if (effRev) {
+    const routing = await db_.routing.upsert({
+      where: { productRevisionId: effRev.id },
+      update: { status: "EFFECTIVE" },
+      create: { productRevisionId: effRev.id, status: "EFFECTIVE", version: 1 },
+    });
+    // 3 operations
+    const chSite = siteByCode["DEMO-CH-01"];
+    const ops = [
+      { sequence: 10, name: "Molding", workCenterCode: "WC-CH-01-MOLD", instructions: "Mold the catheter body per SOP-001" },
+      { sequence: 20, name: "Assembly", workCenterCode: "WC-CH-01-ASM", instructions: "Assemble components per SOP-002" },
+      { sequence: 30, name: "Inspection", workCenterCode: "WC-CH-01-ASM", instructions: "Visual inspection per SOP-003" },
+    ];
+    for (const op of ops) {
+      const wc = wcByCode[op.workCenterCode];
+      await db_.operation.upsert({
+        where: { routingId_sequence: { routingId: routing.id, sequence: op.sequence } },
+        update: { name: op.name, workCenterId: wc?.id ?? null, instructions: op.instructions },
+        create: { routingId: routing.id, sequence: op.sequence, name: op.name, workCenterId: wc?.id ?? null, instructions: op.instructions },
+      });
+    }
+    console.log(`  routing + 3 operations for ${effRev.product.code} ${effRev.revisionCode}`);
+
+    // Work Order (RELEASED -> IN_PRODUCTION) at CH site
+    const wo = await db_.workOrder.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "WO-CH-001" } },
+      update: { status: "IN_PRODUCTION", releasedAt: new Date("2025-06-01") },
+      create: { code: "WO-CH-001", productRevisionId: effRev.id, siteId: chSite.id, plannedQuantity: "500", unit: "pcs", status: "IN_PRODUCTION", releasedAt: new Date("2025-06-01"), isDemo: true },
+    });
+
+    // Batch 1 (IN_PRODUCTION with consumption + execution + device lot)
+    const batch1 = await db_.manufacturingBatch.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "BATCH-CH-001" } },
+      update: { status: "IN_PRODUCTION", startedAt: new Date("2025-06-02") },
+      create: { code: "BATCH-CH-001", workOrderId: wo.id, productRevisionId: effRev.id, siteId: chSite.id, plannedQuantity: "300", unit: "pcs", status: "IN_PRODUCTION", startedAt: new Date("2025-06-02"), isDemo: true },
+    });
+    // Device Lot split from batch1
+    await db_.deviceLot.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "DL-CH-001" } },
+      update: {},
+      create: { code: "DL-CH-001", batchId: batch1.id, siteId: chSite.id, quantity: "150", unit: "pcs", status: "IN_PROCESS", isDemo: true },
+    });
+    await db_.deviceLot.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "DL-CH-002" } },
+      update: {},
+      create: { code: "DL-CH-002", batchId: batch1.id, siteId: chSite.id, quantity: "150", unit: "pcs", status: "CREATED", isDemo: true },
+    });
+    // Material consumption: consume MAT-DEMO-001 (polymer) lot LOT-CH-001 (approved, 100kg avail) into batch1
+    const mat1 = await db_.material.findUniqueOrThrow({ where: { code: "MAT-DEMO-001" } });
+    const lotCh1 = await db_.materialLot.findFirst({ where: { lotCode: "LOT-CH-001" } });
+    if (lotCh1) {
+      const consumed = "20";
+      await db_.materialLot.update({ where: { id: lotCh1.id }, data: { quantityAvailable: parseFloat(lotCh1.quantityAvailable.toString()) - parseFloat(consumed) } });
+      await db_.materialConsumption.create({ data: { batchId: batch1.id, materialLotId: lotCh1.id, quantity: consumed, unit: "kg", recordedByUserId: null, notes: "Initial molding consumption" } });
+    }
+    // Operation execution: operator (Employee EMP-0003 LineWorker at TN, but use CH employee)
+    const emp = await db_.employee.findFirst({ where: { site: { code: "DEMO-CH-01" } } });
+    const op10 = await db_.operation.findFirst({ where: { routingId: routing.id, sequence: 10 } });
+    if (emp && op10) {
+      await db_.operationExecution.create({ data: { batchId: batch1.id, operationId: op10.id, workCenterId: wcByCode["WC-CH-01-MOLD"]?.id ?? null, startedAt: new Date("2025-06-02T08:00"), completedAt: new Date("2025-06-02T12:00"), status: "COMPLETED", operatorEmployeeId: emp.id, loggedByUserId: null, notes: "Molding completed" } });
+    }
+    // Scrap record
+    await db_.productionScrap.create({ data: { batchId: batch1.id, quantity: "5", unit: "pcs", reason: "Visual defect (demo scrap)", recordedByUserId: null } });
+
+    // Batch 2 (COMPLETED -> READY_FOR_REVIEW) to show the state machine endpoint
+    const batch2 = await db_.manufacturingBatch.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "BATCH-CH-002" } },
+      update: { status: "READY_FOR_REVIEW", startedAt: new Date("2025-05-01"), completedAt: new Date("2025-05-05"), actualQuantity: "200" },
+      create: { code: "BATCH-CH-002", workOrderId: wo.id, productRevisionId: effRev.id, siteId: chSite.id, plannedQuantity: "200", unit: "pcs", actualQuantity: "200", status: "READY_FOR_REVIEW", startedAt: new Date("2025-05-01"), completedAt: new Date("2025-05-05"), isDemo: true },
+    });
+    await db_.deviceLot.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "DL-CH-003" } },
+      update: {},
+      create: { code: "DL-CH-003", batchId: batch2.id, siteId: chSite.id, quantity: "200", unit: "pcs", status: "COMPLETED", isDemo: true },
+    });
+
+    // Work Order at TN site (PLANNED)
+    const tnSite = siteByCode["DEMO-TN-01"];
+    await db_.workOrder.upsert({
+      where: { siteId_code: { siteId: tnSite.id, code: "WO-TN-001" } },
+      update: { status: "PLANNED" },
+      create: { code: "WO-TN-001", productRevisionId: effRev.id, siteId: tnSite.id, plannedQuantity: "1000", unit: "pcs", status: "PLANNED", isDemo: true },
+    });
+
+    console.log(`  work orders: 2 (WO-CH-001 IN_PRODUCTION, WO-TN-001 PLANNED)`);
+    console.log(`  batches: 2 (BATCH-CH-001 IN_PRODUCTION, BATCH-CH-002 READY_FOR_REVIEW)`);
+    console.log(`  device lots: 3, consumptions: 1, executions: 1, scraps: 1`);
+  }
+
+  await db_.auditEvent.create({ data: { action: "system.seed.production", entityType: "System", entityId: "seed-p3", outcome: "SUCCESS", reason: "Phase 3 synthetic DEMO seed applied", newState: { workCenters: Object.keys(wcByCode).length } } });
+  console.log("  audit: phase3 seed-run event recorded");
+}
+
 async function main() {
   console.log("Seeding Circum Phase 1 DEMO data (synthetic, clearly labelled)...");
 
@@ -381,6 +512,9 @@ async function main() {
 
   // 8. Phase 2: Manufacturing master data (synthetic DEMO/TEST).
   await seedManufacturing(siteByCode);
+
+  // 9. Phase 3: Production execution (synthetic DEMO/TEST).
+  await seedProduction(siteByCode);
 
   // 7. Seed audit event (records that the seed ran).
   await db.auditEvent.create({

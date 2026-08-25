@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings, Package, Boxes, Truck, Layers } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings, Package, Boxes, Truck, Layers, ClipboardList, Factory, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -38,6 +38,15 @@ const NAV: { section: string; items: NavItem[] }[] = [
       { href: "/manufacturing/materials", labelKey: "nav.materials", icon: Boxes, permission: "manufacturing.material.read" },
       { href: "/manufacturing/material-lots", labelKey: "nav.materialLots", icon: Layers, permission: "manufacturing.materiallot.read" },
       { href: "/manufacturing/suppliers", labelKey: "nav.suppliers", icon: Truck, permission: "manufacturing.supplier.read" },
+    ],
+  },
+  {
+    section: "production",
+    items: [
+      { href: "/production/work-orders", labelKey: "nav.workOrders", icon: ClipboardList, permission: "production.workorder.read" },
+      { href: "/production/batches", labelKey: "nav.batches", icon: Factory, permission: "production.batch.read" },
+      { href: "/production/work-centers", labelKey: "nav.workCenters", icon: Building2, permission: "production.workcenter.read" },
+      { href: "/production/shifts", labelKey: "nav.shifts", icon: Clock, permission: "production.shift.read" },
     ],
   },
   {

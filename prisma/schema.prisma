@@ -30,11 +30,15 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  assignments Assignment[]
-  sessions    Session[]
-  accounts    Account[]
-  auditEvents AuditEvent[] // as actor (onDelete SetNull so audit outlives user)
-  employee    Employee? // optional 1:1 link (Employee optionally associated with User, ADR-0004/User-vs-Employee)
+  assignments        Assignment[]
+  sessions           Session[]
+  accounts           Account[]
+  auditEvents        AuditEvent[] // as actor (onDelete SetNull so audit outlives user)
+  employee           Employee? // optional 1:1 link (Employee optionally associated with User, ADR-0004/User-vs-Employee)
+  executionsLogged   OperationExecution[]  @relation("ExecutionLogger") // Phase 3
+  consumptionsLogged MaterialConsumption[] @relation("ConsumptionRecorder") // Phase 3
+  scrapsLogged       ProductionScrap[]     @relation("ScrapRecorder") // Phase 3
+  reworksLogged      ProductionRework[]    @relation("ReworkRecorder") // Phase 3
 
   @@index([status])
 }
@@ -58,8 +62,9 @@ model Employee {
   userId String? @unique // optional link to a User account
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  site       Site        @relation(fields: [siteId], references: [id], onDelete: Restrict)
-  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  site       Site                 @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  department Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  executions OperationExecution[] @relation("ExecutionOperator") // Phase 3 (D4: operator)
 
   @@index([siteId])
   @@index([departmentId])
@@ -153,6 +158,11 @@ model Site {
   assignments  Assignment[]
   employees    Employee[]
   materialLots MaterialLot[] // Phase 2: site-owned lots
+  workCenters  WorkCenter[] // Phase 3
+  workOrders   WorkOrder[] // Phase 3
+  batches      ManufacturingBatch[] // Phase 3
+  deviceLots   DeviceLot[] // Phase 3
+  shifts       Shift[] // Phase 3
 
   @@index([status])
 }
@@ -289,10 +299,13 @@ model ProductRevision {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  product          Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
-  supersededBy     ProductRevision?  @relation("RevisionSupersession", fields: [supersededById], references: [id], onDelete: NoAction)
+  product          Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
+  supersededBy     ProductRevision?     @relation("RevisionSupersession", fields: [supersededById], references: [id], onDelete: NoAction)
   bom              BOM?
-  supersededByThis ProductRevision[] @relation("RevisionSupersession")
+  supersededByThis ProductRevision[]    @relation("RevisionSupersession")
+  routing          Routing? // Phase 3
+  workOrders       WorkOrder[] // Phase 3
+  batches          ManufacturingBatch[] // Phase 3
 
   @@unique([productId, revisionCode])
   @@index([productId])
@@ -381,6 +394,7 @@ model MaterialLot {
   siteId                String // SITE-OWNED (D4)
   quantityReceived      Decimal
   quantityAvailable     Decimal
+  quantityReserved      Decimal   @default(0) // Phase 3 (D5 reservation); invariant: reserved + available <= received
   unit                  String
   status                String    @default("RECEIVED") // RECEIVED | QUARANTINE | APPROVED | IN_USE | EXHAUSTED | REJECTED
   receivedAt            DateTime  @default(now())
@@ -390,9 +404,11 @@ model MaterialLot {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  material Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
-  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
-  site     Site     @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  material     Material              @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  supplier     Supplier              @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  site         Site                  @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  consumptions MaterialConsumption[] // Phase 3
+  reservations MaterialReservation[] // Phase 3
 
   @@unique([siteId, lotCode])
   @@index([materialId])
@@ -417,4 +433,265 @@ model Supplier {
   materials MaterialSupplier[]
 
   @@index([qualificationStatus])
+}
+
+// ============================================================================
+// Production execution (Phase 3, ADR-0008/0009)
+// D1: ManufacturingBatch 1:N DeviceLot. D3: WorkCenter now, Equipment in Phase 8.
+// D4: Operator = Employee, Logger = User. D6: Routing 1:1 with ProductRevision (global, frozen at EFFECTIVE).
+// Genealogy: WorkOrder -> Batch -> DeviceLot -> OperationExecution -> MaterialConsumption -> MaterialLot.
+// ============================================================================
+
+model Routing {
+  id                String   @id @default(cuid())
+  productRevisionId String   @unique // 1:1 with ProductRevision (D6, like BOM)
+  status            String   @default("DRAFT") // mirrors revision status
+  version           Int      @default(1)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  productRevision ProductRevision @relation(fields: [productRevisionId], references: [id], onDelete: Cascade)
+  operations      Operation[]
+
+  @@index([status])
+}
+
+model Operation {
+  id                       String   @id @default(cuid())
+  routingId                String
+  sequence                 Int
+  name                     String
+  description              String?
+  workCenterId             String? // default WorkCenter (optional; execution may override)
+  estimatedDurationMinutes Int?
+  instructions             String? // basic text (D9; no Document Control subsystem)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  routing    Routing              @relation(fields: [routingId], references: [id], onDelete: Cascade)
+  workCenter WorkCenter?          @relation(fields: [workCenterId], references: [id], onDelete: SetNull)
+  executions OperationExecution[]
+
+  @@unique([routingId, sequence])
+  @@index([routingId])
+}
+
+model WorkCenter {
+  id          String   @id @default(cuid())
+  code        String // unique per site
+  name        String
+  siteId      String // SITE-OWNED
+  description String?
+  status      String   @default("ACTIVE") // ACTIVE | INACTIVE
+  isDemo      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  site       Site                 @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  operations Operation[]
+  executions OperationExecution[]
+
+  @@unique([siteId, code])
+  @@index([siteId])
+}
+
+model WorkOrder {
+  id                String    @id @default(cuid())
+  code              String // unique per site
+  productRevisionId String
+  siteId            String // SITE-OWNED
+  plannedQuantity   Decimal
+  unit              String
+  status            String    @default("PLANNED") // PLANNED | RELEASED | IN_PRODUCTION | COMPLETED | CLOSED | CANCELLED | ON_HOLD
+  plannedStartDate  DateTime?
+  plannedDueDate    DateTime?
+  releasedAt        DateTime?
+  closedAt          DateTime?
+  reason            String? // for hold/cancel
+  isDemo            Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  productRevision ProductRevision       @relation(fields: [productRevisionId], references: [id], onDelete: Restrict)
+  site            Site                  @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  batches         ManufacturingBatch[]
+  reservations    MaterialReservation[]
+
+  @@unique([siteId, code])
+  @@index([siteId])
+  @@index([status])
+  @@index([productRevisionId])
+}
+
+model ManufacturingBatch {
+  id                String    @id @default(cuid())
+  code              String // unique per site
+  workOrderId       String
+  productRevisionId String // denormalized from WO
+  siteId            String // SITE-OWNED
+  plannedQuantity   Decimal
+  actualQuantity    Decimal?
+  unit              String
+  status            String    @default("PLANNED") // PLANNED | IN_PRODUCTION | COMPLETED | READY_FOR_REVIEW | ON_HOLD
+  startedAt         DateTime?
+  completedAt       DateTime?
+  isDemo            Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  workOrder       WorkOrder             @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  productRevision ProductRevision       @relation(fields: [productRevisionId], references: [id], onDelete: Restrict)
+  site            Site                  @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  deviceLots      DeviceLot[]
+  executions      OperationExecution[]
+  consumptions    MaterialConsumption[]
+  scraps          ProductionScrap[]
+  reworks         ProductionRework[]
+
+  @@unique([siteId, code])
+  @@index([workOrderId])
+  @@index([siteId])
+  @@index([status])
+}
+
+model DeviceLot {
+  id        String   @id @default(cuid())
+  code      String // unique per site
+  batchId   String
+  siteId    String // SITE-OWNED (via batch)
+  quantity  Decimal
+  unit      String
+  status    String   @default("CREATED") // CREATED | IN_PROCESS | COMPLETED
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  batch   ManufacturingBatch @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  site    Site               @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  scraps  ProductionScrap[]
+  reworks ProductionRework[]
+
+  @@unique([siteId, code])
+  @@index([batchId])
+  @@index([siteId])
+}
+
+model OperationExecution {
+  id                 String    @id @default(cuid())
+  batchId            String
+  operationId        String
+  workCenterId       String? // actual WorkCenter (may differ from Operation default)
+  startedAt          DateTime
+  completedAt        DateTime?
+  status             String    @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED | SKIPPED
+  operatorEmployeeId String // D4: Employee (not User)
+  loggedByUserId     String? // D4: the authenticated User who created the record
+  parameters         Json?
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  batch      ManufacturingBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  operation  Operation          @relation(fields: [operationId], references: [id], onDelete: Restrict)
+  workCenter WorkCenter?        @relation(fields: [workCenterId], references: [id], onDelete: SetNull)
+  operator   Employee           @relation("ExecutionOperator", fields: [operatorEmployeeId], references: [id], onDelete: Restrict)
+  logger     User?              @relation("ExecutionLogger", fields: [loggedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([batchId])
+  @@index([operationId])
+  @@index([operatorEmployeeId])
+}
+
+model MaterialConsumption {
+  id               String   @id @default(cuid())
+  batchId          String
+  materialLotId    String
+  quantity         Decimal // >0, <= available (service-enforced, transactional)
+  unit             String
+  consumedAt       DateTime @default(now())
+  recordedByUserId String?
+  notes            String?
+  createdAt        DateTime @default(now())
+
+  batch       ManufacturingBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  materialLot MaterialLot        @relation(fields: [materialLotId], references: [id], onDelete: Restrict)
+  recorder    User?              @relation("ConsumptionRecorder", fields: [recordedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([batchId])
+  @@index([materialLotId])
+}
+
+model MaterialReservation {
+  id               String    @id @default(cuid())
+  workOrderId      String
+  materialLotId    String
+  quantityReserved Decimal
+  unit             String
+  status           String    @default("ACTIVE") // ACTIVE | FULFILLED | CANCELLED
+  reservedAt       DateTime  @default(now())
+  fulfilledAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  workOrder   WorkOrder   @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  materialLot MaterialLot @relation(fields: [materialLotId], references: [id], onDelete: Restrict)
+
+  @@index([workOrderId])
+  @@index([materialLotId])
+}
+
+model ProductionScrap {
+  id               String   @id @default(cuid())
+  batchId          String?
+  deviceLotId      String?
+  quantity         Decimal
+  unit             String
+  reason           String
+  scrapedAt        DateTime @default(now())
+  recordedByUserId String?
+  createdAt        DateTime @default(now())
+
+  batch     ManufacturingBatch? @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  deviceLot DeviceLot?          @relation(fields: [deviceLotId], references: [id], onDelete: Cascade)
+  recorder  User?               @relation("ScrapRecorder", fields: [recordedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([batchId])
+  @@index([deviceLotId])
+}
+
+model ProductionRework {
+  id                String    @id @default(cuid())
+  batchId           String?
+  deviceLotId       String?
+  quantity          Decimal
+  unit              String
+  reason            String
+  reworkStartedAt   DateTime  @default(now())
+  reworkCompletedAt DateTime?
+  recordedByUserId  String?
+  createdAt         DateTime  @default(now())
+
+  batch     ManufacturingBatch? @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  deviceLot DeviceLot?          @relation(fields: [deviceLotId], references: [id], onDelete: Cascade)
+  recorder  User?               @relation("ReworkRecorder", fields: [recordedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([batchId])
+  @@index([deviceLotId])
+}
+
+model Shift {
+  id        String   @id @default(cuid())
+  siteId    String
+  name      String // e.g., "Morning", "Night"
+  startTime String // "08:00"
+  endTime   String // "16:00"
+  status    String   @default("ACTIVE")
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, name])
+  @@index([siteId])
 }

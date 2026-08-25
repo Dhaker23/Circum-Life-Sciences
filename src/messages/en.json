@@ -54,6 +54,11 @@
     "materials": "Materials",
     "materialLots": "Material Lots",
     "suppliers": "Suppliers",
+    "production": "Production",
+    "workOrders": "Work Orders",
+    "batches": "Batches",
+    "workCenters": "Work Centers",
+    "shifts": "Shifts",
     "audit": "Audit Trail",
     "events": "Audit Events",
     "settings": "Settings"
@@ -187,6 +192,45 @@
       "materials": "Materials",
       "lots": "Lots",
       "noData": "No suppliers found"
+    }
+  },
+  "production": {
+    "workOrders": {
+      "title": "Work Orders",
+      "subtitle": "Authorized production instructions (site-owned)",
+      "code": "Code",
+      "product": "Product / Revision",
+      "site": "Site",
+      "quantity": "Planned qty",
+      "batches": "Batches",
+      "noData": "No work orders found"
+    },
+    "batches": {
+      "title": "Manufacturing Batches",
+      "subtitle": "Produced traceable units (site-owned, 1:N Device Lots)",
+      "code": "Code",
+      "workOrder": "Work Order",
+      "product": "Product / Revision",
+      "quantity": "Quantity",
+      "deviceLots": "Device Lots",
+      "stopsAt": "Phase 3 stops at READY_FOR_REVIEW. QA Review/Release is a future phase.",
+      "noData": "No batches found"
+    },
+    "workCenters": {
+      "title": "Work Centers",
+      "subtitle": "Production locations/stations (site-owned; Equipment in a future phase)",
+      "code": "Code",
+      "name": "Name",
+      "site": "Site",
+      "noData": "No work centers found"
+    },
+    "shifts": {
+      "title": "Shifts",
+      "subtitle": "Work shifts per site",
+      "name": "Shift",
+      "site": "Site",
+      "hours": "Hours",
+      "noData": "No shifts found"
     }
   }
 }

@@ -54,6 +54,11 @@
     "materials": "Materiaux",
     "materialLots": "Lots de materiaux",
     "suppliers": "Fournisseurs",
+    "production": "Production",
+    "workOrders": "Ordres de fabrication",
+    "batches": "Lots de fabrication",
+    "workCenters": "Postes de travail",
+    "shifts": "Equipes",
     "audit": "Piste d'audit",
     "events": "Evenements d'audit",
     "settings": "Parametres"
@@ -187,6 +192,45 @@
       "materials": "Materiaux",
       "lots": "Lots",
       "noData": "Aucun fournisseur trouve"
+    }
+  },
+  "production": {
+    "workOrders": {
+      "title": "Ordres de fabrication",
+      "subtitle": "Instructions de production autorisees (site)",
+      "code": "Code",
+      "product": "Produit / Revision",
+      "site": "Site",
+      "quantity": "Qte planifiee",
+      "batches": "Lots",
+      "noData": "Aucun ordre de fabrication trouve"
+    },
+    "batches": {
+      "title": "Lots de fabrication",
+      "subtitle": "Unites traçables produites (site, 1:N Device Lots)",
+      "code": "Code",
+      "workOrder": "Ordre de fabrication",
+      "product": "Produit / Revision",
+      "quantity": "Quantite",
+      "deviceLots": "Device Lots",
+      "stopsAt": "La Phase 3 s'arrete a READY_FOR_REVIEW. La revue QA/liberation est une phase ulterieure.",
+      "noData": "Aucun lot de fabrication trouve"
+    },
+    "workCenters": {
+      "title": "Postes de travail",
+      "subtitle": "Emplacements de production (site; Equipement dans une phase ulterieure)",
+      "code": "Code",
+      "name": "Nom",
+      "site": "Site",
+      "noData": "Aucun poste de travail trouve"
+    },
+    "shifts": {
+      "title": "Equipes",
+      "subtitle": "Equipes de travail par site",
+      "name": "Equipe",
+      "site": "Site",
+      "hours": "Heures",
+      "noData": "Aucune equipe trouvee"
     }
   }
 }
