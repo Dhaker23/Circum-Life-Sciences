@@ -119,4 +119,23 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* RTL: use logical properties everywhere. next-intl sets dir on <html>. */
+  [dir="rtl"] {
+    text-align: right;
+  }
+  /* Custom scrollbar for data-dense tables (PRD §14). */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.85 0 0);
+    border-radius: 4px;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: oklch(0.4 0 0);
+  }
 }

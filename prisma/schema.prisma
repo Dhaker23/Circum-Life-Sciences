@@ -1,8 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Circum Life Sciences — Phase 1 Prisma schema
+// SQLite (temporary, ADR-0002); PostgreSQL-portable. See docs/adr/0002.
+// Controlled records carry: unique ID, status, owner, evidence, audit trail, closure criteria (PRD §5).
 
 generator client {
   provider = "prisma-client-js"
@@ -13,20 +11,237 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================================================
+// Identity
+// ============================================================================
+
+/// Application identity/account. A person who can sign in.
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  passwordHash    String // argon2id (with server-side pepper, ADR-0003)
+  status          String    @default("ACTIVE") // ACTIVE | LOCKED | DISABLED  (zod-enforced state machine)
+  preferredLocale String    @default("en") // en | fr | ar
+  timezone        String    @default("Africa/Lagos")
+  failedAttempts  Int       @default(0)
+  lockedUntil     DateTime?
+  lastSignInAt    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  assignments Assignment[]
+  sessions    Session[]
+  accounts    Account[]
+  auditEvents AuditEvent[] // as actor (onDelete SetNull so audit outlives user)
+  employee    Employee? // optional 1:1 link (Employee optionally associated with User, ADR-0004/User-vs-Employee)
+
+  @@index([status])
 }
 
-model Post {
+/// Organizational/personnel identity used by manufacturing, training, competency, etc.
+/// Distinct from User (application login). Not every Employee has a login (ADR-0004).
+model Employee {
+  id           String   @id @default(cuid())
+  employeeCode String   @unique // stable HR code, e.g. "EMP-0001"
+  firstName    String
+  lastName     String
+  fullName     String // denormalized for search/display
+  siteId       String // primary site assignment
+  departmentId String? // primary department (optional)
+  jobTitle     String?
+  status       String   @default("ACTIVE") // ACTIVE | ON_LEAVE | TERMINATED
+  isDemo       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userId String? @unique // optional link to a User account
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  site       Site        @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  @@index([siteId])
+  @@index([departmentId])
+}
+
+// ============================================================================
+// RBAC
+// ============================================================================
+
+/// Named bundle of permissions. 19 system roles seeded (isSystem=true); custom roles allowed.
+model Role {
+  id          String   @id @default(cuid())
+  systemKey   String   @unique // stable enum-like string e.g. "quality_manager"
+  name        String // display name (i18n key or literal)
+  description String?
+  isSystem    Boolean  @default(false) // the 19 seeded roles: true (cannot delete)
+  status      String   @default("ACTIVE") // ACTIVE | DISABLED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions RolePermission[]
+  assignments Assignment[]
+
+  @@index([status])
+}
+
+/// Atomic capability, namespaced <module>.<resource>.<action>. System-defined catalog.
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique // "identity.user.create"
+  module      String // "identity"
+  description String?
+  createdAt   DateTime @default(now())
+
+  roles RolePermission[]
+}
+
+/// Grant of a Permission to a Role.
+model RolePermission {
+  roleId       String
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+/// Unit of least-privilege: binds User to Role within a Scope {site, department, module}.
+model Assignment {
+  id           String    @id @default(cuid())
+  userId       String
+  roleId       String
+  siteId       String? // null = all sites (Super Admin only; guarded at create)
+  departmentId String? // null = whole site
+  moduleScope  String? // optional module restriction
+  status       String    @default("ACTIVE") // ACTIVE | DISABLED
+  validFrom    DateTime?
+  validUntil   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role        @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  site       Site?       @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId, siteId, departmentId, moduleScope])
+  @@index([userId])
+  @@index([siteId])
+}
+
+// ============================================================================
+// Organization
+// ============================================================================
+
+/// Physical manufacturing location. Top-level scope boundary.
+model Site {
   id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
+  code      String   @unique // e.g. "DEMO-CH-01"
+  name      String
+  address   String?
+  timezone  String   @default("Africa/Lagos")
+  status    String   @default("ACTIVE") // ACTIVE | INACTIVE
+  isDemo    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  departments Department[]
+  assignments Assignment[]
+  employees   Employee[]
+
+  @@index([status])
+}
+
+/// Organizational unit within a Site. Unique (siteId, code).
+model Department {
+  id        String   @id @default(cuid())
+  siteId    String
+  code      String
+  name      String
+  status    String   @default("ACTIVE")
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site        Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  assignments Assignment[]
+  employees   Employee[]
+
+  @@unique([siteId, code])
+  @@index([siteId])
+}
+
+// ============================================================================
+// next-auth (DB sessions, ADR-0003)
+// ============================================================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================================================
+// Audit (append-only, ADR-0005). Triggers reject UPDATE/DELETE.
+// ============================================================================
+
+model AuditEvent {
+  id            String   @id @default(cuid())
+  occurredAt    DateTime @default(now())
+  actorUserId   String?
+  action        String // "identity.user.create", "authorization.denied"
+  entityType    String // "User"
+  entityId      String?
+  previousState Json?
+  newState      Json?
+  reason        String?
+  outcome       String   @default("SUCCESS") // SUCCESS | FAILURE | DENIED
+  sessionId     String?
+  ipAddress     String?
+  userAgent     String?
+
+  actor User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([occurredAt])
+  @@index([actorUserId])
+  @@index([entityType, entityId])
+  @@index([action])
 }
