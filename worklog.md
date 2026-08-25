@@ -508,3 +508,13 @@ Stage Summary:
 - **D1-D8 implemented exactly.** No auto-RBAC (D6). No auto qualification change (D7). Legacy refs preserved (D3).
 - **Status:** CONDITIONAL PASS. PHASE 7 STATUS: READY FOR OWNER REVIEW. STOPPED.
 - **Production blocker:** PostgreSQL migration (ADR-0002).
+
+---
+Task ID: p8-plan
+Agent: main-orchestrator (Z.ai Code)
+Task: Phase 7 approved/closed. Produce CIRCUM PHASE 8 DOMAIN & IMPLEMENTATION PLAN (Equipment/Maintenance/Calibration/Qualification/Validation). Do NOT implement. STOP.
+
+Stage Summary:
+- **Phase 8 Plan: PRODUCED.** Equipment master + Maintenance + Calibration + Qualification (IQ/OQ/PQ). 4 new entities. Links to WorkCenter + OperationExecution.
+- **7 decisions (D1-D7) require owner confirmation.**
+- **Status:** WAITING FOR OWNER APPROVAL. STOPPED.
