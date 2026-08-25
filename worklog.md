@@ -562,3 +562,15 @@ Stage Summary:
 - **Phase 10 Plan: PRODUCED.** Hybrid: 4 new entities (DowntimeEvent, ValueStreamMap, VsmNode, VsmEdge) + computation services (OEE, Lean metrics, Pareto, bottleneck). Built on trusted Phase 2-9 data.
 - **7 decisions (D1-D7) require owner confirmation.**
 - **Status:** WAITING FOR OWNER APPROVAL. STOPPED.
+
+---
+Task ID: s1-s4 (Phase 10 implementation)
+Agent: main-orchestrator (Z.ai Code)
+Task: Execute Phase 10 (Lean/OEE/VSM/Downtime/Bottlenecks) per approved plan + owner-confirmed D1-D7. STOP. No Phase 11.
+
+Stage Summary:
+- **Phase 10: IMPLEMENTED + VALIDATED.** 4 entities, 8 API routes, 3 UI pages, 4 permissions. 294/294 tests PASS. Browser-verified.
+- **D1-D7 implemented exactly.** OEE computed on-demand from trusted data (no invention). All metric sources documented. Downtime category free-text. VSM optional siteId. AI read-only.
+- **Metric sources verified:** Planned Time (Shift), Run Time (OperationExecution), Ideal Duration (Operation.estimatedDurationMinutes), Total Count (Batch.actualQuantity), Scrap (ProductionScrap), Rework (ProductionRework). No invented inputs.
+- **Status:** CONDITIONAL PASS. PHASE 10 STATUS: READY FOR OWNER REVIEW. STOPPED.
+- **Production blocker:** PostgreSQL migration (ADR-0002).
