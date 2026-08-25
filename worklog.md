@@ -649,3 +649,26 @@ Stage Summary:
 - **Sidebar:** Already wired (app-sidebar.tsx links to /analytics/dashboards, /analytics/reports, /analytics/vsm, /analytics/corporate with the correct permission gates).
 - **Production blockers (carry-forward, unchanged):** PostgreSQL migration (ADR-0002); RLS for site isolation; Playwright EE coverage; final security hardening.
 - **Lint debt:** Unchanged (no new warnings introduced).
+
+---
+Task ID: s0-s9 (Phase 11 implementation)
+Agent: main-orchestrator (Z.ai Code)
+Task: Execute Phase 11 (Analytics/Reporting/Dashboards) per approved plan + owner-confirmed D1-D15. STOP. No Phase 12.
+
+Work Log:
+- Slice 0 (Schema audit): Verified Site.timezone EXISTS (line 184, no migration needed). RiskAssessment.riskPriorityNumber EXISTS (line 960). CAPA.effectivenessVerification EXISTS (lines 896-898). CalibrationRecord.nextCalibrationDue EXISTS (line 1414, non-nullable). MaintenanceRecord.scheduledDate EXISTS (line 1382, nullable). TrainingRecord.expiresAt EXISTS (line 1251). CAPA + ChangeControl have NO dueDate → D5: report as "limited" (do NOT invent). recharts v2.15.4 + chart.tsx component installed.
+- Slice 1 (Foundation): Added 4 analytics permissions (analytics.read/export/corporate.read/snapshot.create) to permissions.ts. Updated role grants for all 19 roles. Fixed lean_manager missing lean.read (Phase 10 oversight). Created src/modules/analytics/domain/index.ts (KPI_SOURCES mapping, zod schemas, types, D15 assertRangeCap). Created src/modules/analytics/service/index.ts (15 service functions consuming Phase 10 computeOee/computeLeanMetrics/evaluateVsm).
+- Slice 2-4 (APIs): Created 17 API routes under src/app/api/analytics/ (8 dashboards, 6 reports, VSM view, corporate summary, CSV export). All use requirePermission + assertSiteAccess + ok/fail envelope.
+- Slice 5 (UI infra): Updated app-sidebar.tsx (Analytics nav section). Added i18n strings to en/fr/ar.json (analytics namespace). Created src/components/analytics/index.tsx (KpiCard, WarningBanner, MetaFooter, LimitationsNotice, DateRangePicker, SiteSelector, AnalyticsSkeleton, ErrorState, PageHeader).
+- Slice 6 (UI pages): Built dashboards index page (overview with KPI cards). Delegated 19 individual pages to full-stack-developer subagent (Task ID: s6-ui): 8 dashboard pages, 7 report pages, VSM visualization, corporate page. All use recharts for charts, shadcn/ui components, responsive grids, WarningBanner + MetaFooter on every page.
+- Slice 7 (Tests): Created tests/integration/phase11-critical-tests.test.ts (39 tests). Fixed DB singleton issue: @/lib/db uses global singleton created at module-load; added DATABASE_URL override to tests/setup.ts so @/lib/db points to test DB. Fixed test data creation (Deviation requires appliesToEntityType; CalibrationRecord requires code/siteId/result).
+- Slice 8 (Verification): Typecheck PASS (0 Phase 11 errors; 1 pre-existing vitest.config.ts error). Lint: 0 errors / 199 warnings (+15 from Phase 10's 184; all ordinary debt, no suppression). Browser-verified via agent-browser: dashboards overview, OEE, critical-problems, delivery, reports, corporate — all render correctly. All API calls HTTP 200. Null values show "Data unavailable" (not 0). Delivery stub shows D3 warning. Corporate shows "Audited" badge + "Aggregate over 3 authorized site(s)".
+- Committed as 5204687.
+
+Stage Summary:
+- **Phase 11: IMPLEMENTED + VALIDATED.** Analytics/Reporting/Dashboards. Read-only presentation layer consuming Phase 10 computation. ZERO schema changes (D1=live-only, D2=not-implemented, D8=no-cache — owner preferred simpler architecture). 4 new permissions, 17 API routes, 20 UI pages, 39 new tests.
+- **D1-D15 implemented exactly.** Live on-demand computation only (no snapshots). Delivery=null+warning (D3). Critical problems via RPN≥15 (D4). Overdue via authoritative dueDate only; CAPA/ChangeControl reported as "limited" (D5). Corporate aggregate-only + audited (D7). AI gets analytics.read only (D11/D13). 90-day cap (D15). No AI feature (D13).
+- **KPI source-of-truth verified:** Every KPI traces to Phase 10 computeOee/computeLeanMetrics/evaluateVsm or direct trusted-data aggregate. No client-side formula. UI is NOT a second source of truth.
+- **Tests:** 333/333 PASS (294 Phase 1-10 regression + 39 Phase 11). Typecheck clean. Lint 0 errors/199 warnings. Browser-verified.
+- **Status:** CONDITIONAL PASS. PHASE 11 STATUS: READY FOR OWNER REVIEW. STOPPED. Not starting Phase 12.
+- **Production blocker (carry-forward):** PostgreSQL migration (ADR-0002). Phase 11 adds zero schema changes, so migration impact is nil.
