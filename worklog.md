@@ -370,3 +370,37 @@ Unresolved issues / risks (priority for next phase):
 3. **[Medium]** Transition buttons UI (NCR/Deviation/CAPA/Change state transitions; API ready, UI deferred).
 4. **[Medium]** Investigations/Risks list pages (fetch + display; placeholder currently).
 5. **[Medium]** Playwright E2E for quality flows (backlog).
+
+---
+Task ID: p5-plan
+Agent: main-orchestrator (Z.ai Code)
+Task: Phase 4 approved/closed. Produce CIRCUM PHASE 5 DOMAIN & IMPLEMENTATION PLAN (Laboratory/Inspection/Testing/Specifications) via grill-with-docs + domain-modeling + codebase-design. Do NOT implement. STOP and wait for owner approval + domain decisions.
+
+Work Log:
+- Re-read PRD section 5 (Laboratory: Product/Lot -> Sample -> Test -> Method -> Specification -> Result -> Review -> Disposition; "Never invent specifications"), section 9 (AI must never override specifications), section 10 (Traceability: Inspection/Testing in genealogy), current CONTEXT.md/DOMAIN_GLOSSARY.md/Phase 1-4 schema (38 models).
+- Applied domain-modeling discipline per owner directive: "Never invent specifications. Never invent acceptance criteria. Do NOT invent terminology or entities. If a decision affects data model / state machine / traceability / regulatory workflow / authorization / site isolation / auditability, STOP and ask." Identified 8 critical domain ambiguities, proposed canonical resolutions grounded in PRD, each with rationale + alternative + recommendation, flagged for owner confirmation as D1-D8.
+- Key distinctions established: Inspection (shop-floor, simple pass/fail, no sample/method) vs Laboratory Test (formal lab, sample+method+result+review+disposition). Specification (standalone, controlled, immutable when EFFECTIVE) vs Test Method (procedure, references specs). Auto-evaluation of results against specs (system evaluates, never invents). AI must never approve specs, disposition results, or override specifications (PRD section 9).
+- Produced docs/PRD/PHASE-5-IMPLEMENTATION-PLAN.md (17 sections): objectives, PRD traceability, domain model (D1-D8 proposed + state machines + entity defs), proposed Prisma schema (6 new models: Specification, TestMethod, TestMethodSpec, Sample, TestResult, Inspection; PG-portable), API design (lab.* + inspection.* endpoints with /transition + /disposition), UI architecture (5 lab/inspection pages), security/audit (AI governance), multi-site isolation (global specs/methods; site-owned samples/results/inspections), testing (11 critical tests + regression), migration, skills mapping, files/modules, risks (7), dependencies, acceptance criteria (18-point DoD), test plan, open questions (D1-D8 + D9-D11).
+- Updated CONTEXT.md with "Phase 5 proposed terms" section (Specification, Test Method, Sample, Test Result, Inspection, Inspection vs Laboratory Test distinction) marked PROPOSED pending confirmation.
+- Committed: 69c2831 "Phase 5: Domain & Implementation Plan (planning only, no implementation)".
+- Did NOT implement Phase 5. Did NOT modify schema, seed, or create .scratch/phase-5 tickets.
+
+Stage Summary:
+- **Phase 5 Domain & Implementation Plan: PRODUCED** at docs/PRD/PHASE-5-IMPLEMENTATION-PLAN.md. Comprehensive domain model + implementation approach for Laboratory/Inspection/Testing/Specifications.
+- **8 critical domain decisions (D1-D8) require owner confirmation** before any implementation:
+  D1 Inspection (shop-floor) vs Laboratory Test (formal) — separate entities
+  D2 Specification ownership — standalone, polymorphic reference
+  D3 Test Method vs Specification — separate (method=how, spec=what's acceptable)
+  D4 Sample lifecycle (DRAWN->RECEIVED_IN_LAB->IN_TEST->CONSUMED/RETAINED)
+  D5 Test Result state machine + disposition (human-only; AI must never disposition)
+  D6 Inspection state machine (PENDING->PASSED/FAILED/CONDITIONAL)
+  D7 Specification immutability (DRAFT->APPROVED->EFFECTIVE->SUPERSEDED; AI must never approve)
+  D8 Site ownership (GLOBAL: Spec/Method; SITE-OWNED: Sample/Result/Inspection)
+- **Owner constraints honored:** "Never invent specifications. Never invent acceptance criteria. Do NOT invent terminology or entities." AI must never override specs, approve specs, or disposition results (PRD section 9).
+- **Status:** PHASE 5 PLAN STATUS: WAITING FOR OWNER APPROVAL (and D1-D8). STOPPED. Not implementing Phase 5.
+- Phases 0-4 = CLOSED/APPROVED. Carry-forward: PostgreSQL migration (production blocker); PG RLS; PG DB constraints; distributed rate limiting; Playwright E2E; deferred UI workflows; final security hardening; final production validation.
+
+Unresolved issues / risks (priority for next phase):
+1. **[Blocker]** Owner confirmation of D1-D8 domain decisions before Phase 5 implementation.
+2. **[Blocker]** Owner approval of the Phase 5 Implementation Plan.
+3. **[High, on approval]** to-spec -> to-tickets -> TDD execution of Phase 5 slices.
