@@ -285,3 +285,38 @@ Unresolved issues / risks (priority for next phase):
 2. **[High, before production]** PostgreSQL migration (ADR-0002).
 3. **[Medium]** Transition buttons UI (WO/batch/device-lot state transitions; API ready, UI deferred).
 4. **[Medium]** Playwright E2E for production flows (backlog).
+
+---
+Task ID: p4-plan
+Agent: main-orchestrator (Z.ai Code)
+Task: Phase 3 approved/closed. Produce CIRCUM PHASE 4 DOMAIN & IMPLEMENTATION PLAN (Quality foundation: NCR, Deviation, Investigation, CAPA, Change Control, Risk) via grill-with-docs + domain-modeling + codebase-design. Do NOT implement. STOP and wait for owner approval + domain decisions.
+
+Work Log:
+- Re-read PRD section 5 (Quality/QMS: NCR/nonconformity, deviations, RCA, CAPA, change control, risk management), section 9 (AI governance: AI must never close CAPA/approve deviations/changes), section 10 (Traceability), GLM section 9 (Controlled Workflows state machines), current CONTEXT.md/DOMAIN_GLOSSARY.md/Phase 1-3 schema (32 models).
+- Applied domain-modeling discipline per owner directive: "NCR != Deviation != CAPA; Investigation != CAPA; do NOT create duplicate/overlapping entities; identify all ambiguities; if one affects the data model or controlled workflow, STOP and ask." Identified 9 critical domain ambiguities, proposed canonical resolutions grounded in PRD/GLM, each with rationale + alternative + recommendation, flagged for owner confirmation as D1-D9.
+- Key distinctions established: NCR = unplanned nonconformity (reactive); Deviation = planned departure (proactive). Investigation = separate entity that finds root cause; CAPA = separate entity that acts on cause. One Investigation : N CAPAs. CAPA closure requires human effectiveness verification (PRD section 9 guard). Change Control implementation requires human approval (PRD section 9 guard). Polymorphic linkage (entityType + entityId) to production entities avoids sparse FKs. Document Control deferred to Phase 7 (string refs only in Phase 4).
+- Produced docs/PRD/PHASE-4-IMPLEMENTATION-PLAN.md (17 sections): objectives, PRD traceability, domain model (the core, with D1-D9 proposed + state machines + entity defs), proposed Prisma schema (6 new models: NCR, Deviation, Investigation, CAPA, ChangeControl, RiskAssessment; PG-portable), API design (quality.* endpoints with /transition + closure/approval guards), UI architecture (6 quality pages), security/audit (quality.* permissions, AI governance: no transition/approve perms for AI), multi-site isolation (all quality entities site-owned), testing (T-NCR-01, T-DEV-01, T-INV-01, T-CAPA-01, T-CHG-01, T-RISK-01, T-ISOL-04, T-LINK-01, T-AI-GUARD-01 + regression), migration (additive phase4_quality), skills mapping, files/modules, risks (8), dependencies, acceptance criteria (17-point DoD), test plan, open questions (D1-D9 + D10-D12).
+- Updated CONTEXT.md with "Phase 4 proposed terms" section (NCR, Deviation, Investigation, CAPA, Change Control, RiskAssessment, Polymorphic Quality Linkage) marked PROPOSED pending confirmation.
+- Committed: f949d94 "Phase 4: Domain & Implementation Plan (planning only, no implementation)".
+- Did NOT implement Phase 4. Did NOT modify schema, seed, or create .scratch/phase-4 tickets.
+
+Stage Summary:
+- **Phase 4 Domain & Implementation Plan: PRODUCED** at docs/PRD/PHASE-4-IMPLEMENTATION-PLAN.md. Comprehensive domain model + implementation approach for the Quality foundation.
+- **9 critical domain decisions (D1-D9) require owner confirmation** before any implementation:
+  D1 NCR (unplanned) vs Deviation (planned) — separate entities
+  D2 Investigation (finds cause) vs CAPA (acts) — separate entities; 1 Investigation : N CAPAs
+  D3 NCR state machine (DRAFT->CONTAINMENT->INVESTIGATION->DISPOSITION->CLOSED +CANCELLED)
+  D4 Deviation state machine (DRAFT->ASSESSMENT->INVESTIGATION->REVIEW->CLOSED +REJECTED; Investigation optional)
+  D5 CAPA state machine (OPEN->ACTION_PLAN->IMPLEMENTATION->EFFECTIVENESS->CLOSED; closure requires human effectiveness verification)
+  D6 Change Control state machine (REQUEST->IMPACT->RISK->APPROVAL->IMPLEMENTATION->VERIFICATION->EFFECTIVENESS->CLOSED +REJECTED; implementation requires human approval)
+  D7 RiskAssessment entity (severity x probability = RPN 1-25)
+  D8 Polymorphic linkage to production entities (entityType + entityId, service-validated)
+  D9 Document Control boundary (string refs only; full subsystem Phase 7)
+- **Owner constraints honored:** NCR != Deviation != CAPA; Investigation != CAPA; no duplicate/overlapping entities. AI never closes CAPA / approves deviations or changes (PRD section 9).
+- **Status:** PHASE 4 PLAN STATUS: WAITING FOR OWNER APPROVAL (and D1-D9). STOPPED. Not implementing Phase 4.
+- Phases 0-3 = CLOSED. Carry-forward: PostgreSQL migration (production blocker); PG RLS; PG DB constraints; controlled-record defense in depth; Playwright E2E (identity+manufacturing+production); distributed rate limiting; manufacturing/production transition UI.
+
+Unresolved issues / risks (priority for next phase):
+1. **[Blocker]** Owner confirmation of D1-D9 domain decisions before Phase 4 implementation.
+2. **[Blocker]** Owner approval of the Phase 4 Implementation Plan.
+3. **[High, on approval]** to-spec -> to-tickets -> TDD execution of Phase 4 slices.
