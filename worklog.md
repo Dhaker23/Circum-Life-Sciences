@@ -552,3 +552,13 @@ Stage Summary:
 - **Genealogy chain completed:** ...Batch/DeviceLot->Packaging->Sterilization->Batch Review->Final Disposition.
 - **Status:** CONDITIONAL PASS. PHASE 9 STATUS: READY FOR OWNER REVIEW. STOPPED.
 - **Production blocker:** PostgreSQL migration (ADR-0002).
+
+---
+Task ID: p10-plan
+Agent: main-orchestrator (Z.ai Code)
+Task: Phase 9 approved/closed. Produce CIRCUM PHASE 10 DOMAIN & IMPLEMENTATION PLAN (Lean/OEE/VSM/Downtime/Bottlenecks). Do NOT implement. STOP.
+
+Stage Summary:
+- **Phase 10 Plan: PRODUCED.** Hybrid: 4 new entities (DowntimeEvent, ValueStreamMap, VsmNode, VsmEdge) + computation services (OEE, Lean metrics, Pareto, bottleneck). Built on trusted Phase 2-9 data.
+- **7 decisions (D1-D7) require owner confirmation.**
+- **Status:** WAITING FOR OWNER APPROVAL. STOPPED.
