@@ -56,3 +56,4 @@ db/test.db
 db/*.db-wal
 db/*.db-shm
 dev.log
+tool-results/
