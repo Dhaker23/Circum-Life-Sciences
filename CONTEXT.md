@@ -116,3 +116,22 @@ Supplier → Material → Process → Inventory → Process → Customer, measur
 - **"release"**: overloaded (sterilization release vs batch disposition/release vs document effective-release). Proposal — qualify each use. Owner to confirm.
 - **"deviation" vs "ncr"**: a Deviation is a *planned* departure; an NCR is an *unplanned* nonconformance. Owner to confirm Circum's exact usage.
 - **CONTEXT.md vs DOMAIN_GLOSSARY.md overlap**: proposal — CONTEXT.md = concise ubiquitous language (this file); DOMAIN_GLOSSARY.md = detailed definitions + workflow state machines + regulatory notes. Owner to confirm the split.
+
+## Phase 2 proposed terms (domain-modeling, pending owner confirmation D1-D5)
+
+> Sharpened via `grill-with-docs` + `domain-modeling` for Phase 2 (Product/Revision/BOM/Material/MaterialLot/Supplier). These are PROPOSED resolutions grounded in the PRD; not yet confirmed. See `docs/PRD/PHASE-2-IMPLEMENTATION-PLAN.md` §3.
+
+**Device** (PROPOSED D1)
+Conceptual terminology for a *finished unit* of a Product. NOT a separate master-data entity. "Device Lot" (Phase 3) is a traceable batch of finished Product units. Regulatory classification lives on Product as `deviceClass`. _Avoid_: modeling Device as a separate table (doubles relationships).
+
+**Product Revision** (PROPOSED D2 — effectivity)
+A controlled version of a Product's design/spec. Has exactly one BOM (1:1). State machine: `DRAFT → IN_REVIEW → APPROVED → EFFECTIVE → SUPERSEDED → OBSOLETE`. When a Revision becomes EFFECTIVE, its BOM is **frozen** (immutable). Any BOM change requires a new Revision (via Change Control, Phase 7). A Revision is superseded by exactly one newer Revision (`supersededById`).
+
+**Material Lot** (PROPOSED D3 — lifecycle)
+A received batch of a Material from a Supplier, at a Site. State machine: `RECEIVED → QUARANTINE → APPROVED → IN_USE → EXHAUSTED`, plus `QUARANTINE → REJECTED` (terminal). `APPROVED → QUARANTINE` allowed (return to quarantine on issue). Tracks `quantityReceived` and `quantityAvailable` (available ≤ received, invariant).
+
+**Site ownership** (PROPOSED D4)
+Product, ProductRevision, BOM, BOMLine, Material, MaterialSupplier, Supplier are **global** (shared catalog/procurement data, no siteId). MaterialLot is **site-owned** (`siteId` required; multi-site isolation applies). Transfer between sites is a future Phase 13 logistics feature.
+
+**Supplier–Material** (PROPOSED D5)
+A Material can be sourced from many Suppliers (M:N via MaterialSupplier, with `isPreferred`). A MaterialLot comes from exactly one Supplier. Supplier `qualificationStatus`: APPROVED / CONDITIONAL / DISQUALIFIED (foundation for supplier quality, Phase 7).
