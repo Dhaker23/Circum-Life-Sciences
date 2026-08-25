@@ -404,3 +404,26 @@ Unresolved issues / risks (priority for next phase):
 1. **[Blocker]** Owner confirmation of D1-D8 domain decisions before Phase 5 implementation.
 2. **[Blocker]** Owner approval of the Phase 5 Implementation Plan.
 3. **[High, on approval]** to-spec -> to-tickets -> TDD execution of Phase 5 slices.
+
+---
+Task ID: s0-s9 (Phase 5 implementation)
+Agent: main-orchestrator (Z.ai Code)
+Task: Execute Phase 5 (Laboratory/Inspection/Testing/Specifications) per approved plan + owner-confirmed D1-D11. to-spec -> to-tickets -> domain-modeling -> codebase-design -> tdd -> implement -> regression -> validation. STOP. No Phase 6.
+
+Work Log:
+- Slice 0 (spec/tickets): .scratch/phase-5/{spec.md, tickets.md}.
+- Slice 1 (schema): 6 new models (Specification, TestMethod, TestMethodSpec, Sample with D11 quantity tracking, TestResult with D5 eval!=disposition, Inspection). NCR/Site/User/Employee reverse relations. Migration generated.
+- Slice 2 (permissions): 20 lab.* + inspection.* permissions + grants (AI never approve/disposition).
+- Slice 3 (domain): Spec/Method/Sample/Result/Inspection state machines, auto-evaluation logic (PASS/FAIL/NOT_EVALUABLE), D5 eval!=disposition guard, D7 spec immutability, D11 sample quantity invariants, all zod.
+- Slice 4 (service): laboratory module with can()+audit()+SiteScope+polymorphic validation. Human-only disposition (D5). Human-only spec approval (D7). Only EFFECTIVE specs referenced. Auto-evaluation on RESULT_ENTERED.
+- Slice 5 (API): 14 route files under /api/lab/** + /api/inspection/** with /transition, /disposition.
+- Slice 6 (UI): 5 pages + sidebar Laboratory nav + i18n FR/EN/AR.
+- Slice 7 (seed): 4 specs (EFFECTIVE), 2 methods, 2 samples, 2 test results (PASS + FAIL->NCR), 2 inspections (PASSED + FAILED->NCR).
+- Slice 8 (tests): 52 Phase 5 tests (11 critical + 14 extra + extras). ALL 181 tests PASS (17+34+33+45+52).
+- Slice 9 (gate): lint 0 errors (103 warnings), typecheck clean, 181/181 tests pass. Browser-verified: specifications (4 EFFECTIVE), test results (PASS + FAIL with eval!=disposition notice), inspections (PASSED + FAILED). Screenshot saved. Wrote docs/PRD/PHASE-5-VALIDATION-REPORT.md (CONDITIONAL PASS).
+
+Stage Summary:
+- **Phase 5: IMPLEMENTED + VALIDATED.** Laboratory/Inspection/Testing/Specifications. 6 entities, 14 API routes, 5 UI pages, 20 permissions. 181/181 tests PASS. Browser-verified. D5 CRITICAL: eval != disposition (auto-eval does NOT auto-disposition; human review + disposition required).
+- **Domain decisions D1-D11 implemented exactly.** Never invent specifications. AI must never approve specs, disposition results, or override specifications.
+- **Status:** CONDITIONAL PASS. PHASE 5 STATUS: READY FOR OWNER REVIEW. STOPPED. Not starting Phase 6.
+- **Production blocker:** PostgreSQL migration (ADR-0002) required before production.
