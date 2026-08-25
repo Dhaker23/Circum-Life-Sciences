@@ -202,3 +202,37 @@ Unresolved issues / risks (priority for next phase):
 2. **[High, before production]** PostgreSQL migration (ADR-0002).
 3. **[Medium]** BOM editor + revision transition UI (API ready, UI buttons deferred).
 4. **[Medium]** Playwright E2E for manufacturing flows (backlog).
+
+---
+Task ID: p3-plan
+Agent: main-orchestrator (Z.ai Code)
+Task: Phase 2 approved/closed. Produce CIRCUM PHASE 3 DOMAIN & IMPLEMENTATION PLAN (Production: Work Order, Routing, Operation, Batch, Device Lot, execution) via grill-with-docs + domain-modeling + codebase-design. Do NOT implement. STOP and wait for owner approval + domain decisions.
+
+Work Log:
+- Re-read PRD section 5 (Manufacturing: routing, work orders, batches/device lots, production execution, shifts/handover) + section 10 (Traceability genealogy) + current CONTEXT.md/DOMAIN_GLOSSARY.md/Phase 1+2 schema to ground Phase 3.
+- Confirmed Equipment does NOT exist yet (Phase 8 per PRD roadmap) but Operations need it -> identified as key ambiguity (D3).
+- Applied domain-modeling discipline: identified 8 critical domain ambiguities for the manufacturing execution domain. Per owner instruction "do NOT assume Batch = Device Lot; do NOT create a Device entity; do NOT invent manufacturing terminology; if an important ambiguity exists, STOP and ask", proposed canonical resolutions grounded in the PRD, each with rationale + alternative + recommendation, flagged for owner confirmation as D1-D8.
+- Produced docs/PRD/PHASE-3-IMPLEMENTATION-PLAN.md (17 sections): objectives, PRD traceability, domain model (the core, with D1-D8 proposed + state machines + entity defs), proposed Prisma schema (12 new models: Routing, Operation, WorkCenter, WorkOrder, ManufacturingBatch, DeviceLot, OperationExecution, MaterialConsumption, MaterialReservation, ProductionScrap, ProductionRework, Shift; PG-portable), API design (production.* endpoints with /transition), UI architecture, security/audit (production.* permissions), multi-site isolation (all production entities site-owned except Routing/Operation which are global), testing (T-WO-01, T-BATCH-01, T-LOT-02, T-CONS-01, T-RES-01, T-ROUTE-01, T-ISOL-03, T-EXEC-01, T-SCRAP-01 + regression), migration (additive phase3_production), skills mapping, files/modules, risks (8), dependencies, acceptance criteria (17-point DoD), test plan, open questions (D1-D8 + D9-D11).
+- Updated CONTEXT.md with "Phase 3 proposed terms" section (Work Center, Routing, Operation, Work Order, Manufacturing Batch, Device Lot, Operator, Material Consumption, Material Reservation, Scrap, Rework) marked PROPOSED pending confirmation.
+- Committed: 15dac60 "Phase 3: Domain & Implementation Plan (planning only, no implementation)".
+- Did NOT implement Phase 3. Did NOT modify schema, seed, or create .scratch/phase-3 tickets.
+
+Stage Summary:
+- **Phase 3 Domain & Implementation Plan: PRODUCED** at docs/PRD/PHASE-3-IMPLEMENTATION-PLAN.md. Comprehensive domain model + implementation approach for the manufacturing execution domain.
+- **8 critical domain decisions (D1-D8) require owner confirmation** before any implementation:
+  D1 Batch 1:N Device Lot (split for sterilization/packaging)
+  D2 Work Order 1:N Batch (shift/capacity splitting)
+  D3 WorkCenter now (site-owned location/station); Equipment in Phase 8 (avoids rework)
+  D4 Operator = Employee (not User; not every operator has a login); logger = User
+  D5 Material reservation + consumption (both; reservation=planning, consumption=traceability)
+  D6 Routing 1:1 with ProductRevision, frozen at EFFECTIVE (like BOM, ADR-0006 pattern)
+  D7 Production state machines: WO (PLANNED->RELEASED->IN_PRODUCTION->COMPLETED->CLOSED +CANCELLED/ON_HOLD), Batch (PLANNED->IN_PRODUCTION->COMPLETED->READY_FOR_REVIEW +ON_HOLD), DeviceLot (CREATED->IN_PROCESS->COMPLETED)
+  D8 Scrap + Rework records (quantities+reasons; full quality investigation in Phase 6)
+- **Owner constraints honored:** do NOT assume Batch = Device Lot; do NOT create a Device entity; do NOT invent manufacturing terminology.
+- **Status:** PHASE 3 PLAN STATUS: WAITING FOR OWNER APPROVAL (and D1-D8). STOPPED. Not implementing Phase 3.
+- Phase 2 = APPROVED/CLOSED. Carry-forward requirements recorded: PostgreSQL migration (production blocker); PG RLS for site isolation; PG database constraints (quantity invariants); Manufacturing Playwright E2E backlog; distributed rate limiting; controlled-record defense in depth.
+
+Unresolved issues / risks (priority for next phase):
+1. **[Blocker]** Owner confirmation of D1-D8 domain decisions before Phase 3 implementation.
+2. **[Blocker]** Owner approval of the Phase 3 Implementation Plan.
+3. **[High, on approval]** to-spec -> to-tickets -> TDD execution of Phase 3 slices.
