@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings, Package, Boxes, Truck, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -29,6 +29,15 @@ const NAV: { section: string; items: NavItem[] }[] = [
     items: [
       { href: "/organization/sites", labelKey: "nav.sites", icon: Building2, permission: "org.site.read" },
       { href: "/organization/departments", labelKey: "nav.departments", icon: FolderTree, permission: "org.department.read" },
+    ],
+  },
+  {
+    section: "manufacturing",
+    items: [
+      { href: "/manufacturing/products", labelKey: "nav.products", icon: Package, permission: "manufacturing.product.read" },
+      { href: "/manufacturing/materials", labelKey: "nav.materials", icon: Boxes, permission: "manufacturing.material.read" },
+      { href: "/manufacturing/material-lots", labelKey: "nav.materialLots", icon: Layers, permission: "manufacturing.materiallot.read" },
+      { href: "/manufacturing/suppliers", labelKey: "nav.suppliers", icon: Truck, permission: "manufacturing.supplier.read" },
     ],
   },
   {

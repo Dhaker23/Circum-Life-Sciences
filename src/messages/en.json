@@ -49,6 +49,11 @@
     "organization": "Organization",
     "sites": "Sites",
     "departments": "Departments",
+    "manufacturing": "Manufacturing",
+    "products": "Products",
+    "materials": "Materials",
+    "materialLots": "Material Lots",
+    "suppliers": "Suppliers",
     "audit": "Audit Trail",
     "events": "Audit Events",
     "settings": "Settings"
@@ -140,5 +145,48 @@
     "conflict": "Conflict",
     "validation": "Invalid request",
     "server": "An unexpected error occurred"
+  },
+  "manufacturing": {
+    "products": {
+      "title": "Products",
+      "subtitle": "Manufactured device and component catalog (global)",
+      "code": "Code",
+      "name": "Name",
+      "type": "Type",
+      "deviceClass": "Device class",
+      "revisions": "Revisions",
+      "noData": "No products found"
+    },
+    "materials": {
+      "title": "Materials",
+      "subtitle": "Input substances and components (global)",
+      "code": "Code",
+      "name": "Name",
+      "type": "Type",
+      "unit": "Default unit",
+      "lots": "Lots",
+      "noData": "No materials found"
+    },
+    "lots": {
+      "title": "Material Lots",
+      "subtitle": "Received batches (site-owned, multi-site isolated)",
+      "lotCode": "Lot code",
+      "material": "Material",
+      "supplier": "Supplier",
+      "site": "Site",
+      "quantity": "Available / Received",
+      "siteScoped": "Site-scoped: you see only material lots at sites you are authorized for.",
+      "noData": "No material lots found"
+    },
+    "suppliers": {
+      "title": "Suppliers",
+      "subtitle": "External material sources with qualification status",
+      "code": "Code",
+      "name": "Name",
+      "qualification": "Qualification",
+      "materials": "Materials",
+      "lots": "Lots",
+      "noData": "No suppliers found"
+    }
   }
 }

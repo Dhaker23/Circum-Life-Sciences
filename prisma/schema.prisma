@@ -149,9 +149,10 @@ model Site {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  departments Department[]
-  assignments Assignment[]
-  employees   Employee[]
+  departments  Department[]
+  assignments  Assignment[]
+  employees    Employee[]
+  materialLots MaterialLot[] // Phase 2: site-owned lots
 
   @@index([status])
 }
@@ -244,4 +245,176 @@ model AuditEvent {
   @@index([actorUserId])
   @@index([entityType, entityId])
   @@index([action])
+}
+
+// ============================================================================
+// Manufacturing master data (Phase 2, ADR-0006/0007)
+// D1: Device = conceptual (not a table). Product.deviceClass captures regulatory class.
+// D2: BOM 1:1 with ProductRevision, frozen when EFFECTIVE.
+// D3: MaterialLot lifecycle: RECEIVED->QUARANTINE->APPROVED->IN_USE->EXHAUSTED, +REJECTED.
+// D4: GLOBAL: Product/Revision/BOM/BOMLine/Material/MaterialSupplier/Supplier. SITE-OWNED: MaterialLot.
+// D5: Material M:N Supplier (MaterialSupplier). MaterialLot 1:1 Supplier. DISQUALIFIED enforced.
+// ============================================================================
+
+/// Master catalog entity for a manufactured item. GLOBAL (no siteId). Device = conceptual (D1).
+model Product {
+  id          String   @id @default(cuid())
+  code        String   @unique // e.g. "DEV-001"
+  name        String
+  description String?
+  productType String   @default("DEVICE") // DEVICE | COMPONENT | OTHER (zod-enforced)
+  deviceClass String? // if DEVICE: I | IIa | IIb | III (D6, controlled enum)
+  status      String   @default("DRAFT") // DRAFT | ACTIVE | INACTIVE
+  isDemo      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  revisions ProductRevision[]
+
+  @@index([status])
+  @@index([productType])
+}
+
+/// Controlled version of a Product's design/spec. GLOBAL. Has one BOM (1:1, D2).
+/// State machine: DRAFT -> IN_REVIEW -> APPROVED -> EFFECTIVE -> SUPERSEDED -> OBSOLETE.
+model ProductRevision {
+  id             String    @id @default(cuid())
+  productId      String
+  revisionCode   String // e.g. "REV-A"
+  description    String?
+  status         String    @default("DRAFT") // DRAFT | IN_REVIEW | APPROVED | EFFECTIVE | SUPERSEDED | OBSOLETE
+  effectiveFrom  DateTime?
+  supersededById String? // self-ref to the newer revision that superseded this one
+  isDemo         Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  product          Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  supersededBy     ProductRevision?  @relation("RevisionSupersession", fields: [supersededById], references: [id], onDelete: NoAction)
+  bom              BOM?
+  supersededByThis ProductRevision[] @relation("RevisionSupersession")
+
+  @@unique([productId, revisionCode])
+  @@index([productId])
+  @@index([status])
+}
+
+/// Controlled material list for one ProductRevision. 1:1 (D2). Frozen when revision EFFECTIVE.
+model BOM {
+  id                String   @id @default(cuid())
+  productRevisionId String   @unique // 1:1 with ProductRevision (D2)
+  status            String   @default("DRAFT") // mirrors revision status
+  version           Int      @default(1) // always 1 per revision under D2
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  productRevision ProductRevision @relation(fields: [productRevisionId], references: [id], onDelete: Cascade)
+  lines           BOMLine[]
+
+  @@index([status])
+}
+
+/// One line of a BOM. quantity > 0 (service-enforced). Unique per (bomId, materialId).
+model BOMLine {
+  id                   String  @id @default(cuid())
+  bomId                String
+  materialId           String
+  quantity             Decimal // >0, zod + service check
+  unit                 String
+  sequence             Int     @default(0)
+  notes                String?
+  substituteMaterialId String?
+
+  bom                BOM       @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  material           Material  @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  substituteMaterial Material? @relation("BOMLineSubstitute", fields: [substituteMaterialId], references: [id], onDelete: SetNull)
+
+  @@unique([bomId, materialId])
+  @@index([bomId])
+  @@index([materialId])
+}
+
+/// Physical input substance/component. GLOBAL. M:N Supplier via MaterialSupplier (D5).
+model Material {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  name         String
+  description  String?
+  materialType String   @default("RAW") // RAW | COMPONENT | PACKAGING | CONSUMABLE
+  defaultUnit  String
+  status       String   @default("ACTIVE") // ACTIVE | INACTIVE
+  isDemo       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  lots        MaterialLot[]
+  bomLines    BOMLine[]
+  substitutes BOMLine[]          @relation("BOMLineSubstitute")
+  suppliers   MaterialSupplier[]
+
+  @@index([status])
+  @@index([materialType])
+}
+
+/// Join: Material M:N Supplier (D5). isPreferred flag + supplierPartCode.
+model MaterialSupplier {
+  materialId       String
+  supplierId       String
+  isPreferred      Boolean  @default(false)
+  supplierPartCode String?
+  createdAt        DateTime @default(now())
+
+  material Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@id([materialId, supplierId])
+  @@index([supplierId])
+}
+
+/// Received batch of a Material from a Supplier, at a Site. SITE-OWNED (D4).
+/// Lifecycle (D3): RECEIVED -> QUARANTINE -> APPROVED -> IN_USE -> EXHAUSTED; QUARANTINE -> REJECTED.
+model MaterialLot {
+  id                    String    @id @default(cuid())
+  lotCode               String // unique per site
+  materialId            String
+  supplierId            String
+  siteId                String // SITE-OWNED (D4)
+  quantityReceived      Decimal
+  quantityAvailable     Decimal
+  unit                  String
+  status                String    @default("RECEIVED") // RECEIVED | QUARANTINE | APPROVED | IN_USE | EXHAUSTED | REJECTED
+  receivedAt            DateTime  @default(now())
+  expiryDate            DateTime?
+  certificateOfAnalysis String? // string ref only (D7 deferred; full doc control in Phase 7)
+  isDemo                Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  material Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  site     Site     @relation(fields: [siteId], references: [id], onDelete: Restrict)
+
+  @@unique([siteId, lotCode])
+  @@index([materialId])
+  @@index([supplierId])
+  @@index([siteId])
+  @@index([status])
+}
+
+/// External source of Materials. GLOBAL. qualificationStatus enforced on MaterialLot create (D5).
+model Supplier {
+  id                  String   @id @default(cuid())
+  code                String   @unique
+  name                String
+  qualificationStatus String   @default("CONDITIONAL") // APPROVED | CONDITIONAL | DISQUALIFIED
+  contact             String?
+  status              String   @default("ACTIVE") // ACTIVE | INACTIVE
+  isDemo              Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  lots      MaterialLot[]
+  materials MaterialSupplier[]
+
+  @@index([qualificationStatus])
 }

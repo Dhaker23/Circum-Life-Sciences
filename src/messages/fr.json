@@ -49,6 +49,11 @@
     "organization": "Organisation",
     "sites": "Sites",
     "departments": "Departements",
+    "manufacturing": "Fabrication",
+    "products": "Produits",
+    "materials": "Materiaux",
+    "materialLots": "Lots de materiaux",
+    "suppliers": "Fournisseurs",
     "audit": "Piste d'audit",
     "events": "Evenements d'audit",
     "settings": "Parametres"
@@ -140,5 +145,48 @@
     "conflict": "Conflit",
     "validation": "Requete invalide",
     "server": "Une erreur inattendue s'est produite"
+  },
+  "manufacturing": {
+    "products": {
+      "title": "Produits",
+      "subtitle": "Catalogue des dispositifs et composants (global)",
+      "code": "Code",
+      "name": "Nom",
+      "type": "Type",
+      "deviceClass": "Classe du dispositif",
+      "revisions": "Revisions",
+      "noData": "Aucun produit trouve"
+    },
+    "materials": {
+      "title": "Materiaux",
+      "subtitle": "Substances et composants d'entree (global)",
+      "code": "Code",
+      "name": "Nom",
+      "type": "Type",
+      "unit": "Unite par defaut",
+      "lots": "Lots",
+      "noData": "Aucun materiau trouve"
+    },
+    "lots": {
+      "title": "Lots de materiaux",
+      "subtitle": "Lots recus (site, isoles multi-site)",
+      "lotCode": "Code du lot",
+      "material": "Materiau",
+      "supplier": "Fournisseur",
+      "site": "Site",
+      "quantity": "Disponible / Recu",
+      "siteScoped": "Portee site: vous voyez uniquement les lots des sites qui vous sont autorises.",
+      "noData": "Aucun lot de materiau trouve"
+    },
+    "suppliers": {
+      "title": "Fournisseurs",
+      "subtitle": "Sources de materiaux externes avec statut de qualification",
+      "code": "Code",
+      "name": "Nom",
+      "qualification": "Qualification",
+      "materials": "Materiaux",
+      "lots": "Lots",
+      "noData": "Aucun fournisseur trouve"
+    }
   }
 }

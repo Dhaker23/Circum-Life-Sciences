@@ -42,6 +42,33 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { key: "session.sign-out", module: "session", description: "Sign out" },
   // employee
   { key: "org.employee.read", module: "org", description: "Read employees" },
+  // manufacturing — products (Phase 2)
+  { key: "manufacturing.product.read", module: "manufacturing", description: "Read products" },
+  { key: "manufacturing.product.create", module: "manufacturing", description: "Create products" },
+  { key: "manufacturing.product.update", module: "manufacturing", description: "Update products" },
+  // manufacturing — revisions
+  { key: "manufacturing.revision.read", module: "manufacturing", description: "Read product revisions" },
+  { key: "manufacturing.revision.create", module: "manufacturing", description: "Create product revisions" },
+  { key: "manufacturing.revision.update", module: "manufacturing", description: "Update draft revisions" },
+  { key: "manufacturing.revision.transition", module: "manufacturing", description: "Transition revision state (approve/effective/etc.)" },
+  // manufacturing — BOM
+  { key: "manufacturing.bom.read", module: "manufacturing", description: "Read BOMs" },
+  { key: "manufacturing.bom.update", module: "manufacturing", description: "Edit BOM lines (draft/in_review revisions only)" },
+  // manufacturing — materials
+  { key: "manufacturing.material.read", module: "manufacturing", description: "Read materials" },
+  { key: "manufacturing.material.create", module: "manufacturing", description: "Create materials" },
+  { key: "manufacturing.material.update", module: "manufacturing", description: "Update materials" },
+  // manufacturing — material lots (site-scoped)
+  { key: "manufacturing.materiallot.read", module: "manufacturing", description: "Read material lots (site-scoped)" },
+  { key: "manufacturing.materiallot.create", module: "manufacturing", description: "Receive material lots (site-scoped)" },
+  { key: "manufacturing.materiallot.update", module: "manufacturing", description: "Update material lots (site-scoped)" },
+  { key: "manufacturing.materiallot.transition", module: "manufacturing", description: "Transition material lot state (site-scoped)" },
+  // manufacturing — suppliers
+  { key: "manufacturing.supplier.read", module: "manufacturing", description: "Read suppliers" },
+  { key: "manufacturing.supplier.create", module: "manufacturing", description: "Create suppliers" },
+  { key: "manufacturing.supplier.update", module: "manufacturing", description: "Update suppliers" },
+  // manufacturing — material-supplier links
+  { key: "manufacturing.materialsupplier.update", module: "manufacturing", description: "Link/unlink material suppliers" },
 ];
 
 // Role system keys (stable enum-like strings). The 19 PRD roles (PRD §3).
@@ -81,6 +108,13 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "org.department.read", "org.department.create", "org.department.update", "org.department.deactivate",
     "org.employee.read",
     "audit.read", "audit.export",
+    "manufacturing.product.read", "manufacturing.product.create", "manufacturing.product.update",
+    "manufacturing.revision.read", "manufacturing.revision.create", "manufacturing.revision.update", "manufacturing.revision.transition",
+    "manufacturing.bom.read", "manufacturing.bom.update",
+    "manufacturing.material.read", "manufacturing.material.create", "manufacturing.material.update",
+    "manufacturing.materiallot.read", "manufacturing.materiallot.create", "manufacturing.materiallot.update", "manufacturing.materiallot.transition",
+    "manufacturing.supplier.read", "manufacturing.supplier.create", "manufacturing.supplier.update",
+    "manufacturing.materialsupplier.update",
     "session.sign-in", "session.sign-out",
   ],
   site_admin: [
@@ -90,44 +124,78 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "org.site.read", "org.department.read", "org.department.create", "org.department.update", "org.department.deactivate",
     "org.employee.read",
     "audit.read",
+    "manufacturing.product.read", "manufacturing.product.create", "manufacturing.product.update",
+    "manufacturing.revision.read", "manufacturing.revision.create", "manufacturing.revision.update", "manufacturing.revision.transition",
+    "manufacturing.bom.read", "manufacturing.bom.update",
+    "manufacturing.material.read", "manufacturing.material.create", "manufacturing.material.update",
+    "manufacturing.materiallot.read", "manufacturing.materiallot.create", "manufacturing.materiallot.update", "manufacturing.materiallot.transition",
+    "manufacturing.supplier.read", "manufacturing.supplier.create", "manufacturing.supplier.update",
+    "manufacturing.materialsupplier.update",
     "session.sign-in", "session.sign-out",
   ],
   plant_manager: [
     "identity.user.read", "identity.role.read", "identity.assignment.read",
     "org.site.read", "org.department.read", "org.employee.read",
     "audit.read",
+    "manufacturing.product.read", "manufacturing.revision.read", "manufacturing.bom.read",
+    "manufacturing.material.read", "manufacturing.materiallot.read",
+    "manufacturing.supplier.read",
     "session.sign-in", "session.sign-out",
   ],
   production_manager: [
     "identity.user.read", "org.site.read", "org.department.read", "org.employee.read",
+    "manufacturing.product.read", "manufacturing.revision.read", "manufacturing.bom.read",
+    "manufacturing.material.read", "manufacturing.materiallot.read", "manufacturing.materiallot.create",
+    "manufacturing.supplier.read",
     "session.sign-in", "session.sign-out",
   ],
   production_planner: [
     "org.site.read", "org.department.read", "org.employee.read",
+    "manufacturing.product.read", "manufacturing.revision.read", "manufacturing.bom.read",
+    "manufacturing.material.read", "manufacturing.materiallot.read",
+    "manufacturing.supplier.read",
     "session.sign-in", "session.sign-out",
   ],
   shift_supervisor: [
     "identity.user.read", "org.department.read", "org.employee.read",
+    "manufacturing.product.read", "manufacturing.revision.read", "manufacturing.bom.read",
+    "manufacturing.material.read", "manufacturing.materiallot.read",
     "session.sign-in", "session.sign-out",
   ],
   operator: [
+    "manufacturing.product.read", "manufacturing.revision.read", "manufacturing.bom.read",
+    "manufacturing.material.read", "manufacturing.materiallot.read",
     "session.sign-in", "session.sign-out",
   ],
   quality_manager: [
     "identity.user.read", "identity.role.read", "identity.assignment.read",
     "org.site.read", "org.department.read", "org.employee.read",
     "audit.read", "audit.export",
+    "manufacturing.product.read", "manufacturing.revision.read", "manufacturing.revision.transition",
+    "manufacturing.bom.read",
+    "manufacturing.material.read", "manufacturing.material.update",
+    "manufacturing.materiallot.read", "manufacturing.materiallot.transition",
+    "manufacturing.supplier.read", "manufacturing.supplier.update",
+    "manufacturing.materialsupplier.update",
     "session.sign-in", "session.sign-out",
   ],
   qa_reviewer: [
     "audit.read", "identity.user.read", "org.site.read", "org.department.read", "org.employee.read",
+    "manufacturing.product.read", "manufacturing.revision.read", "manufacturing.bom.read",
+    "manufacturing.material.read", "manufacturing.materiallot.read",
+    "manufacturing.supplier.read",
     "session.sign-in", "session.sign-out",
   ],
   quality_engineer: [
     "audit.read", "identity.user.read", "org.site.read", "org.department.read", "org.employee.read",
+    "manufacturing.product.read", "manufacturing.revision.read", "manufacturing.revision.transition",
+    "manufacturing.bom.read",
+    "manufacturing.material.read", "manufacturing.materiallot.read", "manufacturing.materiallot.transition",
+    "manufacturing.supplier.read",
     "session.sign-in", "session.sign-out",
   ],
   lab_technician: [
+    "manufacturing.material.read", "manufacturing.materiallot.read",
     "session.sign-in", "session.sign-out",
   ],
   validation_engineer: [
@@ -136,6 +204,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
   ],
   maintenance_manager: [
     "identity.user.read", "org.site.read", "org.department.read", "org.employee.read",
+    "manufacturing.product.read", "manufacturing.material.read", "manufacturing.materiallot.read",
     "session.sign-in", "session.sign-out",
   ],
   maintenance_technician: [
@@ -146,6 +215,9 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
   ],
   warehouse_logistics_manager: [
     "identity.user.read", "org.site.read", "org.department.read", "org.employee.read",
+    "manufacturing.material.read", "manufacturing.material.create", "manufacturing.material.update",
+    "manufacturing.materiallot.read", "manufacturing.materiallot.create", "manufacturing.materiallot.update", "manufacturing.materiallot.transition",
+    "manufacturing.supplier.read",
     "session.sign-in", "session.sign-out",
   ],
   lean_manager: [
@@ -156,6 +228,9 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "audit.read", "audit.export",
     "identity.user.read", "identity.role.read", "identity.assignment.read",
     "org.site.read", "org.department.read", "org.employee.read",
+    "manufacturing.product.read", "manufacturing.revision.read", "manufacturing.bom.read",
+    "manufacturing.material.read", "manufacturing.materiallot.read",
+    "manufacturing.supplier.read",
     "session.sign-in", "session.sign-out",
   ],
   executive_viewer: [
