@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings, Package, Boxes, Truck, Layers, ClipboardList, Factory, Clock, AlertTriangle, GitBranch, FileSearch, Wrench, Scale } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings, Package, Boxes, Truck, Layers, ClipboardList, Factory, Clock, AlertTriangle, GitBranch, FileSearch, Wrench, Scale, FlaskConical, Microscope, TestTube, Beaker, CheckSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -58,6 +58,16 @@ const NAV: { section: string; items: NavItem[] }[] = [
       { href: "/quality/capas", labelKey: "nav.capas", icon: Wrench, permission: "quality.capa.read" },
       { href: "/quality/changes", labelKey: "nav.changes", icon: ClipboardList, permission: "quality.change.read" },
       { href: "/quality/risks", labelKey: "nav.risks", icon: Scale, permission: "quality.risk.read" },
+    ],
+  },
+  {
+    section: "laboratory",
+    items: [
+      { href: "/lab/specifications", labelKey: "nav.specifications", icon: FlaskConical, permission: "lab.specification.read" },
+      { href: "/lab/test-methods", labelKey: "nav.testMethods", icon: Microscope, permission: "lab.testmethod.read" },
+      { href: "/lab/samples", labelKey: "nav.samples", icon: TestTube, permission: "lab.sample.read" },
+      { href: "/lab/test-results", labelKey: "nav.testResults", icon: Beaker, permission: "lab.testresult.read" },
+      { href: "/inspection/inspections", labelKey: "nav.inspections", icon: CheckSquare, permission: "inspection.read" },
     ],
   },
   {

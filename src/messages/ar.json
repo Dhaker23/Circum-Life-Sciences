@@ -68,7 +68,12 @@
     "risks": "تقييمات المخاطر",
     "audit": "سجل التدقيق",
     "events": "أحداث التدقيق",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "specifications": "المواصفات",
+    "testMethods": "طرق الاختبار",
+    "samples": "العينات",
+    "testResults": "نتائج الاختبار",
+    "inspections": "الفحوصات"
   },
   "users": {
     "title": "المستخدمون",
@@ -284,5 +289,50 @@
       "subtitle": "تقييمات المخاطر (الخطورة × الاحتمالية = RPN، 1-25)",
       "noData": "لم يتم العثور على تقييمات مخاطر"
     }
+  },
+  "lab": {
+    "specs": {
+      "title": "المواصفات",
+      "subtitle": "معايير مراقبة",
+      "code": "Code",
+      "parameter": "المعامل",
+      "criterion": "المعيار",
+      "noData": "لا توجد مواصفات"
+    },
+    "methods": {
+      "title": "طرق الاختبار",
+      "subtitle": "إجراءات مراقبة",
+      "code": "Code",
+      "name": "الاسم",
+      "noData": "لا توجد طرق"
+    },
+    "samples": {
+      "title": "العينات",
+      "subtitle": "عينات (الموقع)",
+      "code": "Code",
+      "source": "المصدر",
+      "site": "الموقع",
+      "noData": "لا توجد عينات"
+    },
+    "results": {
+      "title": "نتائج الاختبار",
+      "subtitle": "نتائج (الموقع، التقييم != التصرف)",
+      "code": "Code",
+      "spec": "المواصفة",
+      "measured": "القياس",
+      "evaluated": "المُقيّم",
+      "disposition": "التصرف",
+      "evalGuard": "التقييم ليس التصرف.",
+      "noData": "لا توجد نتائج"
+    }
+  },
+  "inspection": {
+    "title": "الفحوصات",
+    "subtitle": "فحوصات (الموقع)",
+    "code": "Code",
+    "type": "النوع",
+    "source": "المصدر",
+    "evaluated": "المُقيّم",
+    "noData": "لا توجد فحوصات"
   }
 }

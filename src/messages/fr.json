@@ -68,7 +68,12 @@
     "risks": "Evaluations des risques",
     "audit": "Piste d'audit",
     "events": "Evenements d'audit",
-    "settings": "Parametres"
+    "settings": "Parametres",
+    "specifications": "Specifications",
+    "testMethods": "Methodes de test",
+    "samples": "Echantillons",
+    "testResults": "Resultats de test",
+    "inspections": "Inspections"
   },
   "users": {
     "title": "Utilisateurs",
@@ -284,5 +289,50 @@
       "subtitle": "Evaluations des dangers (severite x probabilite = RPN, 1-25)",
       "noData": "Aucune evaluation de risque trouvee"
     }
+  },
+  "lab": {
+    "specs": {
+      "title": "Specifications",
+      "subtitle": "Criteres controles (global)",
+      "code": "Code",
+      "parameter": "Parametre",
+      "criterion": "Critere",
+      "noData": "Aucune spec"
+    },
+    "methods": {
+      "title": "Methodes",
+      "subtitle": "Procedures controles",
+      "code": "Code",
+      "name": "Nom",
+      "noData": "Aucune methode"
+    },
+    "samples": {
+      "title": "Echantillons",
+      "subtitle": "Echantillons (site)",
+      "code": "Code",
+      "source": "Source",
+      "site": "Site",
+      "noData": "Aucun echantillon"
+    },
+    "results": {
+      "title": "Resultats",
+      "subtitle": "Resultats (site, eval != disposition)",
+      "code": "Code",
+      "spec": "Spec",
+      "measured": "Mesure",
+      "evaluated": "Evalue",
+      "disposition": "Disposition",
+      "evalGuard": "L evaluation n est pas la disposition.",
+      "noData": "Aucun resultat"
+    }
+  },
+  "inspection": {
+    "title": "Inspections",
+    "subtitle": "Controles (site)",
+    "code": "Code",
+    "type": "Type",
+    "source": "Source",
+    "evaluated": "Evalue",
+    "noData": "Aucune inspection"
   }
 }

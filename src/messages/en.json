@@ -68,7 +68,12 @@
     "risks": "Risk Assessments",
     "audit": "Audit Trail",
     "events": "Audit Events",
-    "settings": "Settings"
+    "settings": "Settings",
+    "specifications": "Specifications",
+    "testMethods": "Test Methods",
+    "samples": "Samples",
+    "testResults": "Test Results",
+    "inspections": "Inspections"
   },
   "users": {
     "title": "Users",
@@ -284,5 +289,50 @@
       "subtitle": "Hazard assessments (severity x probability = RPN, 1-25)",
       "noData": "No risk assessments found"
     }
+  },
+  "lab": {
+    "specs": {
+      "title": "Specifications",
+      "subtitle": "Controlled acceptance criteria (global, never invented)",
+      "code": "Code",
+      "parameter": "Parameter",
+      "criterion": "Criterion",
+      "noData": "No specs"
+    },
+    "methods": {
+      "title": "Test Methods",
+      "subtitle": "Controlled test procedures",
+      "code": "Code",
+      "name": "Name",
+      "noData": "No methods"
+    },
+    "samples": {
+      "title": "Samples",
+      "subtitle": "Physical samples (site-owned)",
+      "code": "Code",
+      "source": "Source",
+      "site": "Site",
+      "noData": "No samples"
+    },
+    "results": {
+      "title": "Test Results",
+      "subtitle": "Lab results (site-owned, eval != disposition)",
+      "code": "Code",
+      "spec": "Spec",
+      "measured": "Measured",
+      "evaluated": "Evaluated",
+      "disposition": "Disposition",
+      "evalGuard": "Evaluation is NOT disposition. Human review + disposition required. AI must never disposition.",
+      "noData": "No results"
+    }
+  },
+  "inspection": {
+    "title": "Inspections",
+    "subtitle": "Shop-floor quality checks (site-owned)",
+    "code": "Code",
+    "type": "Type",
+    "source": "Source",
+    "evaluated": "Evaluated",
+    "noData": "No inspections"
   }
 }

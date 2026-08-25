@@ -133,6 +133,28 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { key: "quality.risk.read", module: "quality", description: "Read risk assessments (site-scoped)" },
   { key: "quality.risk.create", module: "quality", description: "Create risk assessments (site-scoped)" },
   { key: "quality.risk.update", module: "quality", description: "Update risk assessments (site-scoped)" },
+  // lab — Specifications (global, controlled, D7)
+  { key: "lab.specification.read", module: "lab", description: "Read specifications" },
+  { key: "lab.specification.create", module: "lab", description: "Create specifications" },
+  { key: "lab.specification.transition", module: "lab", description: "Transition specification state (approve/effective)" },
+  { key: "lab.specification.approve", module: "lab", description: "Approve a specification (human-only; AI MUST NEVER)" },
+  // lab — Test Methods (global, controlled)
+  { key: "lab.testmethod.read", module: "lab", description: "Read test methods" },
+  { key: "lab.testmethod.create", module: "lab", description: "Create test methods" },
+  { key: "lab.testmethod.transition", module: "lab", description: "Transition test method state" },
+  // lab — Samples (site-scoped)
+  { key: "lab.sample.read", module: "lab", description: "Read samples (site-scoped)" },
+  { key: "lab.sample.create", module: "lab", description: "Draw samples (site-scoped)" },
+  { key: "lab.sample.transition", module: "lab", description: "Transition sample state (receive/test/consume/retain)" },
+  // lab — Test Results (site-scoped, D5: eval != disposition; disposition is human-only)
+  { key: "lab.testresult.read", module: "lab", description: "Read test results (site-scoped)" },
+  { key: "lab.testresult.create", module: "lab", description: "Create test results (site-scoped)" },
+  { key: "lab.testresult.transition", module: "lab", description: "Transition test result state (progress/enter/review)" },
+  { key: "lab.testresult.disposition", module: "lab", description: "Disposition a test result (human-only; AI MUST NEVER)" },
+  // inspection (site-scoped, D6: simple)
+  { key: "inspection.read", module: "inspection", description: "Read inspections (site-scoped)" },
+  { key: "inspection.create", module: "inspection", description: "Record inspections (site-scoped)" },
+  { key: "inspection.transition", module: "inspection", description: "Transition inspection state (pass/fail/conditional)" },
 ];
 
 // Role system keys (stable enum-like strings). The 19 PRD roles (PRD §3).
@@ -196,6 +218,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.capa.read", "quality.capa.create", "quality.capa.transition", "quality.capa.close",
     "quality.change.read", "quality.change.create", "quality.change.transition", "quality.change.approve",
     "quality.risk.read", "quality.risk.create", "quality.risk.update",
+    "lab.specification.read", "lab.specification.create", "lab.specification.transition", "lab.specification.approve", "lab.testmethod.read", "lab.testmethod.create", "lab.testmethod.transition", "lab.sample.read", "lab.sample.create", "lab.sample.transition", "lab.testresult.read", "lab.testresult.create", "lab.testresult.transition", "lab.testresult.disposition", "inspection.read", "inspection.create", "inspection.transition",
     "session.sign-in", "session.sign-out",
   ],
   site_admin: [
@@ -240,6 +263,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "production.scrap.read", "production.rework.read", "production.shift.read",
     "quality.ncr.read", "quality.deviation.read", "quality.investigation.read",
     "quality.capa.read", "quality.change.read", "quality.risk.read",
+    "lab.specification.read", "lab.testmethod.read", "lab.sample.read", "lab.testresult.read", "inspection.read",
     "session.sign-in", "session.sign-out",
   ],
   production_manager: [
@@ -321,6 +345,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.capa.read", "quality.capa.create", "quality.capa.transition", "quality.capa.close",
     "quality.change.read", "quality.change.create", "quality.change.transition",
     "quality.risk.read", "quality.risk.create", "quality.risk.update",
+    "lab.specification.read", "lab.specification.create", "lab.specification.transition", "lab.specification.approve", "lab.testmethod.read", "lab.testmethod.create", "lab.testmethod.transition", "lab.sample.read", "lab.sample.create", "lab.sample.transition", "lab.testresult.read", "lab.testresult.create", "lab.testresult.transition", "lab.testresult.disposition", "inspection.read", "inspection.create", "inspection.transition",
     "session.sign-in", "session.sign-out",
   ],
   qa_reviewer: [
@@ -338,6 +363,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.capa.read", "quality.capa.transition", "quality.capa.close",
     "quality.change.read", "quality.change.transition", "quality.change.approve",
     "quality.risk.read", "quality.risk.update",
+    "lab.specification.read", "lab.specification.create", "lab.specification.transition", "lab.specification.approve", "lab.testmethod.read", "lab.testmethod.create", "lab.testmethod.transition", "lab.sample.read", "lab.testresult.read", "lab.testresult.transition", "lab.testresult.disposition", "inspection.read", "inspection.transition",
     "session.sign-in", "session.sign-out",
   ],
   quality_engineer: [
@@ -356,10 +382,12 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "quality.capa.read", "quality.capa.create", "quality.capa.transition", "quality.capa.close",
     "quality.change.read", "quality.change.create", "quality.change.transition",
     "quality.risk.read", "quality.risk.create", "quality.risk.update",
+    "lab.specification.read", "lab.specification.create", "lab.specification.transition", "lab.specification.approve", "lab.testmethod.read", "lab.testmethod.create", "lab.testmethod.transition", "lab.sample.read", "lab.sample.create", "lab.sample.transition", "lab.testresult.read", "lab.testresult.create", "lab.testresult.transition", "lab.testresult.disposition", "inspection.read", "inspection.create", "inspection.transition",
     "session.sign-in", "session.sign-out",
   ],
   lab_technician: [
     "manufacturing.material.read", "manufacturing.materiallot.read",
+    "lab.specification.read", "lab.testmethod.read", "lab.sample.read", "lab.sample.create", "lab.sample.transition", "lab.testresult.read", "lab.testresult.create", "lab.testresult.transition", "inspection.read", "inspection.create", "inspection.transition",
     "session.sign-in", "session.sign-out",
   ],
   validation_engineer: [
@@ -401,6 +429,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "production.scrap.read", "production.rework.read", "production.shift.read",
     "quality.ncr.read", "quality.deviation.read", "quality.investigation.read",
     "quality.capa.read", "quality.change.read", "quality.risk.read",
+    "lab.specification.read", "lab.testmethod.read", "lab.sample.read", "lab.testresult.read", "inspection.read",
     "session.sign-in", "session.sign-out",
   ],
   executive_viewer: [

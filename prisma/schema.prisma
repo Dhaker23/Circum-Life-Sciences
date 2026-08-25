@@ -48,6 +48,12 @@ model User {
   capasClosed                CAPA[]                @relation("CapaCloser") // Phase 4
   changesApproved            ChangeControl[]       @relation("ChangeApprover") // Phase 4
   risksAssessed              RiskAssessment[]      @relation("RiskAssessor") // Phase 4
+  specsApproved              Specification[]       @relation("SpecApprover") // Phase 5
+  samplesDrawn               Sample[]              @relation("SampleDrawnBy") // Phase 5
+  testsPerformed             TestResult[]          @relation("TestPerformedBy") // Phase 5
+  testsReviewed              TestResult[]          @relation("TestReviewedBy") // Phase 5
+  testsDispositioned         TestResult[]          @relation("TestDispositionedBy") // Phase 5
+  inspectionsLogged          Inspection[]          @relation("InspectionLogger") // Phase 5
 
   @@index([status])
 }
@@ -71,9 +77,10 @@ model Employee {
   userId String? @unique // optional link to a User account
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  site       Site                 @relation(fields: [siteId], references: [id], onDelete: Restrict)
-  department Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  executions OperationExecution[] @relation("ExecutionOperator") // Phase 3 (D4: operator)
+  site        Site                 @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  department  Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  executions  OperationExecution[] @relation("ExecutionOperator") // Phase 3 (D4: operator)
+  inspections Inspection[]         @relation("InspectionInspector") // Phase 5
 
   @@index([siteId])
   @@index([departmentId])
@@ -178,6 +185,9 @@ model Site {
   capas           CAPA[] // Phase 4
   changeControls  ChangeControl[] // Phase 4
   riskAssessments RiskAssessment[] // Phase 4
+  samples         Sample[] // Phase 5
+  testResults     TestResult[] // Phase 5
+  inspections     Inspection[] // Phase 5
 
   @@index([status])
 }
@@ -754,6 +764,8 @@ model NCR {
   sourceInvestigations Investigation[]    @relation("InvestigationSourceNcr") // reverse: Investigations that reference this NCR as their source
   scraps               ProductionScrap[]  @relation("ScrapNcr") // Phase 4 (D10)
   reworks              ProductionRework[] @relation("ReworkNcr") // Phase 4 (D10)
+  testResults          TestResult[]       @relation("TestResultNcr") // Phase 5
+  inspections          Inspection[]       @relation("InspectionNcr") // Phase 5
 
   @@unique([siteId, code])
   @@index([siteId])
@@ -919,4 +931,177 @@ model RiskAssessment {
   @@index([siteId])
   @@index([status])
   @@index([subjectType, subjectId])
+}
+
+// ============================================================================
+// Laboratory / Inspection / Testing (Phase 5)
+// D1: Inspection (shop-floor) != Lab Test (formal). D2: Specification standalone.
+// D3: TestMethod != Specification. D5: EVALUATION != DISPOSITION (human disposition required).
+// D7: Spec immutable when EFFECTIVE. D8: GLOBAL: Spec/Method. SITE-OWNED: Sample/Result/Inspection.
+// D11: Sample quantity tracking (collected/consumed/remaining).
+// PRD section 5: Never invent specifications. AI must never override/approve specs or disposition results.
+// ============================================================================
+
+model Specification {
+  id               String    @id @default(cuid())
+  code             String    @unique
+  name             String
+  parameter        String // what's being measured (e.g., "Tensile Strength")
+  unit             String? // e.g., "MPa"
+  criterionType    String    @default("PASS_FAIL") // PASS_FAIL | NUMERIC_RANGE | NUMERIC_MIN | NUMERIC_MAX | TEXT_MATCH
+  criterionValue   String // e.g., ">= 50", "pass", "red"
+  status           String    @default("DRAFT") // DRAFT | APPROVED | EFFECTIVE | SUPERSEDED (D7)
+  approvedByUserId String?
+  approvedAt       DateTime?
+  effectiveFrom    DateTime?
+  supersededById   String?
+  isDemo           Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  approver         User?            @relation("SpecApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  supersededBy     Specification?   @relation("SpecSupersession", fields: [supersededById], references: [id], onDelete: NoAction)
+  supersededByThis Specification[]  @relation("SpecSupersession")
+  methodSpecs      TestMethodSpec[]
+  testResults      TestResult[]
+  inspections      Inspection[]
+
+  @@index([status])
+  @@index([parameter])
+}
+
+model TestMethod {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  name          String
+  description   String?
+  equipmentType String? // string ref (Equipment master is Phase 8)
+  documentRef   String? // D9: string ref; Phase 7 adds ControlledDocument FK
+  status        String   @default("DRAFT") // DRAFT | APPROVED | EFFECTIVE | SUPERSEDED
+  isDemo        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  specs       TestMethodSpec[]
+  testResults TestResult[]
+
+  @@index([status])
+}
+
+model TestMethodSpec {
+  testMethodId    String
+  specificationId String
+  createdAt       DateTime @default(now())
+
+  testMethod    TestMethod    @relation(fields: [testMethodId], references: [id], onDelete: Cascade)
+  specification Specification @relation(fields: [specificationId], references: [id], onDelete: Cascade)
+
+  @@id([testMethodId, specificationId])
+  @@index([specificationId])
+}
+
+model Sample {
+  id                String   @id @default(cuid())
+  code              String // unique per site
+  siteId            String // SITE-OWNED (D8)
+  sourceEntityType  String // BATCH | DEVICE_LOT | MATERIAL_LOT
+  sourceEntityId    String
+  drawnByUserId     String?
+  drawnAt           DateTime @default(now())
+  // D11: quantity tracking (no universal units imposed)
+  quantityCollected Decimal?
+  quantityConsumed  Decimal  @default(0)
+  quantityRemaining Decimal?
+  unit              String?
+  status            String   @default("DRAWN") // DRAWN | RECEIVED_IN_LAB | IN_TEST | CONSUMED | RETAINED (D4)
+  isDemo            Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  site        Site         @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  drawnBy     User?        @relation("SampleDrawnBy", fields: [drawnByUserId], references: [id], onDelete: SetNull)
+  testResults TestResult[]
+
+  @@unique([siteId, code])
+  @@index([siteId])
+  @@index([sourceEntityType, sourceEntityId])
+  @@index([status])
+}
+
+model TestResult {
+  id                    String    @id @default(cuid())
+  code                  String // unique per site
+  siteId                String // SITE-OWNED (D8)
+  sampleId              String
+  testMethodId          String?
+  specificationId       String // preserve exact Specification revision (D9/D10)
+  performedByUserId     String?
+  performedAt           DateTime?
+  measuredValue         String? // the measured value (string to support text/numeric)
+  unit                  String?
+  // D5/D9: auto-evaluation (PASS/FAIL/NOT_EVALUABLE). This is NOT disposition.
+  evaluatedResult       String? // PASS | FAIL | NOT_EVALUABLE (auto-evaluated against spec)
+  evaluatedAt           DateTime?
+  evaluationLogic       String? // audit: which eval logic/version was used
+  status                String    @default("SAMPLE_RECEIVED") // SAMPLE_RECEIVED | IN_PROGRESS | RESULT_ENTERED | REVIEWED | DISPOSITIONED (D5)
+  reviewedByUserId      String?
+  reviewedAt            DateTime?
+  // D5: disposition is HUMAN-ONLY. AI MUST NEVER disposition.
+  disposition           String? // PASS_RELEASE | FAIL_HOLD | FAIL_REJECT | CONDITIONAL_RELEASE
+  dispositionedByUserId String?
+  dispositionedAt       DateTime?
+  dispositionNotes      String?
+  ncrId                 String? // link to NCR if failed (Phase 4)
+  evidenceDocumentRef   String?
+  isDemo                Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  site            Site          @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  sample          Sample        @relation(fields: [sampleId], references: [id], onDelete: Restrict)
+  testMethod      TestMethod?   @relation(fields: [testMethodId], references: [id], onDelete: SetNull)
+  specification   Specification @relation(fields: [specificationId], references: [id], onDelete: Restrict)
+  performedBy     User?         @relation("TestPerformedBy", fields: [performedByUserId], references: [id], onDelete: SetNull)
+  reviewedBy      User?         @relation("TestReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  dispositionedBy User?         @relation("TestDispositionedBy", fields: [dispositionedByUserId], references: [id], onDelete: SetNull)
+  ncr             NCR?          @relation("TestResultNcr", fields: [ncrId], references: [id], onDelete: SetNull)
+
+  @@unique([siteId, code])
+  @@index([siteId])
+  @@index([sampleId])
+  @@index([status])
+  @@index([evaluatedResult])
+}
+
+model Inspection {
+  id                  String   @id @default(cuid())
+  code                String // unique per site
+  siteId              String // SITE-OWNED (D8)
+  inspectionType      String   @default("IN_PROCESS") // IN_PROCESS | FINAL | RECEIVING
+  sourceEntityType    String // BATCH | DEVICE_LOT | MATERIAL_LOT | OPERATION_EXECUTION
+  sourceEntityId      String
+  specificationId     String? // D10: OPTIONAL. If present, must be EFFECTIVE.
+  inspectorEmployeeId String? // D4 pattern: Employee (not User)
+  loggedByUserId      String? // the authenticated User who logged the record
+  measuredValue       String?
+  unit                String?
+  evaluatedResult     String? // PASS | FAIL | CONDITIONAL (auto-evaluated if spec present)
+  status              String   @default("PENDING") // PENDING | PASSED | FAILED | CONDITIONAL (D6)
+  notes               String?
+  ncrId               String? // link to NCR if failed (Phase 4)
+  performedAt         DateTime @default(now())
+  isDemo              Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  site          Site           @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  specification Specification? @relation(fields: [specificationId], references: [id], onDelete: SetNull)
+  inspector     Employee?      @relation("InspectionInspector", fields: [inspectorEmployeeId], references: [id], onDelete: SetNull)
+  logger        User?          @relation("InspectionLogger", fields: [loggedByUserId], references: [id], onDelete: SetNull)
+  ncr           NCR?           @relation("InspectionNcr", fields: [ncrId], references: [id], onDelete: SetNull)
+
+  @@unique([siteId, code])
+  @@index([siteId])
+  @@index([status])
+  @@index([sourceEntityType, sourceEntityId])
 }

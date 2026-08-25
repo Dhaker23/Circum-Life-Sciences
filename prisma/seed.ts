@@ -595,6 +595,9 @@ async function main() {
   // 10. Phase 4: Quality foundation (synthetic DEMO/TEST).
   await seedQuality(siteByCode);
 
+  // 11. Phase 5: Laboratory/Inspection (synthetic DEMO/TEST).
+  await seedLaboratory(siteByCode);
+
   // 7. Seed audit event (records that the seed ran).
   await db.auditEvent.create({
     data: {
@@ -621,3 +624,98 @@ main()
     process.exit(1);
   })
   .finally(() => db.$disconnect());
+
+// Phase 5: Laboratory/Inspection seed (synthetic DEMO/TEST).
+async function seedLaboratory(siteByCode: Record<string, Site>) {
+  console.log("Seeding Phase 5 laboratory DEMO data...");
+  const db_ = db;
+  const chSite = siteByCode["DEMO-CH-01"];
+
+  // Specifications (EFFECTIVE)
+  const specs = [
+    { code: "SPEC-DEMO-001", name: "Tensile Strength", parameter: "Tensile Strength", unit: "MPa", criterionType: "NUMERIC_MIN", criterionValue: ">= 50" },
+    { code: "SPEC-DEMO-002", name: "Dimensional Tolerance", parameter: "Diameter", unit: "mm", criterionType: "NUMERIC_RANGE", criterionValue: "9.9-10.1" },
+    { code: "SPEC-DEMO-003", name: "Visual Inspection", parameter: "Visual Appearance", unit: null, criterionType: "PASS_FAIL", criterionValue: "pass" },
+    { code: "SPEC-DEMO-004", name: "Bioburden", parameter: "CFU Count", unit: "CFU", criterionType: "NUMERIC_MAX", criterionValue: "<= 100" },
+  ];
+  const specByCode: Record<string, { id: string; code: string }> = {};
+  for (const s of specs) {
+    const spec = await db_.specification.upsert({
+      where: { code: s.code },
+      update: { name: s.name, parameter: s.parameter, unit: s.unit, criterionType: s.criterionType, criterionValue: s.criterionValue, status: "EFFECTIVE", effectiveFrom: new Date("2025-01-01"), isDemo: true },
+      create: { ...s, unit: s.unit ?? null, status: "EFFECTIVE", effectiveFrom: new Date("2025-01-01"), isDemo: true },
+    });
+    specByCode[s.code] = spec;
+  }
+  console.log(`  specifications: ${specs.length} (all EFFECTIVE)`);
+
+  // Test Methods (EFFECTIVE) + links
+  const methods = [
+    { code: "TM-DEMO-001", name: "Tensile Test Method", description: "Tensile strength measurement (DEMO)", equipmentType: "Universal Testing Machine", specs: ["SPEC-DEMO-001"] },
+    { code: "TM-DEMO-002", name: "Visual Inspection Method", description: "Visual appearance check (DEMO)", equipmentType: null, specs: ["SPEC-DEMO-003", "SPEC-DEMO-002"] },
+  ];
+  for (const m of methods) {
+    const method = await db_.testMethod.upsert({
+      where: { code: m.code },
+      update: { name: m.name, description: m.description, equipmentType: m.equipmentType, status: "EFFECTIVE", isDemo: true },
+      create: { code: m.code, name: m.name, description: m.description, equipmentType: m.equipmentType, status: "EFFECTIVE", isDemo: true },
+    });
+    for (const sc of m.specs) {
+      await db_.testMethodSpec.upsert({
+        where: { testMethodId_specificationId: { testMethodId: method.id, specificationId: specByCode[sc].id } },
+        update: {},
+        create: { testMethodId: method.id, specificationId: specByCode[sc].id },
+      });
+    }
+  }
+  console.log(`  test methods: ${methods.length} (EFFECTIVE, linked to specs)`);
+
+  // Samples (from BATCH-CH-001)
+  const batch = await db_.manufacturingBatch.findFirst({ where: { siteId: chSite.id } });
+  if (batch) {
+    const sample1 = await db_.sample.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "SMP-CH-001" } },
+      update: { status: "IN_TEST", quantityCollected: "5", quantityRemaining: "3", unit: "pcs", isDemo: true },
+      create: { code: "SMP-CH-001", siteId: chSite.id, sourceEntityType: "BATCH", sourceEntityId: batch.id, quantityCollected: "5", quantityConsumed: "2", quantityRemaining: "3", unit: "pcs", status: "IN_TEST", isDemo: true },
+    });
+    const sample2 = await db_.sample.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "SMP-CH-002" } },
+      update: { status: "RECEIVED_IN_LAB", isDemo: true },
+      create: { code: "SMP-CH-002", siteId: chSite.id, sourceEntityType: "BATCH", sourceEntityId: batch.id, quantityCollected: "3", quantityRemaining: "3", unit: "pcs", status: "RECEIVED_IN_LAB", isDemo: true },
+    });
+
+    // Test Results: one PASS (REVIEWED), one FAIL (RESULT_ENTERED, evaluated FAIL)
+    await db_.testResult.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "TR-CH-001" } },
+      update: { status: "REVIEWED", measuredValue: "55", evaluatedResult: "PASS", evaluatedAt: new Date() },
+      create: { code: "TR-CH-001", siteId: chSite.id, sampleId: sample1.id, testMethodId: null, specificationId: specByCode["SPEC-DEMO-001"].id, measuredValue: "55", unit: "MPa", evaluatedResult: "PASS", evaluatedAt: new Date(), evaluationLogic: "auto-eval-v1: NUMERIC_MIN >= 50", status: "REVIEWED", isDemo: true },
+    });
+    // NCR for the failed result
+    const ncr = await db_.nCR.findFirst({ where: { siteId: chSite.id } });
+    await db_.testResult.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "TR-CH-002" } },
+      update: { status: "RESULT_ENTERED", measuredValue: "8", evaluatedResult: "FAIL" },
+      create: { code: "TR-CH-002", siteId: chSite.id, sampleId: sample2.id, testMethodId: null, specificationId: specByCode["SPEC-DEMO-002"].id, measuredValue: "8", unit: "mm", evaluatedResult: "FAIL", evaluatedAt: new Date(), evaluationLogic: "auto-eval-v1: NUMERIC_RANGE 9.9-10.1", status: "RESULT_ENTERED", ncrId: ncr?.id ?? null, isDemo: true },
+    });
+    console.log(`  samples: 2, test results: 2 (1 PASS REVIEWED, 1 FAIL RESULT_ENTERED -> NCR)`);
+  }
+
+  // Inspections: one PASSED, one FAILED
+  if (batch) {
+    await db_.inspection.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "INSP-CH-001" } },
+      update: { status: "PASSED", evaluatedResult: "PASS" },
+      create: { code: "INSP-CH-001", siteId: chSite.id, inspectionType: "IN_PROCESS", sourceEntityType: "BATCH", sourceEntityId: batch.id, specificationId: specByCode["SPEC-DEMO-003"].id, measuredValue: "pass", evaluatedResult: "PASS", status: "PASSED", isDemo: true },
+    });
+    const ncr = await db_.nCR.findFirst({ where: { siteId: chSite.id } });
+    await db_.inspection.upsert({
+      where: { siteId_code: { siteId: chSite.id, code: "INSP-CH-002" } },
+      update: { status: "FAILED", evaluatedResult: "FAIL" },
+      create: { code: "INSP-CH-002", siteId: chSite.id, inspectionType: "FINAL", sourceEntityType: "BATCH", sourceEntityId: batch.id, specificationId: specByCode["SPEC-DEMO-003"].id, measuredValue: "fail", evaluatedResult: "FAIL", status: "FAILED", ncrId: ncr?.id ?? null, isDemo: true },
+    });
+    console.log(`  inspections: 2 (1 PASSED, 1 FAILED -> NCR)`);
+  }
+
+  await db_.auditEvent.create({ data: { action: "system.seed.laboratory", entityType: "System", entityId: "seed-p5", outcome: "SUCCESS", reason: "Phase 5 synthetic DEMO seed applied", newState: { specs: specs.length } } });
+  console.log("  audit: phase5 seed-run event recorded");
+}
