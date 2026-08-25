@@ -170,3 +170,35 @@ Stage Summary:
   - docs/adr/0007-multi-site-ownership-model.md (global catalog: Product/ProductRevision/BOM/BOMLine/Material/MaterialSupplier/Supplier; site-owned: MaterialLot with siteId required, Phase 1 SiteScope + assertSiteAccess reused, cross-site leakage CRITICAL defect + T-ISOL-02; RLS hardening when PG lands per ADR-0002; inter-site transfer deferred to Phase 13)
 - **Key decisions recorded:** (a) BOM is 1:1 with the Revision and immutable once the Revision is EFFECTIVE, every BOM change is a design change requiring a new Revision (strictest traceability, PRD priority order); (b) the Phase 2 multi-site isolation boundary is MaterialLot alone, all other Phase 2 entities are global shared catalog data; (c) cross-site MaterialLot leakage is a CRITICAL defect; (d) the repository-layer SiteScope filter is the Phase 2 enforcement, with RLS as a future DB-level backstop when PostgreSQL lands (defense-in-depth, not replacement).
 - **Next actions (for orchestrator):** these ADRs unblock Phase 2 execution slices for the manufacturing master-data schema (slice: prisma schema for Product/ProductRevision/BOM/BOMLine/Material/MaterialSupplier/MaterialLot/Supplier with siteId on MaterialLot only, @unique on BOM.productRevisionId, supersededById self-ref on ProductRevision), the BOM immutability service-layer guard (slice: BOM/BOMLine service methods that throw StateTransitionError when the parent Revision is APPROVED/EFFECTIVE/SUPERSEDED/OBSOLETE, with denied audit), and the MaterialLot multi-site isolation (slice: repository SiteScope filter + assertSiteAccess on every MaterialLot read/create/transition path, T-ISOL-02 test). Consider committing the two ADRs together with the Phase 2 implementation kickoff.
+
+---
+Task ID: s0-s10 (Phase 2 implementation)
+Agent: main-orchestrator (Z.ai Code) + adr-writer subagent (s1)
+Task: Execute Phase 2 (Product/Revision/BOM/Material/MaterialLot/Supplier) per approved plan + owner-confirmed D1-D8. to-spec -> to-tickets -> domain-modeling -> codebase-design -> tdd -> implement -> regression -> validation. STOP. No Phase 3.
+
+Work Log:
+- Slice 0 (to-spec/to-tickets): .scratch/phase-2/{spec.md, tickets.md} (10 tickets T01-T10).
+- Slice 1 (ADRs, subagent): ADR-0006 (BOM 1:1 effectivity, frozen when Effective), ADR-0007 (multi-site ownership: global catalog + site-owned MaterialLot).
+- Slice 2 (schema): 8 new models in prisma/schema.prisma (Product, ProductRevision with supersession self-ref, BOM 1:1, BOMLine with substitute self-ref, Material, MaterialSupplier M:N, MaterialLot site-owned, Supplier). Migration 20260825005350_phase2_manufacturing applied. Added MaterialLot relation to Site.
+- Slice 3 (permissions): 20 manufacturing.* permissions added to catalog + least-privilege grants to all 19 roles (super_admin full; site_admin full-mfg; plant_manager/production_*/operator/auditor read; quality_* read+transition; warehouse create lots; lab/maintenance read).
+- Slice 4 (domain): src/modules/manufacturing/domain/index.ts — ProductRevision state machine (DRAFT->IN_REVIEW->APPROVED->EFFECTIVE->SUPERSEDED->OBSOLETE), MaterialLot lifecycle (RECEIVED->QUARANTINE->APPROVED->IN_USE->EXHAUSTED +QUARANTINE->REJECTED), BOM immutability guard (assertBomEditable: DRAFT/IN_REVIEW only), quantity invariants (available<=received, >0), DISQUALIFIED supplier enforcement. All zod schemas.
+- Slice 5 (service): src/modules/manufacturing/service/index.ts — products/revisions/bom/materials/lots/suppliers with can()+audit()+SiteScope+assertSiteAccess. Every create/update/transition audited. BOM mutation rejected when revision not DRAFT/IN_REVIEW (D2). MaterialLot create rejects DISQUALIFIED supplier (D5). transitionRevision supersedes previous EFFECTIVE in a transaction.
+- Slice 6 (API): 14 route files under /api/manufacturing/**. Explicit /transition endpoints for revisions + material lots (validated, audited). zod + envelope + requirePermission.
+- Slice 7 (UI): 4 pages (products, materials, material-lots, suppliers) with tables, status badges, DEMO flags. Sidebar Manufacturing nav group (4 items, permission-gated). i18n FR/EN/AR (manufacturing.* keys). Material-lots page shows site-scoped notice.
+- Slice 8 (seed): prisma/seed.ts extended with seedManufacturing() — 3 suppliers (APPROVED/CONDITIONAL/DISQUALIFIED), 5 materials, 5 MaterialSupplier links, 3 products x2 revisions (EFFECTIVE REV-A + DRAFT REV-B) with BOMs+lines, 8 site-owned MaterialLots across CH/FR/TN in various statuses (APPROVED/QUARANTINE/EXHAUSTED/RECEIVED/REJECTED/IN_USE). All isDemo=true. Re-seeded: 44 permissions, 19 roles, all demo data.
+- Slice 9 (tests): tests/integration/phase2-critical-tests.test.ts — 34 tests: T-REV-01 (revision state machine), T-BOM-01 (BOM immutability D2), T-LOT-01 (lot lifecycle D3), T-QUANT-01 (quantity invariants), T-ISOL-02 (cross-site MaterialLot isolation + compound key), T-SUP-01 (DISQUALIFIED enforcement), regression (audit immutability on test DB). ALL 51 tests PASS (17 Phase 1 + 34 Phase 2).
+- Slice 10 (gate): lint 0 errors (44 warnings), typecheck clean, 51/51 tests pass. Browser-verified (agent-browser): admin sees all 8 lots across 3 sites + 3 suppliers with qualification badges + 3 products; Quality Manager (CH-scoped) sees ONLY 3 CH lots (cross-site isolation T-ISOL-02 browser-verified). Screenshot saved. Wrote docs/PRD/PHASE-2-VALIDATION-REPORT.md (CONDITIONAL PASS).
+- Committed (Phase 2 implementation).
+
+Stage Summary:
+- **Phase 2: IMPLEMENTED + VALIDATED.** Manufacturing master data: Product, ProductRevision (state machine + supersession), BOM (1:1 frozen when Effective, D2), BOMLine, Material, MaterialSupplier (M:N, D5), MaterialLot (site-owned, D4, lifecycle D3), Supplier (qualification D5). 20 manufacturing.* permissions, least-privilege. 14 API routes. 4 UI pages. 8 demo lots across 3 sites. 51/51 tests PASS. Browser-verified incl. cross-site isolation. ADRs 0006-0007 + validation report.
+- **Domain decisions D1-D8 implemented exactly as owner-confirmed.** No invented entities. No Phase 3 functionality.
+- **Status:** CONDITIONAL PASS. PHASE 2 STATUS: READY FOR OWNER REVIEW. STOPPED. Not starting Phase 3.
+- **Known limitations (Phase 13 hardening):** audit site-scoping best-effort (RLS when PG); quantity CHECK constraints (service-enforced, PG will add); BOM immutability service-enforced (cleaner error than DB trigger); Playwright E2E backlog; no inter-site lot transfer; no Customer/Project (D8 out of scope).
+- **Production blocker:** PostgreSQL migration (ADR-0002) required before production.
+
+Unresolved issues / risks (priority for next phase):
+1. **[Blocker]** Owner approval of Phase 2 Validation Report before Phase 3.
+2. **[High, before production]** PostgreSQL migration (ADR-0002).
+3. **[Medium]** BOM editor + revision transition UI (API ready, UI buttons deferred).
+4. **[Medium]** Playwright E2E for manufacturing flows (backlog).
