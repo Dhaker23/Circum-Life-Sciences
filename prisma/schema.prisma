@@ -63,6 +63,11 @@ model User {
   maintenancePerformed       MaintenanceRecord[]    @relation("MaintenancePerformer") // Phase 8
   calibrationsPerformed      CalibrationRecord[]    @relation("CalibrationPerformer") // Phase 8
   qualificationsApproved     Qualification[]        @relation("QualificationApprover") // Phase 8
+  monitoringMeasuredBy       MonitoringResult[]     @relation("MonitoringMeasuredBy") // Phase 9
+  packagingLogged            PackagingRecord[]      @relation("PackagingLogger") // Phase 9
+  sterilizationReleasedBy    SterilizationLot[]     @relation("SterilizationReleaseBy") // Phase 9
+  batchReviewsReviewed       BatchReviewRecord[]    @relation("BatchReviewReviewer") // Phase 9
+  batchReviewsDispositioned  BatchReviewRecord[]    @relation("BatchReviewDispositioner") // Phase 9
 
   @@index([status])
 }
@@ -86,12 +91,13 @@ model Employee {
   userId String? @unique // optional link to a User account
   user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  site            Site                 @relation(fields: [siteId], references: [id], onDelete: Restrict)
-  department      Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  executions      OperationExecution[] @relation("ExecutionOperator") // Phase 3 (D4: operator)
-  inspections     Inspection[]         @relation("InspectionInspector") // Phase 5
-  trainingRecords TrainingRecord[] // Phase 7
-  competencies    Competency[] // Phase 7
+  site             Site                 @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  department       Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  executions       OperationExecution[] @relation("ExecutionOperator") // Phase 3 (D4: operator)
+  inspections      Inspection[]         @relation("InspectionInspector") // Phase 5
+  trainingRecords  TrainingRecord[] // Phase 7
+  competencies     Competency[] // Phase 7
+  packagingRecords PackagingRecord[]    @relation("PackagingOperator") // Phase 9
 
   @@index([siteId])
   @@index([departmentId])
@@ -181,30 +187,37 @@ model Site {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  departments        Department[]
-  assignments        Assignment[]
-  employees          Employee[]
-  materialLots       MaterialLot[] // Phase 2: site-owned lots
-  workCenters        WorkCenter[] // Phase 3
-  workOrders         WorkOrder[] // Phase 3
-  batches            ManufacturingBatch[] // Phase 3
-  deviceLots         DeviceLot[] // Phase 3
-  shifts             Shift[] // Phase 3
-  ncrs               NCR[] // Phase 4
-  deviations         Deviation[] // Phase 4
-  investigations     Investigation[] // Phase 4
-  capas              CAPA[] // Phase 4
-  changeControls     ChangeControl[] // Phase 4
-  riskAssessments    RiskAssessment[] // Phase 4
-  samples            Sample[] // Phase 5
-  testResults        TestResult[] // Phase 5
-  inspections        Inspection[] // Phase 5
-  trainingRecords    TrainingRecord[] // Phase 7
-  supplierAudits     SupplierAudit[] // Phase 7
-  equipment          Equipment[] // Phase 8
-  maintenanceRecords MaintenanceRecord[] // Phase 8
-  calibrationRecords CalibrationRecord[] // Phase 8
-  qualifications     Qualification[] // Phase 8
+  departments                Department[]
+  assignments                Assignment[]
+  employees                  Employee[]
+  materialLots               MaterialLot[] // Phase 2: site-owned lots
+  workCenters                WorkCenter[] // Phase 3
+  workOrders                 WorkOrder[] // Phase 3
+  batches                    ManufacturingBatch[] // Phase 3
+  deviceLots                 DeviceLot[] // Phase 3
+  shifts                     Shift[] // Phase 3
+  ncrs                       NCR[] // Phase 4
+  deviations                 Deviation[] // Phase 4
+  investigations             Investigation[] // Phase 4
+  capas                      CAPA[] // Phase 4
+  changeControls             ChangeControl[] // Phase 4
+  riskAssessments            RiskAssessment[] // Phase 4
+  samples                    Sample[] // Phase 5
+  testResults                TestResult[] // Phase 5
+  inspections                Inspection[] // Phase 5
+  trainingRecords            TrainingRecord[] // Phase 7
+  supplierAudits             SupplierAudit[] // Phase 7
+  equipment                  Equipment[] // Phase 8
+  maintenanceRecords         MaintenanceRecord[] // Phase 8
+  calibrationRecords         CalibrationRecord[] // Phase 8
+  qualifications             Qualification[] // Phase 8
+  cleanrooms                 Cleanroom[] // Phase 9
+  monitoringResults          MonitoringResult[] // Phase 9
+  excursions                 Excursion[] // Phase 9
+  packagingRecords           PackagingRecord[] // Phase 9
+  sterilizationLots          SterilizationLot[] // Phase 9
+  sterilizationLotDeviceLots SterilizationLotDeviceLot[] // Phase 9
+  batchReviewRecords         BatchReviewRecord[] // Phase 9
 
   @@index([status])
 }
@@ -584,14 +597,15 @@ model ManufacturingBatch {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  workOrder       WorkOrder             @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
-  productRevision ProductRevision       @relation(fields: [productRevisionId], references: [id], onDelete: Restrict)
-  site            Site                  @relation(fields: [siteId], references: [id], onDelete: Restrict)
-  deviceLots      DeviceLot[]
-  executions      OperationExecution[]
-  consumptions    MaterialConsumption[]
-  scraps          ProductionScrap[]
-  reworks         ProductionRework[]
+  workOrder         WorkOrder             @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  productRevision   ProductRevision       @relation(fields: [productRevisionId], references: [id], onDelete: Restrict)
+  site              Site                  @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  deviceLots        DeviceLot[]
+  executions        OperationExecution[]
+  consumptions      MaterialConsumption[]
+  scraps            ProductionScrap[]
+  reworks           ProductionRework[]
+  batchReviewRecord BatchReviewRecord?
 
   @@unique([siteId, code])
   @@index([workOrderId])
@@ -611,10 +625,11 @@ model DeviceLot {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  batch   ManufacturingBatch @relation(fields: [batchId], references: [id], onDelete: Restrict)
-  site    Site               @relation(fields: [siteId], references: [id], onDelete: Restrict)
-  scraps  ProductionScrap[]
-  reworks ProductionRework[]
+  batch             ManufacturingBatch          @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  site              Site                        @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  scraps            ProductionScrap[]
+  reworks           ProductionRework[]
+  sterilizationLots SterilizationLotDeviceLot[] // Phase 9
 
   @@unique([siteId, code])
   @@index([batchId])
@@ -789,6 +804,7 @@ model NCR {
   reworks              ProductionRework[]  @relation("ReworkNcr") // Phase 4 (D10)
   testResults          TestResult[]        @relation("TestResultNcr") // Phase 5
   inspections          Inspection[]        @relation("InspectionNcr") // Phase 5
+  excursions           Excursion[]         @relation("ExcursionNcr") // Phase 9
   controlledDocument   ControlledDocument? @relation("NcrDocument", fields: [controlledDocumentId], references: [id], onDelete: SetNull) // Phase 7 D3
 
   @@unique([siteId, code])
@@ -1193,6 +1209,8 @@ model ControlledDocument {
   maintenanceRecords MaintenanceRecord[] // Phase 8
   calibrationRecords CalibrationRecord[] // Phase 8
   qualifications     Qualification[] // Phase 8
+  sterilizationLots  SterilizationLot[] // Phase 9
+  batchReviewRecords BatchReviewRecord[] // Phase 9
 
   @@index([status])
   @@index([documentType])
@@ -1341,6 +1359,8 @@ model Equipment {
   calibrationRecords CalibrationRecord[]
   qualifications     Qualification[]
   executions         OperationExecution[]
+  packagingRecords   PackagingRecord[] // Phase 9
+  sterilizationLots  SterilizationLot[] // Phase 9
 
   @@unique([siteId, code])
   @@index([siteId])
@@ -1435,4 +1455,187 @@ model Qualification {
   @@index([siteId])
   @@index([status])
   @@index([qualificationType])
+}
+
+// ============================================================================
+// Phase 9: Cleanroom / Packaging / Sterilization / Batch Review (Phase 9)
+// D2: Cleanroom limits never hard-coded. D4: Sterilization release human-only.
+// D5: Batch disposition human-only. D7: All site-owned. D8: AI never release.
+// ============================================================================
+
+model Cleanroom {
+  id               String            @id @default(cuid())
+  code             String
+  name             String
+  siteId           String
+  classification   String?
+  status           String            @default("ACTIVE")
+  isDemo           Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  monitoringPoints MonitoringPoint[]
+  excursions       Excursion[]
+  site             Site              @relation(fields: [siteId], references: [id], onDelete: Restrict)
+
+  @@unique([siteId, code])
+  @@index([siteId])
+}
+
+model MonitoringPoint {
+  id          String             @id @default(cuid())
+  cleanroomId String
+  code        String
+  name        String
+  parameter   String
+  unit        String
+  alertLimit  Decimal
+  actionLimit Decimal
+  status      String             @default("ACTIVE")
+  isDemo      Boolean            @default(false)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  cleanroom   Cleanroom          @relation(fields: [cleanroomId], references: [id], onDelete: Cascade)
+  results     MonitoringResult[]
+
+  @@unique([cleanroomId, code])
+  @@index([cleanroomId])
+}
+
+model MonitoringResult {
+  id                String          @id @default(cuid())
+  code              String
+  monitoringPointId String
+  siteId            String
+  value             Decimal
+  unit              String
+  resultStatus      String          @default("NORMAL")
+  measuredAt        DateTime        @default(now())
+  measuredByUserId  String?
+  notes             String?
+  isDemo            Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  monitoringPoint   MonitoringPoint @relation(fields: [monitoringPointId], references: [id], onDelete: Restrict)
+  site              Site            @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  measuredBy        User?           @relation("MonitoringMeasuredBy", fields: [measuredByUserId], references: [id], onDelete: SetNull)
+  excursion         Excursion?
+
+  @@unique([siteId, code])
+  @@index([monitoringPointId])
+  @@index([resultStatus])
+}
+
+model Excursion {
+  id                    String           @id @default(cuid())
+  monitoringResultId    String           @unique
+  cleanroomId           String
+  siteId                String
+  excursionType         String
+  description           String?
+  investigationRequired Boolean          @default(false)
+  ncrId                 String?
+  status                String           @default("OPEN")
+  isDemo                Boolean          @default(false)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  monitoringResult      MonitoringResult @relation(fields: [monitoringResultId], references: [id], onDelete: Cascade)
+  cleanroom             Cleanroom        @relation(fields: [cleanroomId], references: [id], onDelete: Restrict)
+  site                  Site             @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  ncr                   NCR?             @relation("ExcursionNcr", fields: [ncrId], references: [id], onDelete: SetNull)
+
+  @@index([cleanroomId])
+  @@index([status])
+}
+
+model PackagingRecord {
+  id                     String     @id @default(cuid())
+  code                   String
+  siteId                 String
+  targetEntityType       String
+  targetEntityId         String
+  packagingConfiguration String?
+  equipmentId            String?
+  operatorEmployeeId     String?
+  loggedByUserId         String?
+  parameters             Json?
+  inspectionResult       String?
+  status                 String     @default("IN_PROGRESS")
+  notes                  String?
+  isDemo                 Boolean    @default(false)
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+  site                   Site       @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  equipment              Equipment? @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  operator               Employee?  @relation("PackagingOperator", fields: [operatorEmployeeId], references: [id], onDelete: SetNull)
+  logger                 User?      @relation("PackagingLogger", fields: [loggedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([siteId, code])
+  @@index([targetEntityType, targetEntityId])
+  @@index([status])
+}
+
+model SterilizationLot {
+  id                   String                      @id @default(cuid())
+  code                 String
+  siteId               String
+  processType          String
+  sterilizationLotCode String?
+  equipmentId          String?
+  cycleNumber          String?
+  parameters           Json?
+  validationStatus     String                      @default("NOT_VALIDATED")
+  status               String                      @default("SCHEDULED")
+  releaseByUserId      String?
+  releaseAt            DateTime?
+  releaseNotes         String?
+  evidenceDocumentId   String?
+  isDemo               Boolean                     @default(false)
+  createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @updatedAt
+  site                 Site                        @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  equipment            Equipment?                  @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  releaseBy            User?                       @relation("SterilizationReleaseBy", fields: [releaseByUserId], references: [id], onDelete: SetNull)
+  evidenceDocument     ControlledDocument?         @relation(fields: [evidenceDocumentId], references: [id], onDelete: SetNull)
+  deviceLots           SterilizationLotDeviceLot[]
+
+  @@unique([siteId, code])
+  @@index([siteId])
+  @@index([status])
+}
+
+model SterilizationLotDeviceLot {
+  sterilizationLotId String
+  deviceLotId        String
+  siteId             String
+  createdAt          DateTime         @default(now())
+  sterilizationLot   SterilizationLot @relation(fields: [sterilizationLotId], references: [id], onDelete: Cascade)
+  deviceLot          DeviceLot        @relation(fields: [deviceLotId], references: [id], onDelete: Cascade)
+  site               Site             @relation(fields: [siteId], references: [id], onDelete: Restrict)
+
+  @@id([sterilizationLotId, deviceLotId])
+  @@index([deviceLotId])
+}
+
+model BatchReviewRecord {
+  id                    String              @id @default(cuid())
+  batchId               String              @unique
+  siteId                String
+  reviewedByUserId      String?
+  reviewedAt            DateTime?
+  reviewFindings        String?
+  disposition           String?
+  dispositionedByUserId String?
+  dispositionedAt       DateTime?
+  dispositionNotes      String?
+  evidenceDocumentId    String?
+  isDemo                Boolean             @default(false)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  batch                 ManufacturingBatch  @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  site                  Site                @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  reviewer              User?               @relation("BatchReviewReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  dispositionedBy       User?               @relation("BatchReviewDispositioner", fields: [dispositionedByUserId], references: [id], onDelete: SetNull)
+  evidenceDocument      ControlledDocument? @relation(fields: [evidenceDocumentId], references: [id], onDelete: SetNull)
+
+  @@index([siteId])
+  @@index([disposition])
 }

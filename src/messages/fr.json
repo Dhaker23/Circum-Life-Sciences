@@ -80,7 +80,11 @@
     "documents": "Documents",
     "trainingRecords": "Formation",
     "supplierAudits": "Audits Fournisseurs",
-    "equipment": "Equipement"
+    "equipment": "Equipement",
+    "cleanroom": "Salle Blanche",
+    "packaging": "Conditionnement",
+    "sterilization": "Sterilisation",
+    "batchReview": "Revue Lot"
   },
   "users": {
     "title": "Utilisateurs",
@@ -386,5 +390,24 @@
   "equipment": {
     "title": "Equipement",
     "subtitle": "Maitre equipement, maintenance, calibration (site)"
+  },
+  "cleanroom": {
+    "title": "Surveillance Salle Blanche",
+    "subtitle": "Surveillance environnementale (site)"
+  },
+  "packaging": {
+    "title": "Dossiers Conditionnement",
+    "subtitle": "Dossiers de conditionnement (site)"
+  },
+  "sterilization": {
+    "title": "Lots Sterilisation",
+    "subtitle": "Suivi cycles sterilisation (site)",
+    "releaseGuard": "Le statut RELEASED est HUMAIN uniquement."
+  },
+  "batchReview": {
+    "title": "Revue de Lot",
+    "subtitle": "Revue QA et disposition (humain uniquement)",
+    "dispositionGuard": "La disposition du lot est HUMAINE uniquement.",
+    "noData": "Aucun lot pret pour revue"
   }
 }

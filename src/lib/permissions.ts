@@ -189,6 +189,24 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { key: "equipment.qualification.create", module: "equipment", description: "Create qualifications" },
   { key: "equipment.qualification.transition", module: "equipment", description: "Transition qualification state" },
   { key: "equipment.qualification.approve", module: "equipment", description: "Approve a qualification (human-only; AI MUST NEVER)" },
+  // cleanroom (Phase 9, site-scoped)
+  { key: "cleanroom.read", module: "cleanroom", description: "Read cleanrooms (site-scoped)" },
+  { key: "cleanroom.create", module: "cleanroom", description: "Create cleanrooms (site-scoped)" },
+  { key: "cleanroom.result.create", module: "cleanroom", description: "Record monitoring results (site-scoped)" },
+  { key: "cleanroom.excursion.transition", module: "cleanroom", description: "Transition excursion state" },
+  // packaging (Phase 9, site-scoped)
+  { key: "packaging.read", module: "packaging", description: "Read packaging records (site-scoped)" },
+  { key: "packaging.create", module: "packaging", description: "Create packaging records (site-scoped)" },
+  { key: "packaging.transition", module: "packaging", description: "Transition packaging state" },
+  // sterilization (Phase 9, site-scoped; D4/D8: release is human-only)
+  { key: "sterilization.read", module: "sterilization", description: "Read sterilization lots (site-scoped)" },
+  { key: "sterilization.create", module: "sterilization", description: "Create sterilization lots (site-scoped)" },
+  { key: "sterilization.transition", module: "sterilization", description: "Transition sterilization state" },
+  { key: "sterilization.release", module: "sterilization", description: "Release a sterilization lot (human-only; AI MUST NEVER)" },
+  // batch review (Phase 9, D5/D8: disposition is human-only)
+  { key: "batchreview.read", module: "batchreview", description: "Read batch reviews (site-scoped)" },
+  { key: "batchreview.transition", module: "batchreview", description: "Transition batch review state (QA review)" },
+  { key: "batchreview.disposition", module: "batchreview", description: "Disposition a batch (human-only; AI MUST NEVER)" },
 ];
 
 // Role system keys (stable enum-like strings). The 19 PRD roles (PRD §3).

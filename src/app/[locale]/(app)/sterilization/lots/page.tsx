@@ -1,0 +1,12 @@
+"use client";
+import { useTranslations } from "next-intl";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+const STER_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = { SCHEDULED: "outline", IN_PROGRESS: "secondary", COMPLETED: "default", RELEASED: "default", REJECTED: "destructive" };
+export default function SterilizationPage() {
+  const t = useTranslations("sterilization");
+  const { data, isLoading } = useQuery({ queryKey: ["sterilization-lots"], queryFn: async () => { const res = await fetch("/api/sterilization/lots?pageSize=100", { credentials: "same-origin" }); if (!res.ok) throw new Error("Failed"); const json = await res.json(); return json.data as Array<{ id: string; code: string; processType: string; status: string; sterilizationLotCode: string | null; _count: { deviceLots: number } }>; } });
+  return (<div className="space-y-6"><div><h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1><p className="text-sm text-muted-foreground">{t("subtitle")}</p></div><div className="rounded-md border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">{t("releaseGuard")}</div><Card><CardHeader><CardTitle className="text-base">{t("title")}</CardTitle></CardHeader><CardContent>{isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : data && data.length > 0 ? (<div className="max-h-[32rem] overflow-auto rounded-md border"><Table><TableHeader className="sticky top-0 bg-card"><TableRow><TableHead>Code</TableHead><TableHead>Process</TableHead><TableHead>Ster Lot</TableHead><TableHead>Device Lots</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{data.map((s) => (<TableRow key={s.id}><TableCell className="font-mono text-xs">{s.code}</TableCell><TableCell className="text-xs">{s.processType}</TableCell><TableCell className="font-mono text-xs">{s.sterilizationLotCode ?? "-"}</TableCell><TableCell>{s._count.deviceLots}</TableCell><TableCell><Badge variant={STER_VARIANT[s.status] ?? "outline"}>{s.status}</Badge></TableCell></TableRow>))}</TableBody></Table></div>) : <p className="text-sm text-muted-foreground">No sterilization lots found</p>}</CardContent></Card></div>);
+}

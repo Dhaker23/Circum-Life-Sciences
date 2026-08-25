@@ -80,7 +80,11 @@
     "documents": "المستندات",
     "trainingRecords": "التدريب",
     "supplierAudits": "تدقيق الموردين",
-    "equipment": "المعدات"
+    "equipment": "المعدات",
+    "cleanroom": "غرفة نظيفة",
+    "packaging": "التعبئة",
+    "sterilization": "التعقيم",
+    "batchReview": "مراجعة الدفعة"
   },
   "users": {
     "title": "المستخدمون",
@@ -386,5 +390,24 @@
   "equipment": {
     "title": "المعدات",
     "subtitle": "المعدات، الصيانة، المعايرة، التأهيل"
+  },
+  "cleanroom": {
+    "title": "مراقبة الغرفة النظيفة",
+    "subtitle": "المراقبة البيئية بحدود قابلة للتكوين"
+  },
+  "packaging": {
+    "title": "سجلات التعبئة",
+    "subtitle": "سجلات عملية التعبئة"
+  },
+  "sterilization": {
+    "title": "دفعات التعقيم",
+    "subtitle": "تتبع دورات التعقيم",
+    "releaseGuard": "حالة الإصدار بشري فقط. يجب ألا يطلق الذكاء الاصطناعي منتجات معقمة."
+  },
+  "batchReview": {
+    "title": "مراجعة الدفعة",
+    "subtitle": "مراجعة ضمان الجودة والتصرف",
+    "dispositionGuard": "التصرف بالدفعة بشري فقط.",
+    "noData": "لا توجد دفعات جاهزة للمراجعة"
   }
 }

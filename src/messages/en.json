@@ -80,7 +80,11 @@
     "documents": "Documents",
     "trainingRecords": "Training",
     "supplierAudits": "Supplier Audits",
-    "equipment": "Equipment"
+    "equipment": "Equipment",
+    "cleanroom": "Cleanroom",
+    "packaging": "Packaging",
+    "sterilization": "Sterilization",
+    "batchReview": "Batch Review"
   },
   "users": {
     "title": "Users",
@@ -386,5 +390,24 @@
   "equipment": {
     "title": "Equipment",
     "subtitle": "Equipment master, maintenance, calibration, and qualification (site-owned)"
+  },
+  "cleanroom": {
+    "title": "Cleanroom Monitoring",
+    "subtitle": "Environmental monitoring with configurable limits (site-owned)"
+  },
+  "packaging": {
+    "title": "Packaging Records",
+    "subtitle": "Packaging process records (site-owned)"
+  },
+  "sterilization": {
+    "title": "Sterilization Lots",
+    "subtitle": "Sterilization cycle tracking (site-owned, human-only release)",
+    "releaseGuard": "RELEASED status is HUMAN-ONLY. AI must never release sterile product."
+  },
+  "batchReview": {
+    "title": "Batch Review",
+    "subtitle": "QA review and batch disposition (human-only)",
+    "dispositionGuard": "Batch disposition is HUMAN-ONLY. AI must never release product.",
+    "noData": "No batches ready for review"
   }
 }

@@ -1,0 +1,2 @@
+import { NextRequest } from "next/server"; import { ok, fail } from "@/lib/api-envelope"; import { requirePermission } from "@/lib/auth-context"; import * as svc from "@/modules/phase9/service";
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) { try { const { id } = await params; const ctx = await requirePermission("batchreview.read"); return ok(await svc.getBatchReviewData(ctx, id)); } catch (e) { return fail(e); } }

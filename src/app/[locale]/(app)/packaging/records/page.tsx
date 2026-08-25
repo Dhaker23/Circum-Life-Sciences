@@ -1,0 +1,12 @@
+"use client";
+import { useTranslations } from "next-intl";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+const PKG_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = { IN_PROGRESS: "outline", COMPLETED: "default", FAILED: "destructive" };
+export default function PackagingPage() {
+  const t = useTranslations("packaging");
+  const { data, isLoading } = useQuery({ queryKey: ["packaging-records"], queryFn: async () => { const res = await fetch("/api/packaging/records?pageSize=100", { credentials: "same-origin" }); if (!res.ok) throw new Error("Failed"); const json = await res.json(); return json.data as Array<{ id: string; code: string; targetEntityType: string; status: string; inspectionResult: string | null; equipment: { code: string; name: string } | null; operator: { fullName: string } | null }>; } });
+  return (<div className="space-y-6"><div><h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1><p className="text-sm text-muted-foreground">{t("subtitle")}</p></div><Card><CardHeader><CardTitle className="text-base">{t("title")}</CardTitle></CardHeader><CardContent>{isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : data && data.length > 0 ? (<div className="max-h-[32rem] overflow-auto rounded-md border"><Table><TableHeader className="sticky top-0 bg-card"><TableRow><TableHead>Code</TableHead><TableHead>Target</TableHead><TableHead>Equipment</TableHead><TableHead>Operator</TableHead><TableHead>Inspection</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{data.map((p) => (<TableRow key={p.id}><TableCell className="font-mono text-xs">{p.code}</TableCell><TableCell className="text-xs font-mono">{p.targetEntityType}</TableCell><TableCell className="text-xs">{p.equipment?.code ?? "-"}</TableCell><TableCell className="text-xs">{p.operator?.fullName ?? "-"}</TableCell><TableCell className="text-xs">{p.inspectionResult ?? "-"}</TableCell><TableCell><Badge variant={PKG_VARIANT[p.status] ?? "outline"}>{p.status}</Badge></TableCell></TableRow>))}</TableBody></Table></div>) : <p className="text-sm text-muted-foreground">No packaging records found</p>}</CardContent></Card></div>);
+}

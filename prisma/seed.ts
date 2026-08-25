@@ -604,6 +604,9 @@ async function main() {
   // 13. Phase 8: Equipment (synthetic DEMO/TEST).
   await seedEquipment(siteByCode);
 
+  // 14. Phase 9: Cleanroom/Packaging/Sterilization/Batch Review (synthetic DEMO/TEST).
+  await seedPhase9(siteByCode);
+
   // 7. Seed audit event (records that the seed ran).
   await db.auditEvent.create({
     data: {
@@ -817,4 +820,48 @@ async function seedEquipment(siteByCode: Record<string, Site>) {
   });
   console.log("  equipment: 1, calibration: 1 (PASS), maintenance: 1 (COMPLETED), qualification: 1 (IQ, REPORT)");
   await db_.auditEvent.create({ data: { action: "system.seed.equipment", entityType: "System", entityId: "seed-p8", outcome: "SUCCESS", reason: "Phase 8 synthetic DEMO seed applied" } });
+}
+
+// Phase 9: Cleanroom/Packaging/Sterilization/Batch Review seed
+async function seedPhase9(siteByCode: Record<string, Site>) {
+  console.log("Seeding Phase 9 cleanroom/packaging/sterilization/batchreview DEMO data...");
+  const db_ = db;
+  const chSite = siteByCode["DEMO-CH-01"];
+
+  // Cleanroom
+  const cr = await db_.cleanroom.upsert({
+    where: { siteId_code: { siteId: chSite.id, code: "CR-DEMO-001" } },
+    update: { classification: "ISO 7", isDemo: true },
+    create: { code: "CR-DEMO-001", name: "Demo Cleanroom (DEMO)", siteId: chSite.id, classification: "ISO 7", isDemo: true },
+  });
+  const mp = await db_.monitoringPoint.create({ data: { cleanroomId: cr.id, code: "MP-001", name: "Particle Count", parameter: "Particles >= 0.5um", unit: "CFU/m3", alertLimit: 352000, actionLimit: 3520000, isDemo: true } }).catch(() => null);
+  if (mp) {
+    const mr = await db_.monitoringResult.create({ data: { code: "MR-001", monitoringPointId: mp.id, siteId: chSite.id, value: 100000, unit: "CFU/m3", resultStatus: "NORMAL", isDemo: true } }).catch(() => null);
+  }
+  console.log("  cleanroom: 1, monitoring point: 1, result: 1 (NORMAL)");
+
+  // Packaging
+  const batch = await db_.manufacturingBatch.findFirst({ where: { siteId: chSite.id } });
+  if (batch) {
+    await db_.packagingRecord.create({ data: { code: "PKG-DEMO-001", siteId: chSite.id, targetEntityType: "BATCH", targetEntityId: batch.id, packagingConfiguration: "Standard pouch packaging (DEMO)", status: "COMPLETED", inspectionResult: "PASS", isDemo: true } }).catch(() => null);
+  }
+  console.log("  packaging record: 1 (COMPLETED, PASS)");
+
+  // Sterilization
+  const dl = await db_.deviceLot.findFirst({ where: { siteId: chSite.id } });
+  if (dl) {
+    const sl = await db_.sterilizationLot.create({ data: { code: "STER-DEMO-001", siteId: chSite.id, processType: "ETO", sterilizationLotCode: "STER-EXT-001", cycleNumber: "CYCLE-01", validationStatus: "VALIDATED", status: "COMPLETED", isDemo: true } }).catch(() => null);
+    if (sl) { await db_.sterilizationLotDeviceLot.create({ data: { sterilizationLotId: sl.id, deviceLotId: dl.id, siteId: chSite.id } }).catch(() => null); }
+  }
+  console.log("  sterilization lot: 1 (ETO, COMPLETED), device lot linked: 1");
+
+  // Batch Review (for BATCH-CH-002 which is READY_FOR_REVIEW)
+  const reviewBatch = await db_.manufacturingBatch.findFirst({ where: { siteId: chSite.id, status: "READY_FOR_REVIEW" } });
+  if (reviewBatch) {
+    await db_.batchReviewRecord.create({ data: { batchId: reviewBatch.id, siteId: chSite.id, isDemo: true } }).catch(() => null);
+  }
+  console.log("  batch review record: 1 (for READY_FOR_REVIEW batch)");
+
+  await db_.auditEvent.create({ data: { action: "system.seed.phase9", entityType: "System", entityId: "seed-p9", outcome: "SUCCESS", reason: "Phase 9 synthetic DEMO seed applied" } });
+  console.log("  audit: phase9 seed-run event recorded");
 }
