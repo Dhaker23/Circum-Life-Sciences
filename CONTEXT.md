@@ -135,3 +135,40 @@ Product, ProductRevision, BOM, BOMLine, Material, MaterialSupplier, Supplier are
 
 **Supplier–Material** (PROPOSED D5)
 A Material can be sourced from many Suppliers (M:N via MaterialSupplier, with `isPreferred`). A MaterialLot comes from exactly one Supplier. Supplier `qualificationStatus`: APPROVED / CONDITIONAL / DISQUALIFIED (foundation for supplier quality, Phase 7).
+
+## Phase 3 proposed terms (domain-modeling, pending owner confirmation D1-D8)
+
+> Sharpened via `grill-with-docs` + `domain-modeling` for Phase 3 (Production: Work Order, Routing, Operation, Batch, Device Lot, execution). These are PROPOSED resolutions grounded in the PRD; not yet confirmed. See `docs/PRD/PHASE-3-IMPLEMENTATION-PLAN.md` §3.
+
+**Work Center** (PROPOSED D3)
+A named location/station at a Site where an Operation runs (e.g., "Assembly Station 1", "Molding Line A"). Site-owned. Distinct from Equipment (which is Phase 8: a WorkCenter may later have one or more Equipment items linked to it). _Avoid_: station, cell (use WorkCenter).
+
+**Routing** (PROPOSED D6)
+The controlled sequence of Operations to build a Product Revision. 1:1 with ProductRevision (like BOM), frozen when the revision becomes EFFECTIVE (ADR-0006 pattern). Global (not site-specific); site differences are captured at execution time (OperationExecution references the actual WorkCenter). _Avoid_: process plan, route.
+
+**Operation** (PROPOSED)
+A single step in a Routing, with a sequence, name, optional default WorkCenter, estimated duration, and instructions. Executed by an Operator (Employee) on a WorkCenter. Global (part of the routing). _Avoid_: step, task (use Operation).
+
+**Work Order** (PROPOSED D2, D7)
+An authorized instruction to produce a quantity of a Product Revision by a date, at a Site, following a Routing. 1:N with Manufacturing Batches (one WO can produce multiple batches across shifts). Site-owned. State machine: PLANNED → RELEASED → IN_PRODUCTION → COMPLETED → CLOSED, +CANCELLED, +ON_HOLD (reversible). _Avoid_: production order, job (use Work Order).
+
+**Manufacturing Batch** (PROPOSED D1, D7)
+A produced traceable unit of a Product Revision under one Work Order. 1:N with Device Lots (a Batch can be split into multiple Device Lots for sterilization/packaging). Site-owned. State machine: PLANNED → IN_PRODUCTION → COMPLETED → READY_FOR_REVIEW, +ON_HOLD. Phase 3 produces the batch and reaches READY_FOR_REVIEW; Phase 9 (Batch Review/Release) picks up from there. _Avoid_: lot (ambiguous; use Manufacturing Batch, Device Lot, or Material Lot).
+
+**Device Lot** (PROPOSED D1)
+A traceable sub-unit of a Manufacturing Batch, created by splitting a Batch. Belongs to exactly 1 Batch. Carries full genealogy through to shipment. Site-owned. State machine: CREATED → IN_PROCESS → COMPLETED. _Avoid_: sub-batch (use Device Lot). NOT a separate Device entity (Device = conceptual, Phase 2 D1).
+
+**Operator** (PROPOSED D4)
+The person who physically performs an Operation. Recorded as an **Employee** (not a User; not every operator has a login, per Phase 1 owner decision). The authenticated User who logs the record is the "logger" (captured separately in AuditEvent + loggedByUserId). _Avoid_: worker, operative (use Operator or Employee).
+
+**Material Consumption** (PROPOSED D5)
+The act of consuming a MaterialLot against a Batch, decrementing `quantityAvailable`. Transactional (rejects over-consumption). The traceability link: MaterialLot → Batch (PRD §10 genealogy). _Avoid_: usage, issue (use Consumption).
+
+**Material Reservation** (PROPOSED D5, optional)
+Allocating a MaterialLot to a Work Order (pre-production), decrementing a `quantityReserved` field. Reserved material is not yet consumed (still physically in inventory). When consumed, the reservation is fulfilled. Supports production planning. _Avoid_: allocation, booking (use Reservation).
+
+**Scrap** (PROPOSED D8)
+A record of non-conforming output (scrapped quantity + reason) against a Batch/DeviceLot. Does not create a new entity; decrements good-output quantity. Full quality investigation (RCA/CAPA) is Phase 6. _Avoid_: waste, discard (use Scrap).
+
+**Rework** (PROPOSED D8)
+A record of re-processing a quantity (Batch/DeviceLot) that did not conform. Does NOT decrement good output (units may become good after re-processing). Full rework workflow with Deviation is Phase 6. _Avoid_: repair (use Rework; Repair is a maintenance concept, Phase 8).
