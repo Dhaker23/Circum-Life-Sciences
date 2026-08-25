@@ -530,3 +530,13 @@ Stage Summary:
 - **Critical constraints enforced:** OUT_OF_SERVICE guard. Same-site validation. Human-only qualification approval. Acceptance criteria never invented. AI governance.
 - **Status:** CONDITIONAL PASS. PHASE 8 STATUS: READY FOR OWNER REVIEW. STOPPED.
 - **Production blocker:** PostgreSQL migration (ADR-0002).
+
+---
+Task ID: p9-plan
+Agent: main-orchestrator (Z.ai Code)
+Task: Phase 8 approved/closed. Produce CIRCUM PHASE 9 DOMAIN & IMPLEMENTATION PLAN (Cleanroom/Packaging/Sterilization/Batch Review/Release). Do NOT implement. STOP.
+
+Stage Summary:
+- **Phase 9 Plan: PRODUCED.** 4 sub-domains: Cleanroom monitoring (4 entities), Packaging (1 entity, reuses Material), Sterilization (2 entities, human-only release), Batch Review/Release (extends ManufacturingBatch + 1 entity, human-only disposition). Completes the genealogy chain.
+- **8 decisions (D1-D8) require owner confirmation.**
+- **Status:** WAITING FOR OWNER APPROVAL. STOPPED.
