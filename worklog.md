@@ -479,3 +479,21 @@ Stage Summary:
 - **D1-D8 implemented exactly.** Pure query layer (no snapshot). Impact analysis informational only (no auto-action). Site-scoped with boundary markers (no leaking). TraceabilityGraph contract stable across all endpoints.
 - **Status:** CONDITIONAL PASS. PHASE 6 STATUS: READY FOR OWNER REVIEW. STOPPED. Not starting Phase 7.
 - **Production blocker:** PostgreSQL migration (ADR-0002) required before production.
+
+---
+Task ID: p7-plan
+Agent: main-orchestrator (Z.ai Code)
+Task: Phase 6 approved/closed. Produce CIRCUM PHASE 7 DOMAIN & IMPLEMENTATION PLAN (Document Control/Training/Supplier Audits). Do NOT implement. STOP.
+
+Work Log:
+- Analyzed PRD Phase 7 roadmap: "Document control / training / change control / risk / audits." Change Control + Risk already implemented (Phase 4). Remaining: Document Control, Training, Supplier Quality Audits.
+- Re-read PRD section 5 (Document Control lifecycle, Training chain). Checked existing string-ref document fields (8 entities with evidenceDocumentRef/documentRef/certificateOfAnalysis). Zero training entities. Zero supplier audit entities.
+- Applied grill-with-docs + domain-modeling: identified 8 critical domain decisions (D1-D8).
+- Produced docs/PRD/PHASE-7-IMPLEMENTATION-PLAN.md (12 sections): context, objectives, PRD traceability, domain model (D1-D8), proposed schema (ControlledDocument, RequiredTraining, TrainingRecord, Assessment, Competency, SupplierAudit + D3 nullable FK migration), API design, UI, security/audit, multi-site, testing, risks, acceptance criteria, open questions.
+- Committed.
+- Did NOT implement Phase 7.
+
+Stage Summary:
+- **Phase 7 Plan: PRODUCED.** Document Control (controlled lifecycle, versioning, file ref) + Training (4 entities: requirement/record/assessment/competency) + Supplier Audits (formal record with CAPA linkage).
+- **8 decisions (D1-D8) require owner confirmation.**
+- **Status:** WAITING FOR OWNER APPROVAL. STOPPED.
