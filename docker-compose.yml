@@ -1,0 +1,68 @@
+# Phase 13 D2: Docker Compose for Circum.
+# Two profiles: dev (SQLite) and prod (PostgreSQL).
+# D9: local build only — no registry push.
+
+# Usage:
+#   docker compose --profile dev up      # Development with SQLite
+#   docker compose --profile prod up     # Production with PostgreSQL (requires cutover first)
+
+services:
+  # === Dev profile: app + SQLite ===
+  circum-dev:
+    profile: dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/custom.db
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required}
+      - AUTH_PEPPER=${AUTH_PEPPER:?AUTH_PEPPER is required}
+      - INTEGRATION_ENCRYPTION_KEY=${INTEGRATION_ENCRYPTION_KEY:?INTEGRATION_ENCRYPTION_KEY is required}
+    volumes:
+      - dev-data:/app/data
+    restart: unless-stopped
+
+  # === Prod profile: app + PostgreSQL ===
+  circum-prod:
+    profile: prod
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://circum:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/circum
+      - NEXTAUTH_URL=${NEXTAUTH_URL:?NEXTAUTH_URL is required}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required}
+      - AUTH_PEPPER=${AUTH_PEPPER:?AUTH_PEPPER is required}
+      - INTEGRATION_ENCRYPTION_KEY=${INTEGRATION_ENCRYPTION_KEY:?INTEGRATION_ENCRYPTION_KEY is required}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # === PostgreSQL (prod profile only) ===
+  postgres:
+    profile: prod
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=circum
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      - POSTGRES_DB=circum
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U circum -d circum"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  dev-data:
+  pg-data:

@@ -227,6 +227,11 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { key: "ai.chat", module: "ai", description: "Use the AI Assistant (advisory-only; operates in user's authorized context)" },
   { key: "ai.history.read", module: "ai", description: "Read AI conversation history (user/site-scoped)" },
   { key: "ai.history.delete", module: "ai", description: "Archive AI conversations (human-only; AuditEvent records preserved)" },
+  // integration (Phase 13; D7: human-only; AI has ZERO integration permissions; D5: pull-only)
+  // D7 role grants: super_admin, site_admin get all 3; auditor gets read-only.
+  { key: "integration.read", module: "integration", description: "View integration configs + event log (credentials masked)" },
+  { key: "integration.config.manage", module: "integration", description: "Create/update/deactivate integration configs (human-only; AI MUST NEVER)" },
+  { key: "integration.sync", module: "integration", description: "Trigger a manual sync (pull-only; human-only; AI MUST NEVER)" },
 ];
 
 // Role system keys (stable enum-like strings). The 19 PRD roles (PRD §3).
@@ -297,6 +302,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "lean.read", "lean.downtime.create", "lean.downtime.close", "lean.vsm.create",
     "analytics.read", "analytics.export", "analytics.corporate.read", "analytics.snapshot.create",
     "ai.chat", "ai.history.read", "ai.history.delete",
+    "integration.read", "integration.config.manage", "integration.sync",
     "session.sign-in", "session.sign-out",
   ],
   site_admin: [
@@ -327,6 +333,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "lean.read",
     "analytics.read", "analytics.export",
     "ai.chat", "ai.history.read",
+    "integration.read", "integration.config.manage", "integration.sync",
     "session.sign-in", "session.sign-out",
   ],
   plant_manager: [
@@ -547,6 +554,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "lean.read",
     "analytics.read", "analytics.export",
     "ai.chat", "ai.history.read",
+    "integration.read",
     "session.sign-in", "session.sign-out",
   ],
   executive_viewer: [

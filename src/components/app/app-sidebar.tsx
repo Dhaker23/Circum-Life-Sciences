@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings, Package, Boxes, Truck, Layers, ClipboardList, Factory, Clock, AlertTriangle, GitBranch, FileSearch, Wrench, Scale, FlaskConical, Microscope, TestTube, Beaker, CheckSquare, Network, AlertCircle, History, FileText, GraduationCap, ClipboardCheck, Cog, Wind, PackageCheck, Radiation, Gavel, TrendingDown, GitGraph, BarChart3, PieChart, Activity, Building, FileBarChart } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, Building2, FolderTree, ScrollText, Settings, Package, Boxes, Truck, Layers, ClipboardList, Factory, Clock, AlertTriangle, GitBranch, FileSearch, Wrench, Scale, FlaskConical, Microscope, TestTube, Beaker, CheckSquare, Network, AlertCircle, History, FileText, GraduationCap, ClipboardCheck, Cog, Wind, PackageCheck, Radiation, Gavel, TrendingDown, GitGraph, BarChart3, PieChart, Activity, Building, FileBarChart, Plug } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -99,6 +99,12 @@ const NAV: { section: string; items: NavItem[] }[] = [
     section: "ai",
     items: [
       { href: "/ai-assistant", labelKey: "nav.aiAssistant", icon: Activity, permission: "ai.chat" },
+    ],
+  },
+  {
+    section: "integration",
+    items: [
+      { href: "/integration/configs", labelKey: "nav.integration", icon: Plug, permission: "integration.read" },
     ],
   },
   {

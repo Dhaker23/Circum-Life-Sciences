@@ -13,6 +13,11 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Phase 13 D8: /api/health is public (non-sensitive health info only).
+  if (pathname === "/api/health") {
+    return NextResponse.next();
+  }
+
   // Other API routes: enforce auth (RBAC enforced in the handler via requirePermission).
   // Return 401 JSON, never redirect.
   if (pathname.startsWith("/api/")) {

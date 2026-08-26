@@ -222,6 +222,7 @@ model Site {
   downtimeEvents             DowntimeEvent[]
   valueStreamMaps            ValueStreamMap[]
   aiConversations            AiConversation[] // Phase 12
+  integrationConfigs         IntegrationConfig[] // Phase 13
 
   @@index([status])
 }
@@ -1784,4 +1785,56 @@ model AiMessage {
 
   @@index([conversationId])
   @@index([role])
+}
+
+// ============================================================================
+// Phase 13 — Integrations / Deployment / Backup / Recovery / Observability
+// D1: Integration adapter FRAMEWORK only (no concrete adapters; each requires
+//     REAL TARGET SYSTEM + OWNER DECISION + ADR).
+// D5: PULL-ONLY (adapters read from external; no push without future approval).
+// D6: AES-256-GCM credential encryption (server-side key; never exposed to client).
+// D7: 3 integration perms (human-only; AI has ZERO integration permissions).
+// ============================================================================
+
+model IntegrationConfig {
+  id              String   @id @default(cuid())
+  adapterType     String   // "ERP" | "MES" | "LIMS" | "PLM" | "HR" | "MAINTENANCE" | "BARCODE_RFID" | "PLC_SCADA" | "IOT" | "OTHER" | "MOCK_TEST"
+  name            String   // human-readable, e.g. "SAP ERP - Geneva"
+  siteId          String?  // null = global; set = site-scoped (D7: site isolation)
+  endpointUrl     String   // the external system's API URL
+  credentials     String   // AES-256-GCM encrypted JSON (API key, token, etc.) — D6
+  credentialsIv   String   // initialization vector for decryption — D6
+  syncSchedule    String?  // cron expression (future; not automated in Phase 13)
+  status          String   @default("ACTIVE") // ACTIVE | INACTIVE | ERROR
+  lastSyncAt      DateTime?
+  lastSyncStatus  String?  // SUCCESS | FAILURE | PARTIAL
+  isDemo          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  site    Site?              @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  events  IntegrationEvent[]
+
+  @@unique([adapterType, name])
+  @@index([siteId])
+  @@index([status])
+}
+
+model IntegrationEvent {
+  id                String   @id @default(cuid())
+  configId          String
+  eventType         String   // SYNC_START | SYNC_SUCCESS | SYNC_FAILURE | SYNC_PARTIAL | HEALTH_CHECK
+  recordsSynced     Int      @default(0)
+  recordsFailed     Int      @default(0)
+  errorDetail       String?  // error message (NO credentials/secrets — D6 redaction)
+  durationMs        Int?
+  triggeredByUserId String?
+  createdAt         DateTime @default(now())
+  // NOTE: no updatedAt — append-only. No update/delete methods on the repository.
+
+  config IntegrationConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId])
+  @@index([eventType])
+  @@index([createdAt])
 }
