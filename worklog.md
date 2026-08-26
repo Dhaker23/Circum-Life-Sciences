@@ -792,3 +792,33 @@ Stage Summary:
 - **Tests:** 366/366 PASS (333 Phase 1-11 regression + 33 Phase 12). Typecheck clean. Lint 0 errors/202 warnings. Browser-verified (D6 fallback confirmed).
 - **Status:** CONDITIONAL PASS. PHASE 12 STATUS: READY FOR OWNER REVIEW. STOPPED. Not starting Phase 13.
 - **Production blockers (carry-forward):** PostgreSQL migration (ADR-0002); distributed rate limiting; vector search for RAG; lint debt (202 warnings, must not grow uncontrolled).
+
+---
+Task ID: p13-plan
+Agent: main-orchestrator (Z.ai Code)
+Task: Phase 12 approved/closed. Produce CIRCUM PHASE 13 DOMAIN & IMPLEMENTATION PLAN (Integrations / Deployment / Backup / Recovery / Observability). Use grill-with-docs → domain-modeling → codebase-design. Do NOT implement. STOP.
+
+Work Log:
+- Inspected complete project state through Phase 12:
+  - Master PRD §13 (Integrations): "controlled adapters for ERP, MES, PLC, SCADA, IoT, Barcode/RFID, LIMS, PLM, HR and maintenance systems. Avoid tight coupling to one vendor." — 10 integration categories.
+  - PRD §18 Phase 13: "Integrations / deployment / backup / recovery / observability."
+  - PRD §11: "Docker/Docker Compose, Redis only where justified."
+  - PRD §12: Local-First — core workflows must operate on factory LAN without Internet.
+  - ADR-0002: SQLite→PostgreSQL migration is the top production blocker; cutover script stubbed since Phase 1; RLS policies deferred.
+  - 69 Prisma models (67 + AiConversation + AiMessage). 366/366 tests pass. 0 lint errors / 202 warnings.
+  - Zero existing integration code (no ERP/MES/LIMS/PLC adapters). No Docker, Redis, or observability dependencies installed.
+  - next.config.ts: output="standalone" (production-ready). Security headers configured.
+  - docs/operations/secrets.md exists (env vars documented). No deployment/backup/observability docs.
+  - Matt Pocock skills: grill-with-docs, domain-modeling, codebase-design.
+- Applied grill-with-docs + domain-modeling + codebase-design: identified the fundamental tension — PRD §13 lists 10 integration types but the sandbox has no real target systems (ERP/MES/PLC/SCADA are factory-floor systems). Building all 10 speculatively would violate "do not invent." The middle ground: build the integration adapter FRAMEWORK (seam + event log + config entity + audit) so future concrete adapters have a controlled seam. This mirrors Phase 6 (traceability framework) and Phase 12 D1 (AI provider abstraction) — the seam is the deliverable.
+- Identified 10 domain decisions (D1-D10) requiring owner confirmation. Most critical: D1 (framework only vs concrete adapters), D5 (pull-only vs push — conservative default is pull-only; push requires future OWNER DECISION + ADR), D2 (Docker dev+prod profiles), D4 (pino + health + metrics; no external infra).
+- Produced docs/PRD/PHASE-13-IMPLEMENTATION-PLAN.md (17 sections): context, objectives, PRD traceability (R1-R9), domain model (D1-D10), proposed schema (2 new entities: IntegrationConfig + IntegrationEvent), API design, UI architecture, deployment architecture (Dockerfile + docker-compose.yml), backup/recovery scripts, observability (pino + health + metrics), PostgreSQL migration readiness (cutover script + RLS policies + runbook), testing (~25-30 new tests), technical-debt implications, OWNER DECISION REQUIRED summary, critical rules, no-invented-requirements, and the mandatory STOP.
+- Did NOT implement Phase 13. No migrations, no APIs, no UI, no Docker, no scripts.
+
+Stage Summary:
+- **Phase 13 Plan: PRODUCED.** Integrations / Deployment / Backup / Recovery / Observability. Integration adapter FRAMEWORK only (no concrete adapters — D1). Pull-only (D5). Docker dev+prod profiles (D2). Backup scripts + tested restore (D3). pino + health + metrics (D4). AES-256-GCM config encryption (D6). PostgreSQL cutover script + RLS policies + runbook (ADR-0002 readiness).
+- **10 decisions (D1-D10) require owner confirmation.** Most critical: D1 (framework only), D5 (pull-only), D2 (Docker scope), D4 (observability scope).
+- **Schema impact:** 2 new entities (IntegrationConfig, IntegrationEvent — append-only, site-scoped, credentials encrypted). No changes to existing 69 models.
+- **Status:** WAITING FOR OWNER APPROVAL. STOPPED. Not starting Phase 13 implementation. Not starting Phase 14.
+- **Production blockers (carry-forward):** PostgreSQL migration (ADR-0002 — Phase 13 makes the cutover script executable + RLS policies); distributed rate limiting (Phase 14); vector search for RAG (Phase 14+); concrete integration adapters (future phases per real target system); automated backup scheduling (Phase 14/operations); lint debt (202 warnings, must not grow uncontrolled).
+- **Autonomous cron conflict:** Host standing "15-min webDevReview cron" remains superseded by Circum Phase 0 Q5 owner-approved decision. No autonomous-continuation cron created.
