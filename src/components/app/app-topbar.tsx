@@ -2,7 +2,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter, usePathname } from "next/navigation";
-import { LogOut, User as UserIcon, Globe } from "lucide-react";
+import { LogOut, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

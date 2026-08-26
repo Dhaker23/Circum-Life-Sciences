@@ -49,7 +49,7 @@ async function validatePolymorphicRef(siteId: string, entityType: string, entity
     case "MATERIAL_LOT": { const e = await db.materialLot.findUnique({ where: { id: entityId }, select: { siteId: true } }); entitySiteId = e?.siteId ?? null; break; }
     case "WORK_ORDER": { const e = await db.workOrder.findUnique({ where: { id: entityId }, select: { siteId: true } }); entitySiteId = e?.siteId ?? null; break; }
     case "OPERATION_EXECUTION": { const e = await db.operationExecution.findUnique({ where: { id: entityId }, include: { batch: { select: { siteId: true } } } }); entitySiteId = e?.batch.siteId ?? null; break; }
-    case "PRODUCT_REVISION": { /* global entity */ entitySiteId = siteId; break; } // global; no site check
+    case "PRODUCT_REVISION": { /* entity is global */ entitySiteId = siteId; break; } // global; no site check
     case "MATERIAL": { entitySiteId = siteId; break; } // global
     case "SUPPLIER": { entitySiteId = siteId; break; } // global
     case "ROUTING": { entitySiteId = siteId; break; } // global

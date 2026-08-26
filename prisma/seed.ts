@@ -335,7 +335,7 @@ async function seedProduction(siteByCode: Record<string, Site>) {
       create: { code: "DL-CH-002", batchId: batch1.id, siteId: chSite.id, quantity: "150", unit: "pcs", status: "CREATED", isDemo: true },
     });
     // Material consumption: consume MAT-DEMO-001 (polymer) lot LOT-CH-001 (approved, 100kg avail) into batch1
-    const mat1 = await db_.material.findUniqueOrThrow({ where: { code: "MAT-DEMO-001" } });
+    await db_.material.findUniqueOrThrow({ where: { code: "MAT-DEMO-001" } });
     const lotCh1 = await db_.materialLot.findFirst({ where: { lotCode: "LOT-CH-001" } });
     if (lotCh1) {
       const consumed = "20";
@@ -839,7 +839,7 @@ async function seedPhase9(siteByCode: Record<string, Site>) {
   });
   const mp = await db_.monitoringPoint.create({ data: { cleanroomId: cr.id, code: "MP-001", name: "Particle Count", parameter: "Particles >= 0.5um", unit: "CFU/m3", alertLimit: 352000, actionLimit: 3520000, isDemo: true } }).catch(() => null);
   if (mp) {
-    const mr = await db_.monitoringResult.create({ data: { code: "MR-001", monitoringPointId: mp.id, siteId: chSite.id, value: 100000, unit: "CFU/m3", resultStatus: "NORMAL", isDemo: true } }).catch(() => null);
+    await db_.monitoringResult.create({ data: { code: "MR-001", monitoringPointId: mp.id, siteId: chSite.id, value: 100000, unit: "CFU/m3", resultStatus: "NORMAL", isDemo: true } }).catch(() => null);
   }
   console.log("  cleanroom: 1, monitoring point: 1, result: 1 (NORMAL)");
 
@@ -876,7 +876,7 @@ async function seedLean(siteByCode: Record<string, Site>) {
   const chSite = siteByCode["DEMO-CH-01"];
   const eq = await db_.equipment.findFirst({ where: { siteId: chSite.id } });
   if (eq) {
-    const de = await db_.downtimeEvent.create({ data: { code: "DT-DEMO-001", equipmentId: eq.id, siteId: chSite.id, downtimeCategory: "CHANGEOVER", reason: "Material changeover (DEMO)", startTime: new Date(Date.now() - 3600000), endTime: new Date(Date.now() - 3000000), durationMinutes: 10, status: "CLOSED", isDemo: true } }).catch(() => null);
+    await db_.downtimeEvent.create({ data: { code: "DT-DEMO-001", equipmentId: eq.id, siteId: chSite.id, downtimeCategory: "CHANGEOVER", reason: "Material changeover (DEMO)", startTime: new Date(Date.now() - 3600000), endTime: new Date(Date.now() - 3000000), durationMinutes: 10, status: "CLOSED", isDemo: true } }).catch(() => null);
     console.log("  downtime event: 1 (CLOSED, 10min, CHANGEOVER)");
   }
   const vsm = await db_.valueStreamMap.create({ data: { code: "VSM-DEMO-001", name: "Demo Catheter Value Stream (DEMO)", siteId: chSite.id, status: "ACTIVE", isDemo: true } }).catch(() => null);

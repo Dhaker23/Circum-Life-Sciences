@@ -11,7 +11,7 @@ import {
   MAINT_STATUSES,
   QUAL_STATUSES,
 } from "@/modules/equipment/domain";
-import { StateTransitionError, ValidationError } from "@/lib/errors";
+import { StateTransitionError } from "@/lib/errors";
 
 let db: Awaited<ReturnType<typeof getTestDb>>;
 
@@ -22,10 +22,10 @@ beforeAll(async () => {
   const siteB = await db.site.create({ data: { code: "T-SITE-B", name: "B", isDemo: true, status: "ACTIVE" } });
   const wc = await db.workCenter.create({ data: { code: "WC-A", name: "Station A", siteId: site.id, isDemo: true } });
   const eq = await db.equipment.create({ data: { code: "EQ-A", name: "Molding Machine", equipmentType: "Molding", serialNumber: "SN-001", workCenterId: wc.id, siteId: site.id, isDemo: true } });
-  const eqB = await db.equipment.create({ data: { code: "EQ-B", name: "Test Bench", equipmentType: "Test", siteId: siteB.id, isDemo: true } });
-  const cal = await db.calibrationRecord.create({ data: { code: "CAL-A", equipmentId: eq.id, siteId: site.id, result: "PASS", nextCalibrationDue: new Date(Date.now() + 180 * 86400000), isDemo: true } });
-  const maint = await db.maintenanceRecord.create({ data: { code: "MAINT-A", equipmentId: eq.id, siteId: site.id, maintenanceType: "PREVENTIVE", isDemo: true } });
-  const qual = await db.qualification.create({ data: { code: "QUAL-A", equipmentId: eq.id, siteId: site.id, qualificationType: "IQ", acceptanceCriteria: "User-defined criteria (not invented)", isDemo: true } });
+  await db.equipment.create({ data: { code: "EQ-B", name: "Test Bench", equipmentType: "Test", siteId: siteB.id, isDemo: true } });
+  await db.calibrationRecord.create({ data: { code: "CAL-A", equipmentId: eq.id, siteId: site.id, result: "PASS", nextCalibrationDue: new Date(Date.now() + 180 * 86400000), isDemo: true } });
+  await db.maintenanceRecord.create({ data: { code: "MAINT-A", equipmentId: eq.id, siteId: site.id, maintenanceType: "PREVENTIVE", isDemo: true } });
+  await db.qualification.create({ data: { code: "QUAL-A", equipmentId: eq.id, siteId: site.id, qualificationType: "IQ", acceptanceCriteria: "User-defined criteria (not invented)", isDemo: true } });
 });
 afterAll(async () => { await disconnectTestDb(); });
 

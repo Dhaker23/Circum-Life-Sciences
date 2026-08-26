@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { ok, fail, noContent, parseOrThrow } from "@/lib/api-envelope";
+import { ok, fail, parseOrThrow } from "@/lib/api-envelope";
 import { requirePermission } from "@/lib/auth-context";
 import { CreateAssignmentSchema } from "@/lib/zod-schemas";
 import * as identityService from "@/modules/identity/service";
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const ctx = await requirePermission("identity.assignment.read");
+    await requirePermission("identity.assignment.read");
     const { db } = await import("@/lib/db");
     const assignments = await db.assignment.findMany({
       where: { userId: id },

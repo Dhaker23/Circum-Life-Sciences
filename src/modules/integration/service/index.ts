@@ -13,7 +13,6 @@ import type { AuthContext } from "@/lib/rbac";
 import { encrypt, decrypt, isEncryptionConfigured } from "@/lib/crypto";
 import { getAdapter, listRegisteredAdapters } from "../domain";
 import type { ResolvedIntegrationConfig } from "../domain";
-import { ADAPTER_TYPES } from "../domain/schemas";
 import type z from "zod";
 import "./../adapters/mock-test"; // side-effect: register MockTestAdapter
 
@@ -80,7 +79,7 @@ export async function createConfig(
     throw new ValidationError("INTEGRATION_ENCRYPTION_KEY is not configured. Cannot store integration credentials.");
   }
   // Verify adapter type is registered (or is a known type for future adapters)
-  const adapter = getAdapter(input.adapterType);
+  getAdapter(input.adapterType);
   // Allow creating configs for adapter types even if no concrete adapter is registered yet
   // (the config is stored; sync will fail with "adapter not registered" until a concrete adapter is added)
 
@@ -201,7 +200,7 @@ export async function triggerSync(ctx: AuthContext, configId: string) {
   if (config.status !== "ACTIVE") throw new ValidationError("IntegrationConfig is not ACTIVE");
 
   // Log SYNC_START (append-only)
-  const startEvent = await db.integrationEvent.create({
+  await db.integrationEvent.create({
     data: { configId, eventType: "SYNC_START", triggeredByUserId: ctx.user.id },
   });
 

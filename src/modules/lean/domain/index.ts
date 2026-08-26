@@ -8,7 +8,7 @@
 //   Scrap = Σ(ProductionScrap.quantity)
 //   Rework = Σ(ProductionRework.quantity)
 import { z } from "zod";
-import { StateTransitionError, ValidationError } from "@/lib/errors";
+import { StateTransitionError } from "@/lib/errors";
 
 // Downtime state machine
 export const DOWNTIME_STATUSES = ["OPEN", "CLOSED"] as const;

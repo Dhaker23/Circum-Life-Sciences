@@ -35,7 +35,7 @@ class MockProvider implements AiProvider {
   shouldFail = false;
   callCount = 0;
   constructor(responses: string[] = []) { this.responses = responses; }
-  async chat(messages: ChatMessage[], options?: any): Promise<ChatResponse> {
+  async chat(messages: ChatMessage[], _options?: any): Promise<ChatResponse> {
     this.callCount++;
     if (this.shouldFail) throw new Error("Provider unavailable (mock)");
     // Verify the system prompt is always included (D10)

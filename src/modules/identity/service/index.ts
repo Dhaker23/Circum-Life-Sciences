@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/auth.password";
 import { audit } from "@/lib/audit";
 import { can } from "@/lib/rbac";
-import { assertSiteAccess, siteIdFilter } from "@/lib/site-scope";
+import { assertSiteAccess } from "@/lib/site-scope";
 import {
   ConflictError,
   ForbiddenError,
@@ -238,7 +238,7 @@ export async function createAssignment(
       newState: { userId: input.userId, roleId: input.roleId, siteId: input.siteId ?? null, departmentId: input.departmentId ?? null },
     });
     return assignment;
-  } catch (e) {
+  } catch {
     throw new ConflictError("Assignment already exists");
   }
 }

@@ -25,7 +25,7 @@ beforeAll(async () => {
   const site = await db.site.create({ data: { code: "T-SITE-A", name: "Test Site A", isDemo: true, status: "ACTIVE" } });
   const siteB = await db.site.create({ data: { code: "T-SITE-B", name: "Test Site B", isDemo: true, status: "ACTIVE" } });
   const supplierApproved = await db.supplier.create({ data: { code: "T-SUP-01", name: "Approved Supplier", qualificationStatus: "APPROVED", isDemo: true } });
-  const supplierDisqualified = await db.supplier.create({ data: { code: "T-SUP-02", name: "Disqualified Supplier", qualificationStatus: "DISQUALIFIED", isDemo: true } });
+  await db.supplier.create({ data: { code: "T-SUP-02", name: "Disqualified Supplier", qualificationStatus: "DISQUALIFIED", isDemo: true } });
   const material = await db.material.create({ data: { code: "T-MAT-01", name: "Test Material", materialType: "RAW", defaultUnit: "kg", isDemo: true } });
   const product = await db.product.create({ data: { code: "T-PROD-01", name: "Test Product", productType: "DEVICE", deviceClass: "IIa", isDemo: true } });
   const revDraft = await db.productRevision.create({ data: { productId: product.id, revisionCode: "REV-A", status: "DRAFT", isDemo: true } });

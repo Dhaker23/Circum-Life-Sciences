@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { can } from "@/lib/rbac";
 import { assertSiteAccess } from "@/lib/site-scope";
-import { ConflictError, ForbiddenError, NotFoundError, StateTransitionError, ValidationError } from "@/lib/errors";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import type { AuthContext } from "@/lib/rbac";
 import { assertDowntimeTransition, type OeeResult, type LeanMetricsResult, type VsmEvaluation, CreateDowntimeSchema, CloseDowntimeSchema, OeeQuerySchema, MetricsQuerySchema, CreateVsmSchema, CreateVsmNodeSchema, CreateVsmEdgeSchema } from "../domain";
 import type z from "zod";

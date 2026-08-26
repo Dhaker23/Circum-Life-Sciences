@@ -1,11 +1,10 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { BarChart3, TrendingDown, AlertTriangle, Clock, Package, Gauge, Activity, GitGraph, Building } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { BarChart3, AlertTriangle, Clock, Gauge } from "lucide-react";
 import { KpiCard, WarningBanner, MetaFooter, AnalyticsSkeleton, ErrorState, PageHeader, DateRangePicker, SiteSelector } from "@/components/analytics";
 
 export default function AnalyticsDashboardsPage() {

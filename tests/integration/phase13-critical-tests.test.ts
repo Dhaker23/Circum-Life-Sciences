@@ -11,7 +11,7 @@ import { buildAuthContext, can } from "@/lib/rbac";
 import type { AuthContext } from "@/lib/rbac";
 import { ForbiddenError } from "@/lib/errors";
 import * as integSvc from "@/modules/integration/service";
-import { getAdapter, listRegisteredAdapters, registerAdapter } from "@/modules/integration/domain";
+import { getAdapter, listRegisteredAdapters } from "@/modules/integration/domain";
 import { encrypt, decrypt, isEncryptionConfigured } from "@/lib/crypto";
 import "@/modules/integration/adapters/mock-test"; // register mock adapter
 
@@ -23,7 +23,6 @@ let userSiteB: { id: string; email: string };
 let userNoInteg: { id: string; email: string };
 let ctxAdmin: AuthContext;
 let ctxSiteA: AuthContext;
-let ctxSiteB: AuthContext;
 let ctxNoInteg: AuthContext;
 
 async function seed() {
@@ -76,7 +75,6 @@ beforeAll(async () => {
   await seed();
   ctxAdmin = await ctxFor(userAdmin.id);
   ctxSiteA = await ctxFor(userSiteA.id);
-  ctxSiteB = await ctxFor(userSiteB.id);
   ctxNoInteg = await ctxFor(userNoInteg.id);
 });
 afterAll(async () => { await disconnectTestDb(); });

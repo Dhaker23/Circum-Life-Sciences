@@ -2,9 +2,9 @@
 import { db } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { can } from "@/lib/rbac";
-import { ConflictError, ForbiddenError, NotFoundError, StateTransitionError } from "@/lib/errors";
+import { ConflictError, ForbiddenError, NotFoundError } from "@/lib/errors";
 import type { AuthContext } from "@/lib/rbac";
-import { assertDocTransition, assertDocEditable, CreateDocumentSchema, DocTransitionSchema } from "../domain";
+import { assertDocTransition, CreateDocumentSchema, DocTransitionSchema } from "../domain";
 import type z from "zod";
 
 export async function listDocuments(ctx: AuthContext, page: number, pageSize: number) {

@@ -16,7 +16,7 @@
 // This script is the ADR-0002 deliverable. It must NOT be run in the sandbox
 // (no PostgreSQL available). It is documented and executable for production.
 
-import { PrismaClient } from "@prisma/client";
+// (No PrismaClient import — this script only orchestrates pg_dump / psql via shell.)
 
 const SQLITE_URL = process.env.SQLITE_DATABASE_URL;
 const PG_URL = process.env.DATABASE_URL;

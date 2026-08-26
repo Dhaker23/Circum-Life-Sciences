@@ -25,7 +25,23 @@
     "of": "of",
     "total": "Total",
     "export": "Export",
-    "close": "Close"
+    "close": "Close",
+    "back": "Back",
+    "reason": "Reason",
+    "reasonRequired": "Reason (required)",
+    "confirm": "Confirm",
+    "confirmTransition": "Confirm Transition",
+    "transition": "Transition",
+    "transitionSuccess": "Transition successful",
+    "transitionFailed": "Transition failed",
+    "dispositionSuccess": "Disposition recorded",
+    "dispositionFailed": "Disposition failed",
+    "notFound": "Record not found",
+    "notAvailable": "Not available",
+    "yes": "Yes",
+    "no": "No",
+    "never": "Never",
+    "refresh": "Refresh"
   },
   "auth": {
     "signIn": "Sign in",
@@ -275,14 +291,66 @@
       "severity": "Severity",
       "concerns": "Concerns",
       "site": "Site",
-      "noData": "No NCRs found"
+      "noData": "No NCRs found",
+      "detail": {
+        "fields": {
+          "code": "Code",
+          "status": "Status",
+          "severity": "Severity",
+          "concernsEntityType": "Concerns Entity Type",
+          "concernsEntityId": "Concerns Entity ID",
+          "description": "Description",
+          "containmentAction": "Containment Action",
+          "disposition": "Disposition",
+          "closureNotes": "Closure Notes",
+          "createdAt": "Created At",
+          "site": "Site"
+        },
+        "transitions": {
+          "CONTAINMENT": "Move to Containment",
+          "CANCELLED": "Cancel NCR",
+          "INVESTIGATION": "Move to Investigation",
+          "DISPOSITION": "Move to Disposition",
+          "CLOSED": "Close NCR"
+        },
+        "transitionTitle": "Transition NCR to {to}",
+        "containmentActionRequired": "Containment Action (required)",
+        "dispositionRequired": "Disposition (required)",
+        "closureNotesRequired": "Closure Notes (required)",
+        "noTransitions": "No further transitions available from this status."
+      }
     },
     "deviations": {
       "title": "Deviations",
       "subtitle": "Planned departures from approved processes (site-owned)",
       "code": "Code",
       "appliesTo": "Applies to",
-      "noData": "No deviations found"
+      "noData": "No deviations found",
+      "detail": {
+        "fields": {
+          "code": "Code",
+          "status": "Status",
+          "appliesToEntityType": "Applies To Entity Type",
+          "appliesToEntityId": "Applies To Entity ID",
+          "description": "Description",
+          "justification": "Justification",
+          "impactAssessment": "Impact Assessment",
+          "validFrom": "Valid From",
+          "validUntil": "Valid Until",
+          "createdAt": "Created At",
+          "site": "Site"
+        },
+        "transitions": {
+          "ASSESSMENT": "Move to Assessment",
+          "INVESTIGATION": "Move to Investigation",
+          "REVIEW": "Move to Review",
+          "CLOSED": "Close Deviation",
+          "REJECTED": "Reject Deviation"
+        },
+        "transitionTitle": "Transition Deviation to {to}",
+        "impactAssessmentOptional": "Impact Assessment (optional)",
+        "noTransitions": "No further transitions available from this status."
+      }
     },
     "investigations": {
       "title": "Investigations (RCA)",
@@ -297,14 +365,74 @@
       "type": "Type",
       "investigation": "Investigation",
       "aiGuard": "AI governance: AI must never close a CAPA. Closure requires human effectiveness verification.",
-      "noData": "No CAPAs found"
+      "noData": "No CAPAs found",
+      "detail": {
+        "fields": {
+          "code": "Code",
+          "status": "Status",
+          "sourceType": "Source Type",
+          "sourceId": "Source ID",
+          "type": "Type",
+          "actionPlan": "Action Plan",
+          "implementationOwnerUserId": "Implementation Owner",
+          "implementedAt": "Implemented At",
+          "effectivenessVerification": "Effectiveness Verification",
+          "effectivenessVerifiedAt": "Effectiveness Verified At",
+          "closedByUserId": "Closed By",
+          "closedAt": "Closed At",
+          "createdAt": "Created At",
+          "site": "Site"
+        },
+        "transitions": {
+          "ACTION_PLAN": "Move to Action Plan",
+          "IMPLEMENTATION": "Move to Implementation",
+          "EFFECTIVENESS": "Move to Effectiveness",
+          "CLOSED": "Close CAPA"
+        },
+        "transitionTitle": "Transition CAPA to {to}",
+        "closureHumanOnlyNotice": "CAPA closure is HUMAN-ONLY. AI must NEVER close a CAPA. Effectiveness verification evidence is required.",
+        "effectivenessVerificationRequired": "Effectiveness Verification (required for closure)",
+        "noTransitions": "No further transitions available from this status."
+      }
     },
     "changes": {
       "title": "Change Controls",
       "subtitle": "Governed changes to products/processes/documents/equipment",
       "code": "Code",
       "type": "Type",
-      "noData": "No change controls found"
+      "noData": "No change controls found",
+      "detail": {
+        "fields": {
+          "code": "Code",
+          "status": "Status",
+          "changeType": "Change Type",
+          "description": "Description",
+          "reason": "Reason",
+          "impactAssessment": "Impact Assessment",
+          "implementationPlan": "Implementation Plan",
+          "verificationPlan": "Verification Plan",
+          "approvedByUserId": "Approved By",
+          "approvedAt": "Approved At",
+          "createdAt": "Created At",
+          "site": "Site"
+        },
+        "transitions": {
+          "IMPACT": "Move to Impact",
+          "RISK": "Move to Risk",
+          "APPROVAL": "Move to Approval",
+          "IMPLEMENTATION": "Move to Implementation",
+          "VERIFICATION": "Move to Verification",
+          "EFFECTIVENESS": "Move to Effectiveness",
+          "CLOSED": "Close Change",
+          "REJECTED": "Reject Change"
+        },
+        "transitionTitle": "Transition Change Control to {to}",
+        "impactAssessmentRequired": "Impact Assessment (required)",
+        "implementationPlanRequired": "Implementation Plan (required)",
+        "verificationPlanRequired": "Verification Plan (required)",
+        "implementationNeedsApprovalNotice": "Implementation requires prior human approval (APPROVAL stage). AI must NEVER approve a change.",
+        "noTransitions": "No further transitions available from this status."
+      }
     },
     "risks": {
       "title": "Risk Assessments",
@@ -419,7 +547,41 @@
     "title": "Batch Review",
     "subtitle": "QA review and batch disposition (human-only)",
     "dispositionGuard": "Batch disposition is HUMAN-ONLY. AI must never release product.",
-    "noData": "No batches ready for review"
+    "noData": "No batches ready for review",
+    "detail": {
+      "back": "Back",
+      "fields": {
+        "code": "Batch Code",
+        "status": "Status",
+        "plannedQuantity": "Planned Quantity",
+        "actualQuantity": "Actual Quantity",
+        "reviewFindings": "Review Findings",
+        "disposition": "Disposition",
+        "dispositionNotes": "Disposition Notes",
+        "workOrder": "Work Order",
+        "product": "Product",
+        "site": "Site",
+        "reviewedBy": "Reviewed By",
+        "reviewedAt": "Reviewed At",
+        "dispositionedBy": "Dispositioned By",
+        "dispositionedAt": "Dispositioned At",
+        "createdAt": "Created At"
+      },
+      "transitionTitle": "Start QA Review",
+      "reviewFindingsRequired": "Review Findings (required)",
+      "dispositionNotesRequired": "Disposition Notes (required)",
+      "transitionButton": "Start QA Review",
+      "dispositionHumanOnlyNotice": "Batch disposition is HUMAN-ONLY. AI must NEVER release product. All dispositions require documented review findings.",
+      "dispositions": {
+        "APPROVED": "Approve Batch",
+        "HOLD": "Place on Hold",
+        "REWORK": "Send to Rework",
+        "REJECT": "Reject Batch"
+      },
+      "dispositionTitle": "Disposition: {disposition}",
+      "noActions": "No actions available from this status.",
+      "batchNotFound": "Batch not found"
+    }
   },
   "lean": {
     "downtime": {

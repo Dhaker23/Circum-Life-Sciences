@@ -4,7 +4,7 @@ import { requirePermission } from "@/lib/auth-context";
 import { CreateShiftSchema } from "@/modules/production/domain";
 import * as svc from "@/modules/production/service";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const ctx = await requirePermission("production.shift.read");
     return ok(await svc.listShifts(ctx));

@@ -9,13 +9,14 @@ export default defineConfig({
     include: ["src/**/*.{test,spec}.{ts,tsx}", "tests/unit/**/*.{test,spec}.{ts,tsx}", "tests/integration/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules/**", ".next/**", "tests/e2e/**"],
     // Run test files sequentially: they share a single test DB file and each resets it in beforeAll.
+    // vitest 4: poolOptions.forks.singleFork was removed; fileParallelism:false + pool:"forks"
+    // achieves the same sequential single-process behavior.
     fileParallelism: false,
     pool: "forks",
-    poolOptions: { forks: { singleFork: true } },
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      include: ["src/lib/**", "src/modules/**", "src/middleware.ts"],
+      include: ["src/lib/**", "src/modules/**", "src/proxy.ts"],
       exclude: ["src/components/ui/**", "src/**/*.test.*", "src/app/**/page.tsx"],
     },
   },

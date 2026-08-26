@@ -7,7 +7,6 @@ import { resetTestDb, disconnectTestDb, getTestDb } from "./test-db";
 import {
   assertDispositionAllowed,
   assertInspTransition,
-  assertMethodTransition,
   assertResultTransition,
   assertSampleTransition,
   assertSpecEditable,
@@ -23,7 +22,7 @@ import {
   RESULT_STATUSES,
   INSP_STATUSES,
 } from "@/modules/laboratory/domain";
-import { StateTransitionError, ValidationError } from "@/lib/errors";
+import { StateTransitionError } from "@/lib/errors";
 
 let db: Awaited<ReturnType<typeof getTestDb>>;
 
@@ -37,12 +36,12 @@ beforeAll(async () => {
   const woA = await db.workOrder.create({ data: { code: "WO-A", productRevisionId: rev.id, siteId: siteA.id, plannedQuantity: "100", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
   const batchA = await db.manufacturingBatch.create({ data: { code: "BAT-A", workOrderId: woA.id, productRevisionId: rev.id, siteId: siteA.id, plannedQuantity: "100", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
   const woB = await db.workOrder.create({ data: { code: "WO-B", productRevisionId: rev.id, siteId: siteB.id, plannedQuantity: "50", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
-  const batchB = await db.manufacturingBatch.create({ data: { code: "BAT-B", workOrderId: woB.id, productRevisionId: rev.id, siteId: siteB.id, plannedQuantity: "50", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
+  await db.manufacturingBatch.create({ data: { code: "BAT-B", workOrderId: woB.id, productRevisionId: rev.id, siteId: siteB.id, plannedQuantity: "50", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
   // EFFECTIVE spec
-  const spec = await db.specification.create({ data: { code: "SPEC-T-01", name: "Tensile", parameter: "Tensile", unit: "MPa", criterionType: "NUMERIC_MIN", criterionValue: ">= 50", status: "EFFECTIVE", effectiveFrom: new Date(), isDemo: true } });
-  const specPF = await db.specification.create({ data: { code: "SPEC-T-02", name: "Visual", parameter: "Visual", criterionType: "PASS_FAIL", criterionValue: "pass", status: "EFFECTIVE", effectiveFrom: new Date(), isDemo: true } });
+  await db.specification.create({ data: { code: "SPEC-T-01", name: "Tensile", parameter: "Tensile", unit: "MPa", criterionType: "NUMERIC_MIN", criterionValue: ">= 50", status: "EFFECTIVE", effectiveFrom: new Date(), isDemo: true } });
+  await db.specification.create({ data: { code: "SPEC-T-02", name: "Visual", parameter: "Visual", criterionType: "PASS_FAIL", criterionValue: "pass", status: "EFFECTIVE", effectiveFrom: new Date(), isDemo: true } });
   // NCR at site A
-  const ncr = await db.nCR.create({ data: { code: "NCR-T-01", siteId: siteA.id, concernsEntityType: "BATCH", concernsEntityId: batchA.id, description: "test ncr", isDemo: true } });
+  await db.nCR.create({ data: { code: "NCR-T-01", siteId: siteA.id, concernsEntityType: "BATCH", concernsEntityId: batchA.id, description: "test ncr", isDemo: true } });
 });
 afterAll(async () => { await disconnectTestDb(); });
 
@@ -171,7 +170,7 @@ describe("T-ISOL-05: cross-site lab isolation", () => {
   it("Cross-site TestResult isolation", async () => {
     const siteA = await db.site.findUniqueOrThrow({ where: { code: "T-SITE-A" } });
     const siteB = await db.site.findUniqueOrThrow({ where: { code: "T-SITE-B" } });
-    const trsA = await db.testResult.findMany({ where: { siteId: siteA.id } });
+    await db.testResult.findMany({ where: { siteId: siteA.id } });
     const trsB = await db.testResult.findMany({ where: { siteId: siteB.id } });
     expect(trsB.length).toBe(0); // no test results at site B
   });

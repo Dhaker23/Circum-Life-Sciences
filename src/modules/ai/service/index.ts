@@ -21,7 +21,7 @@ import { db } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { can } from "@/lib/rbac";
 import { assertSiteAccess } from "@/lib/site-scope";
-import { ForbiddenError, NotFoundError, TooManyRequestsError, ValidationError } from "@/lib/errors";
+import { ForbiddenError, NotFoundError, TooManyRequestsError } from "@/lib/errors";
 import type { AuthContext } from "@/lib/rbac";
 import { getProvider } from "../provider/factory";
 import { SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION } from "../domain/system-prompt";

@@ -1,9 +1,8 @@
 import { NextRequest } from "next/server";
 import { ok, fail, parseOrThrow } from "@/lib/api-envelope";
 import { requirePermission } from "@/lib/auth-context";
-import { CreateInvestigationSchema, ConcludeInvestigationSchema } from "@/modules/quality/domain";
+import { CreateInvestigationSchema } from "@/modules/quality/domain";
 import * as svc from "@/modules/quality/service";
-import { z } from "zod";
 
 export async function POST(req: NextRequest) {
   try {

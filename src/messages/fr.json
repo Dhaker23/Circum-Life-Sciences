@@ -25,7 +25,23 @@
     "of": "sur",
     "total": "Total",
     "export": "Exporter",
-    "close": "Fermer"
+    "close": "Fermer",
+    "back": "Retour",
+    "reason": "Motif",
+    "reasonRequired": "Motif (obligatoire)",
+    "confirm": "Confirmer",
+    "confirmTransition": "Confirmer la transition",
+    "transition": "Transition",
+    "transitionSuccess": "Transition effectuee",
+    "transitionFailed": "Echec de la transition",
+    "dispositionSuccess": "Disposition enregistree",
+    "dispositionFailed": "Echec de la disposition",
+    "notFound": "Enregistrement introuvable",
+    "notAvailable": "Non disponible",
+    "yes": "Oui",
+    "no": "Non",
+    "never": "Jamais",
+    "refresh": "Rafraichir"
   },
   "auth": {
     "signIn": "Se connecter",
@@ -275,14 +291,66 @@
       "severity": "Severite",
       "concerns": "Concerne",
       "site": "Site",
-      "noData": "Aucune NCR trouvee"
+      "noData": "Aucune NCR trouvee",
+      "detail": {
+        "fields": {
+          "code": "Code",
+          "status": "Statut",
+          "severity": "Severite",
+          "concernsEntityType": "Type d'entite concernee",
+          "concernsEntityId": "ID d'entite concernee",
+          "description": "Description",
+          "containmentAction": "Action de confinement",
+          "disposition": "Disposition",
+          "closureNotes": "Notes de cloture",
+          "createdAt": "Cree le",
+          "site": "Site"
+        },
+        "transitions": {
+          "CONTAINMENT": "Passer en Confinement",
+          "CANCELLED": "Annuler le NCR",
+          "INVESTIGATION": "Passer en Investigation",
+          "DISPOSITION": "Passer en Disposition",
+          "CLOSED": "Cloturer le NCR"
+        },
+        "transitionTitle": "Transition NCR vers {to}",
+        "containmentActionRequired": "Action de confinement (obligatoire)",
+        "dispositionRequired": "Disposition (obligatoire)",
+        "closureNotesRequired": "Notes de cloture (obligatoire)",
+        "noTransitions": "Aucune transition disponible depuis ce statut."
+      }
     },
     "deviations": {
       "title": "Deviations",
       "subtitle": "Departs planifies des processus approuves (site)",
       "code": "Code",
       "appliesTo": "S'applique a",
-      "noData": "Aucune deviation trouvee"
+      "noData": "Aucune deviation trouvee",
+      "detail": {
+        "fields": {
+          "code": "Code",
+          "status": "Statut",
+          "appliesToEntityType": "Type d'entite visee",
+          "appliesToEntityId": "ID d'entite visee",
+          "description": "Description",
+          "justification": "Justification",
+          "impactAssessment": "Evaluation d'impact",
+          "validFrom": "Valide depuis",
+          "validUntil": "Valide jusqu'a",
+          "createdAt": "Cree le",
+          "site": "Site"
+        },
+        "transitions": {
+          "ASSESSMENT": "Passer en Evaluation",
+          "INVESTIGATION": "Passer en Investigation",
+          "REVIEW": "Passer en Revue",
+          "CLOSED": "Cloturer la deviation",
+          "REJECTED": "Rejeter la deviation"
+        },
+        "transitionTitle": "Transition deviation vers {to}",
+        "impactAssessmentOptional": "Evaluation d'impact (optionnel)",
+        "noTransitions": "Aucune transition disponible depuis ce statut."
+      }
     },
     "investigations": {
       "title": "Investigations (RCA)",
@@ -297,14 +365,74 @@
       "type": "Type",
       "investigation": "Investigation",
       "aiGuard": "Gouvernance IA: l'IA ne doit jamais fermer un CAPA. La fermeture necessite une verification d'efficacite humaine.",
-      "noData": "Aucun CAPA trouve"
+      "noData": "Aucun CAPA trouve",
+      "detail": {
+        "fields": {
+          "code": "Code",
+          "status": "Statut",
+          "sourceType": "Type de source",
+          "sourceId": "ID de source",
+          "type": "Type",
+          "actionPlan": "Plan d'action",
+          "implementationOwnerUserId": "Responsable de mise en oeuvre",
+          "implementedAt": "Mis en oeuvre le",
+          "effectivenessVerification": "Verification d'efficacite",
+          "effectivenessVerifiedAt": "Efficacite verifiee le",
+          "closedByUserId": "Cloture par",
+          "closedAt": "Cloture le",
+          "createdAt": "Cree le",
+          "site": "Site"
+        },
+        "transitions": {
+          "ACTION_PLAN": "Passer en Plan d'action",
+          "IMPLEMENTATION": "Passer en Mise en oeuvre",
+          "EFFECTIVENESS": "Passer en Efficacite",
+          "CLOSED": "Cloturer le CAPA"
+        },
+        "transitionTitle": "Transition CAPA vers {to}",
+        "closureHumanOnlyNotice": "La cloture d'un CAPA est HUMAINE. L'IA ne doit JAMAIS clôturer un CAPA. Une preuve de verification d'efficacite est requise.",
+        "effectivenessVerificationRequired": "Verification d'efficacite (requise pour la cloture)",
+        "noTransitions": "Aucune transition disponible depuis ce statut."
+      }
     },
     "changes": {
       "title": "Controle des changements",
       "subtitle": "Changements gouvernes des produits/processus/documents/equipements",
       "code": "Code",
       "type": "Type",
-      "noData": "Aucun controle de changement trouve"
+      "noData": "Aucun controle de changement trouve",
+      "detail": {
+        "fields": {
+          "code": "Code",
+          "status": "Statut",
+          "changeType": "Type de changement",
+          "description": "Description",
+          "reason": "Motif",
+          "impactAssessment": "Evaluation d'impact",
+          "implementationPlan": "Plan de mise en oeuvre",
+          "verificationPlan": "Plan de verification",
+          "approvedByUserId": "Approuve par",
+          "approvedAt": "Approuve le",
+          "createdAt": "Cree le",
+          "site": "Site"
+        },
+        "transitions": {
+          "IMPACT": "Passer en Impact",
+          "RISK": "Passer en Risque",
+          "APPROVAL": "Passer en Approbation",
+          "IMPLEMENTATION": "Passer en Mise en oeuvre",
+          "VERIFICATION": "Passer en Verification",
+          "EFFECTIVENESS": "Passer en Efficacite",
+          "CLOSED": "Cloturer le changement",
+          "REJECTED": "Rejeter le changement"
+        },
+        "transitionTitle": "Transition controle de changement vers {to}",
+        "impactAssessmentRequired": "Evaluation d'impact (requise)",
+        "implementationPlanRequired": "Plan de mise en oeuvre (requis)",
+        "verificationPlanRequired": "Plan de verification (requis)",
+        "implementationNeedsApprovalNotice": "La mise en oeuvre requiert une approbation humaine prealable (etape APPROVAL). L'IA ne doit JAMAIS approuver un changement.",
+        "noTransitions": "Aucune transition disponible depuis ce statut."
+      }
     },
     "risks": {
       "title": "Evaluations des risques",
@@ -419,7 +547,41 @@
     "title": "Revue de Lot",
     "subtitle": "Revue QA et disposition (humain uniquement)",
     "dispositionGuard": "La disposition du lot est HUMAINE uniquement.",
-    "noData": "Aucun lot pret pour revue"
+    "noData": "Aucun lot pret pour revue",
+    "detail": {
+      "back": "Retour",
+      "fields": {
+        "code": "Code Lot",
+        "status": "Statut",
+        "plannedQuantity": "Quantite planifiee",
+        "actualQuantity": "Quantite reelle",
+        "reviewFindings": "Constats de revue",
+        "disposition": "Disposition",
+        "dispositionNotes": "Notes de disposition",
+        "workOrder": "Ordre de fabrication",
+        "product": "Produit",
+        "site": "Site",
+        "reviewedBy": "Revu par",
+        "reviewedAt": "Revu le",
+        "dispositionedBy": "Disposition par",
+        "dispositionedAt": "Disposition le",
+        "createdAt": "Cree le"
+      },
+      "transitionTitle": "Demarrer la revue QA",
+      "reviewFindingsRequired": "Constats de revue (obligatoire)",
+      "dispositionNotesRequired": "Notes de disposition (obligatoire)",
+      "transitionButton": "Demarrer la revue QA",
+      "dispositionHumanOnlyNotice": "La disposition du lot est HUMAINE. L'IA ne doit JAMAIS liberer de produit. Toute disposition exige des constats de revue documentes.",
+      "dispositions": {
+        "APPROVED": "Approuver le lot",
+        "HOLD": "Mettre en attente",
+        "REWORK": "Envoyer en reprise",
+        "REJECT": "Rejeter le lot"
+      },
+      "dispositionTitle": "Disposition: {disposition}",
+      "noActions": "Aucune action disponible depuis ce statut.",
+      "batchNotFound": "Lot introuvable"
+    }
   },
   "lean": {
     "downtime": {

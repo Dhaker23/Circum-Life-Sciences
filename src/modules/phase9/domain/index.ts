@@ -2,7 +2,7 @@
 // D2: Cleanroom limits never hard-coded. D4: Sterilization release human-only.
 // D5: Batch disposition human-only. D8: AI never release/disposition.
 import { z } from "zod";
-import { StateTransitionError, ValidationError } from "@/lib/errors";
+import { StateTransitionError } from "@/lib/errors";
 
 // Cleanroom auto-evaluation (D2: uses configured limits, never hard-coded)
 export function evaluateMonitoringResult(value: number, alertLimit: number, actionLimit: number): string {

@@ -35,7 +35,7 @@ if (isPostgres) {
   try {
     execSync(`pg_restore --clean --if-exists --dbname="${process.env.DATABASE_URL}" "${BACKUP_FILE}"`, { stdio: "inherit" });
     console.log("✓ PostgreSQL restore completed");
-  } catch (e) {
+  } catch {
     console.error("ERROR: pg_restore failed.");
     process.exit(1);
   }
@@ -48,7 +48,7 @@ if (isPostgres) {
 console.log("Verifying restore...");
 const { execSync } = await import("node:child_process");
 try {
-  const count = execSync(`bunx prisma db execute --stdin <<< "SELECT COUNT(*) as c FROM User;" --url "${process.env.DATABASE_URL}"`, { encoding: "utf-8" });
+  execSync(`bunx prisma db execute --stdin <<< "SELECT COUNT(*) as c FROM User;" --url "${process.env.DATABASE_URL}"`, { encoding: "utf-8" });
   console.log(`✓ Verification: User table accessible`);
 } catch {
   console.warn("⚠ Verification: could not verify tables (may need prisma generate)");

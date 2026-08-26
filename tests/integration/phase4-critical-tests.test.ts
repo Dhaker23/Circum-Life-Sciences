@@ -34,11 +34,11 @@ beforeAll(async () => {
   const siteB = await db.site.create({ data: { code: "T-SITE-B", name: "Test Site B", isDemo: true, status: "ACTIVE" } });
   const product = await db.product.create({ data: { code: "T-PROD-01", name: "Test Product", productType: "DEVICE", deviceClass: "IIa", isDemo: true } });
   const rev = await db.productRevision.create({ data: { productId: product.id, revisionCode: "REV-A", status: "EFFECTIVE", effectiveFrom: new Date(), isDemo: true } });
-  const material = await db.material.create({ data: { code: "T-MAT-01", name: "Test Material", materialType: "RAW", defaultUnit: "kg", isDemo: true } });
+  await db.material.create({ data: { code: "T-MAT-01", name: "Test Material", materialType: "RAW", defaultUnit: "kg", isDemo: true } });
   const woA = await db.workOrder.create({ data: { code: "WO-A-01", productRevisionId: rev.id, siteId: siteA.id, plannedQuantity: "100", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
-  const batchA = await db.manufacturingBatch.create({ data: { code: "BATCH-A-01", workOrderId: woA.id, productRevisionId: rev.id, siteId: siteA.id, plannedQuantity: "100", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
+  await db.manufacturingBatch.create({ data: { code: "BATCH-A-01", workOrderId: woA.id, productRevisionId: rev.id, siteId: siteA.id, plannedQuantity: "100", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
   const woB = await db.workOrder.create({ data: { code: "WO-B-01", productRevisionId: rev.id, siteId: siteB.id, plannedQuantity: "50", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
-  const batchB = await db.manufacturingBatch.create({ data: { code: "BATCH-B-01", workOrderId: woB.id, productRevisionId: rev.id, siteId: siteB.id, plannedQuantity: "50", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
+  await db.manufacturingBatch.create({ data: { code: "BATCH-B-01", workOrderId: woB.id, productRevisionId: rev.id, siteId: siteB.id, plannedQuantity: "50", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
 });
 afterAll(async () => { await disconnectTestDb(); });
 

@@ -17,13 +17,13 @@ beforeAll(async () => {
   const batch = await db.manufacturingBatch.create({ data: { code: "BAT-A", workOrderId: wo.id, productRevisionId: rev.id, siteId: site.id, plannedQuantity: "100", actualQuantity: "95", unit: "pcs", status: "COMPLETED", completedAt: new Date(), isDemo: true } });
   const wc = await db.workCenter.create({ data: { code: "WC-A", name: "Station A", siteId: site.id, isDemo: true } });
   const eq = await db.equipment.create({ data: { code: "EQ-A", name: "Molder", equipmentType: "Molding", siteId: site.id, workCenterId: wc.id, isDemo: true } });
-  const eqB = await db.equipment.create({ data: { code: "EQ-B", name: "Tester", equipmentType: "Test", siteId: siteB.id, isDemo: true } });
-  const shift = await db.shift.create({ data: { siteId: site.id, name: "Morning", startTime: "08:00", endTime: "16:00", isDemo: true } });
+  await db.equipment.create({ data: { code: "EQ-B", name: "Tester", equipmentType: "Test", siteId: siteB.id, isDemo: true } });
+  await db.shift.create({ data: { siteId: site.id, name: "Morning", startTime: "08:00", endTime: "16:00", isDemo: true } });
   const routing = await db.routing.create({ data: { productRevisionId: rev.id, status: "EFFECTIVE" } });
   const op = await db.operation.create({ data: { routingId: routing.id, sequence: 10, name: "Molding", estimatedDurationMinutes: 60, workCenterId: wc.id } });
-  const exec = await db.operationExecution.create({ data: { batchId: batch.id, operationId: op.id, workCenterId: wc.id, startedAt: new Date(Date.now() - 7200000), completedAt: new Date(Date.now() - 6600000), status: "COMPLETED", operatorEmployeeId: (await db.employee.create({ data: { employeeCode: "EMP-T-01", firstName: "T", lastName: "E", fullName: "T E", siteId: site.id, isDemo: true } })).id } });
-  const scrap = await db.productionScrap.create({ data: { batchId: batch.id, quantity: "3", unit: "pcs", reason: "Visual defect" } });
-  const de = await db.downtimeEvent.create({ data: { code: "DT-A", equipmentId: eq.id, siteId: site.id, downtimeCategory: "CHANGEOVER", reason: "Material change", startTime: new Date(Date.now() - 3600000), endTime: new Date(Date.now() - 3000000), durationMinutes: 10, status: "CLOSED", isDemo: true } });
+  await db.operationExecution.create({ data: { batchId: batch.id, operationId: op.id, workCenterId: wc.id, startedAt: new Date(Date.now() - 7200000), completedAt: new Date(Date.now() - 6600000), status: "COMPLETED", operatorEmployeeId: (await db.employee.create({ data: { employeeCode: "EMP-T-01", firstName: "T", lastName: "E", fullName: "T E", siteId: site.id, isDemo: true } })).id } });
+  await db.productionScrap.create({ data: { batchId: batch.id, quantity: "3", unit: "pcs", reason: "Visual defect" } });
+  await db.downtimeEvent.create({ data: { code: "DT-A", equipmentId: eq.id, siteId: site.id, downtimeCategory: "CHANGEOVER", reason: "Material change", startTime: new Date(Date.now() - 3600000), endTime: new Date(Date.now() - 3000000), durationMinutes: 10, status: "CLOSED", isDemo: true } });
   const vsm = await db.valueStreamMap.create({ data: { code: "VSM-A", name: "Test VSM", siteId: site.id, status: "ACTIVE", isDemo: true } });
   const n1 = await db.vsmNode.create({ data: { vsmId: vsm.id, sequence: 1, nodeType: "PROCESS", name: "Molding", leadTimeMinutes: 30, valueAddedMinutes: 25 } });
   const n2 = await db.vsmNode.create({ data: { vsmId: vsm.id, sequence: 2, nodeType: "INVENTORY", name: "Buffer", leadTimeMinutes: 120, valueAddedMinutes: 0 } });

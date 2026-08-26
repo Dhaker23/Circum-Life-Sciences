@@ -272,7 +272,7 @@ describe("T-RECURRENCE-01: Recurrence by subject", () => {
 describe("T-EFFECTIVENESS-01: Action effectiveness", () => {
   it("returns closed CAPAs with effectiveness outcome + recurrence flag", async () => {
     // Create a closed CAPA at siteA
-    const capa = await db.cAPA.create({ data: { code: "CAPA-EFF", siteId: siteA.id, sourceType: "OTHER", sourceId: "manual", actionPlan: "Plan", status: "CLOSED", closedAt: new Date(Date.now() - 86400000), effectivenessVerification: "Effective", isDemo: true } });
+    await db.cAPA.create({ data: { code: "CAPA-EFF", siteId: siteA.id, sourceType: "OTHER", sourceId: "manual", actionPlan: "Plan", status: "CLOSED", closedAt: new Date(Date.now() - 86400000), effectivenessVerification: "Effective", isDemo: true } });
     const r = await analyticsSvc.getActionEffectivenessReport(ctxSiteA, { siteId: siteA.id, ...range });
     expect(r.items.some((i) => i.capaCode === "CAPA-EFF")).toBe(true);
     const item = r.items.find((i) => i.capaCode === "CAPA-EFF")!;

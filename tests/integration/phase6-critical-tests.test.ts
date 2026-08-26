@@ -16,10 +16,10 @@ beforeAll(async () => {
   const material = await db.material.create({ data: { code: "T-MAT-01", name: "M", materialType: "RAW", defaultUnit: "kg", isDemo: true } });
   const supplier = await db.supplier.create({ data: { code: "T-SUP-01", name: "S", qualificationStatus: "APPROVED", isDemo: true } });
   const lot = await db.materialLot.create({ data: { lotCode: "LOT-A", materialId: material.id, supplierId: supplier.id, siteId: site.id, quantityReceived: "100", quantityAvailable: "80", unit: "kg", status: "APPROVED", isDemo: true } });
-  const lotB = await db.materialLot.create({ data: { lotCode: "LOT-B", materialId: material.id, supplierId: supplier.id, siteId: siteB.id, quantityReceived: "50", quantityAvailable: "50", unit: "kg", status: "APPROVED", isDemo: true } });
+  await db.materialLot.create({ data: { lotCode: "LOT-B", materialId: material.id, supplierId: supplier.id, siteId: siteB.id, quantityReceived: "50", quantityAvailable: "50", unit: "kg", status: "APPROVED", isDemo: true } });
   const wo = await db.workOrder.create({ data: { code: "WO-A", productRevisionId: rev.id, siteId: site.id, plannedQuantity: "100", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
   const batch = await db.manufacturingBatch.create({ data: { code: "BAT-A", workOrderId: wo.id, productRevisionId: rev.id, siteId: site.id, plannedQuantity: "100", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
-  const dl = await db.deviceLot.create({ data: { code: "DL-A", batchId: batch.id, siteId: site.id, quantity: "50", unit: "pcs", status: "COMPLETED", isDemo: true } });
+  await db.deviceLot.create({ data: { code: "DL-A", batchId: batch.id, siteId: site.id, quantity: "50", unit: "pcs", status: "COMPLETED", isDemo: true } });
   await db.materialConsumption.create({ data: { batchId: batch.id, materialLotId: lot.id, quantity: "20", unit: "kg" } });
   await db.nCR.create({ data: { code: "NCR-A", siteId: site.id, concernsEntityType: "BATCH", concernsEntityId: batch.id, description: "test ncr", isDemo: true } });
   const spec = await db.specification.create({ data: { code: "SPEC-T", name: "T", parameter: "Tensile", criterionType: "NUMERIC_MIN", criterionValue: ">= 50", status: "EFFECTIVE", effectiveFrom: new Date(), isDemo: true } });
@@ -95,7 +95,7 @@ describe("T-TRACE-04: impact analysis is informational only (D4)", () => {
     const batchCountBefore = await db.manufacturingBatch.count();
     // Simulate a trace query (just reading, no mutation)
     const batch = await db.manufacturingBatch.findFirstOrThrow();
-    const dls = await db.deviceLot.findMany({ where: { batchId: batch.id } });
+    await db.deviceLot.findMany({ where: { batchId: batch.id } });
     const ncrCountAfter = await db.nCR.count();
     const batchCountAfter = await db.manufacturingBatch.count();
     expect(ncrCountAfter).toBe(ncrCountBefore); // no NCR created

@@ -14,7 +14,7 @@ import {
   TRAINING_STATUSES,
   AUDIT_STATUSES,
 } from "@/modules/docs/domain";
-import { StateTransitionError, ValidationError } from "@/lib/errors";
+import { StateTransitionError } from "@/lib/errors";
 
 let db: Awaited<ReturnType<typeof getTestDb>>;
 
@@ -22,18 +22,18 @@ beforeAll(async () => {
   await resetTestDb();
   db = getTestDb();
   const site = await db.site.create({ data: { code: "T-SITE-A", name: "A", isDemo: true, status: "ACTIVE" } });
-  const siteB = await db.site.create({ data: { code: "T-SITE-B", name: "B", isDemo: true, status: "ACTIVE" } });
+  await db.site.create({ data: { code: "T-SITE-B", name: "B", isDemo: true, status: "ACTIVE" } });
   const product = await db.product.create({ data: { code: "T-PROD-01", name: "P", productType: "DEVICE", deviceClass: "IIa", isDemo: true } });
-  const rev = await db.productRevision.create({ data: { productId: product.id, revisionCode: "REV-A", status: "EFFECTIVE", effectiveFrom: new Date(), isDemo: true } });
-  const material = await db.material.create({ data: { code: "T-MAT-01", name: "M", materialType: "RAW", defaultUnit: "kg", isDemo: true } });
+  await db.productRevision.create({ data: { productId: product.id, revisionCode: "REV-A", status: "EFFECTIVE", effectiveFrom: new Date(), isDemo: true } });
+  await db.material.create({ data: { code: "T-MAT-01", name: "M", materialType: "RAW", defaultUnit: "kg", isDemo: true } });
   const supplier = await db.supplier.create({ data: { code: "T-SUP-01", name: "S", qualificationStatus: "APPROVED", isDemo: true } });
   const emp = await db.employee.create({ data: { employeeCode: "EMP-T-01", firstName: "Test", lastName: "Employee", fullName: "Test Employee", siteId: site.id, isDemo: true } });
   const doc = await db.controlledDocument.create({ data: { code: "DOC-T-01", title: "Test SOP", documentType: "SOP", version: "1.0", status: "EFFECTIVE", effectiveFrom: new Date(), isDemo: true } });
   const rt = await db.requiredTraining.create({ data: { code: "RT-T-01", title: "Test Training", documentId: doc.id, validityPeriodMonths: 24, status: "ACTIVE", isDemo: true } });
   const tr = await db.trainingRecord.create({ data: { code: "TR-T-01", employeeId: emp.id, requiredTrainingId: rt.id, siteId: site.id, status: "COMPLETED", isDemo: true } });
-  const assessment = await db.assessment.create({ data: { trainingRecordId: tr.id, result: "PASS", score: "90%" } });
-  const comp = await db.competency.create({ data: { id: "comp-t-01", employeeId: emp.id, requiredTrainingId: rt.id, trainingRecordId: tr.id, competencyLevel: "AUTHORIZED", status: "ACTIVE", isDemo: true } });
-  const sa = await db.supplierAudit.create({ data: { code: "SA-T-01", supplierId: supplier.id, siteId: site.id, auditType: "PERIODIC", status: "SCHEDULED", isDemo: true } });
+  await db.assessment.create({ data: { trainingRecordId: tr.id, result: "PASS", score: "90%" } });
+  await db.competency.create({ data: { id: "comp-t-01", employeeId: emp.id, requiredTrainingId: rt.id, trainingRecordId: tr.id, competencyLevel: "AUTHORIZED", status: "ACTIVE", isDemo: true } });
+  await db.supplierAudit.create({ data: { code: "SA-T-01", supplierId: supplier.id, siteId: site.id, auditType: "PERIODIC", status: "SCHEDULED", isDemo: true } });
 });
 afterAll(async () => { await disconnectTestDb(); });
 

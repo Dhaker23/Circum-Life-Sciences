@@ -945,3 +945,228 @@ Stage Summary:
 - **Status:** WAITING FOR OWNER APPROVAL. STOPPED. Not starting Phase 14 implementation. No Phase 15 (Phase 14 is final).
 - **Carry-forward resolution:** ENVIRONMENT-BLOCKED items (PostgreSQL, Docker, Z.ai provider) documented as production-deployment gates; DEFERRED items (Redis rate limiting, pgvector, automated backup) documented as future requirements; NOT IMPLEMENTED items (concrete adapters) documented as future phases; VERIFIED items (lint, vitest.config.ts, middleware→proxy, deferred UI, E2E) to be resolved in Phase 14.
 - **Autonomous cron conflict:** Host standing "15-min webDevReview cron" remains superseded by Circum Phase 0 Q5 owner-approved decision. No autonomous-continuation cron created.
+
+---
+Task ID: d5-ui
+Agent: d5-ui (Z.ai Code)
+Task: Phase 14 D5 — build 5 detail pages (NCR / Deviation / CAPA / ChangeControl / BatchReview) with transition buttons that call the EXISTING transition/disposition APIs. UI-only; no new workflows/states/permissions/business rules. STOP.
+
+Work Log:
+- Read existing list pages (quality/{ncrs,deviations,capas,changes}/page.tsx, batch-review/page.tsx) for the established pattern: "use client" + useTranslations + useQuery + shadcn Card/Table/Badge/Button.
+- Verified existing API contracts:
+  - GET /api/quality/ncrs/[id] exists (svc.getNcr).
+  - GET /api/quality/deviations/[id] does NOT exist ([id]/route.ts only has POST approve). Fetch from list + filter client-side.
+  - GET /api/quality/capas/[id] does NOT exist. Fetch from list + filter client-side (per task spec).
+  - GET /api/quality/changes/[id] does NOT exist ([id]/route.ts only has POST approve). Fetch from list + filter client-side.
+  - GET /api/batch-review/batches/[id] exists (svc.getBatchReviewData — returns aggregated {batch, ncrs, inspections, samples, packagingRecords}).
+  - POST /api/quality/{ncrs,deviations,capas,changes}/[id]/transition — all exist, each with its own zod schema.
+  - POST /api/batch-review/batches/[id]/transition and /disposition — both exist.
+- Verified domain state machines (src/modules/quality/domain + src/modules/phase9/domain): NCR (D3), Deviation (D4), CAPA (D5 — closure guarded by assertCapaClosureAllowed), Change (D6 — implementation guarded by assertChangeImplementationApproved), BatchReview (D5 — disposition guarded by assertBatchReviewTransition + human-only permission).
+- Added i18n keys (EN/FR/AR) under common, quality.{ncrs,deviations,capas,changes}.detail.*, batchReview.detail.*. Each entity has: fields.*, transitions.{TO}, transitionTitle (ICU {to}), noTransitions, plus entity-specific notices (closureHumanOnlyNotice / effectivenessVerificationRequired / impactAssessmentRequired / implementationPlanRequired / verificationPlanRequired / implementationNeedsApprovalNotice). batchReview adds dispositions.{APPROVED,HOLD,REWORK,REJECT}, dispositionTitle (ICU {disposition}), reviewFindingsRequired, dispositionNotesRequired, dispositionHumanOnlyNotice, noActions, batchNotFound.
+- Built 5 detail pages (all under src/app/[locale]/(app)/):
+  1. quality/ncrs/[id]/page.tsx — fetch by ID; transitions: DRAFT→CONTAINMENT (reason+containmentAction), DRAFT→CANCELLED (reason+closureNotes, destructive), CONTAINMENT→INVESTIGATION (reason), INVESTIGATION→DISPOSITION (reason+disposition Select w/ 5 options), DISPOSITION→CLOSED (reason+closureNotes, secondary). Terminal-status amber Alert in CLOSED/CANCELLED dialogs.
+  2. quality/deviations/[id]/page.tsx — fetch from list+filter; transitions: DRAFT→{ASSESSMENT,REJECTED}, ASSESSMENT→{INVESTIGATION,REVIEW(+optional impactAssessment),REJECTED}, INVESTIGATION→REVIEW(+optional impactAssessment), REVIEW→{CLOSED,REJECTED}.
+  3. quality/capas/[id]/page.tsx — fetch from list+filter; always-visible AI-guard Alert; transitions: OPEN→ACTION_PLAN, ACTION_PLAN→IMPLEMENTATION, IMPLEMENTATION→EFFECTIVENESS, EFFECTIVENESS→CLOSED (reason+REQUIRED effectivenessVerification textarea + human-only closure notice in dialog).
+  4. quality/changes/[id]/page.tsx — fetch from list+filter; transitions: REQUEST→{IMPACT,REJECTED}, IMPACT→{RISK(+required impactAssessment),REJECTED}, RISK→{APPROVAL,REJECTED}, APPROVAL→{IMPLEMENTATION(+amber "needs prior human approval" notice),REJECTED}, IMPLEMENTATION→VERIFICATION(+required implementationPlan), VERIFICATION→EFFECTIVENESS(+required verificationPlan), EFFECTIVENESS→CLOSED.
+  5. batch-review/batches/[id]/page.tsx — fetch aggregated review data; always-visible human-only disposition Alert; TransitionDialog (only when READY_FOR_REVIEW): POST /transition {to:"QA_REVIEW", reason}; 4 DispositionDialogs (only when QA_REVIEW): APPROVED/HOLD/REWORK/REJECT, each POST /disposition {disposition, reviewFindings, dispositionNotes}, each with human-only amber Alert inside dialog.
+- UX: shadcn Card/Badge/Alert/Skeleton/Dialog/Button/Label/Textarea/Select; desktop-first responsive grid; status Badge variants mirror existing list pages (no new color tokens); amber notice Alerts use border-amber-200 bg-amber-50 (consistent with Phase 13 integration detail); RefreshCw button per page; loading skeletons; destructive Alert on error; success/failure toasts via useToast; back button to list page in every header; mobile-safe 44px touch targets; ARIA labels + Label htmlFor; NO indigo/blue primary colors.
+- D5 compliance: every page is a pure consumer of the existing authoritative service layer. The transition-spec tables in each page are a UI-side MIRROR of the domain state machine (defined in src/modules/{quality,phase9}/domain/index.ts) — the server re-validates every transition via the existing assertXxxTransition / assertCapaClosureAllowed / assertChangeImplementationApproved guards. AI governance (PRD §9) is enforced by the service layer (AI role lacks *.transition / *.approve / *.disposition permissions); the UI only surfaces visible Alerts. No new API routes, no new service functions, no new Prisma models, no migrations, no new permissions.
+- List pages NOT modified (out of scope — task said "pages to create"). Detail pages reachable via direct URL navigation; each has a back button to its list page.
+
+Verification:
+- `bunx tsc --noEmit` → exit 0, zero errors.
+- `bun run lint` → 0 errors / 243 warnings (all pre-existing carry-forward; ZERO new warnings introduced — verified by grepping lint output for the 5 new file paths).
+- All JSON i18n files validated for EN/FR/AR (python3 json.load).
+- Dev server runs clean (existing routes 200; new pages compile on first request via Turbopack).
+
+Stage Summary:
+- **5 detail pages built** — NCR, Deviation, CAPA, ChangeControl, BatchReview. Each calls only existing transition/disposition APIs. Each renders a transition button per valid outgoing edge of the current status, opens a Dialog with the required fields + reason textarea, submits to the existing POST /transition (or /disposition) endpoint, refetches on success, toasts on success/failure.
+- **Human-only guards surfaced as visible Alerts** — CAPA closure (effectivenessVerification required), Change IMPLEMENTATION (needs prior approval), Batch disposition (all 4 dispositions). Server enforces; UI cannot bypass (AI role lacks permissions).
+- **i18n complete** — EN/FR/AR for all new keys; ICU placeholders for {to} / {disposition}.
+- **No new domain behavior** — D5 rule honored. No new states, workflows, permissions, services, models, migrations.
+- **Schema impact:** ZERO.
+- **Status:** D5 UI COMPLETE. STOP.
+- **Carry-forward (unchanged):** PostgreSQL migration, RLS, Playwright E2E, distributed rate limiting, vector search, lint debt (243 warnings). The existing list pages do not yet have row-level links to the new detail pages (out of scope; would be a small additive UX enhancement in a future task).
+
+---
+Task ID: d1-e2e
+Agent: d1-e2e (Z.ai Code)
+Task: Phase 14 D1 — author 7 Playwright E2E spec files (auth / manufacturing / quality / batch-review / traceability / analytics / ai-assistant) covering real user workflows, authorization boundaries, critical state transitions, and failure/denial behavior. Create the spec files only — do NOT run the E2E suite (sandbox cannot host a browser + dev server simultaneously). STOP.
+
+Work Log:
+- Read `/home/z/my-project/worklog.md` end-to-end (Phase 0 through Phase 14 plan + D5 UI completion). Confirmed scope: D1 = E2E coverage for 7 critical workflows; zero schema/permissions/UI changes.
+- Inspected the live project state:
+  - `playwright.config.ts` already configured (testDir `./tests/e2e`, baseURL `http://localhost:3000`, single chromium project, webServer `bun run dev` with `reuseExistingServer:true`). No changes needed.
+  - `tsconfig.json` excludes `tests/e2e/**` from the project's main typecheck (so E2E files cannot regress `bunx tsc --noEmit`).
+  - `eslint.config.mjs` ignores `tests/e2e/**` (so E2E files cannot regress `bun run lint`).
+  - `tests/e2e/` directory was empty — created it.
+  - Demo credentials confirmed in `prisma/seed.ts`: `admin@circum.demo` / `CircumDemo2025!` → Super Admin, global (siteCode=null). Name = "Demo Super Admin".
+  - Sign-in page (`src/app/[locale]/sign-in/page.tsx`): standard email/password form, `signIn("credentials", { ..., redirect: false })`, on success pushes `callbackUrl` (default `/` → next-intl `localePrefix:"always"` resolves to `/en`).
+  - Proxy (`src/proxy.ts`): unauthenticated `/api/*` requests return JSON 401 `{ error: { code:"UNAUTHORIZED", message:"Authentication required" } }` — never a redirect.
+  - API envelope (`src/lib/api-envelope.ts` + `src/lib/errors.ts`): `UnauthorizedError` → 401, `ForbiddenError` → 403, etc.
+  - Topbar (`src/components/app/app-topbar.tsx`): user dropdown trigger button has visible text = session.user.name (e.g. "Demo Super Admin"); menu item "Sign out" calls next-auth `signOut({ callbackUrl: /{locale}/sign-in })`.
+  - Sidebar (`src/components/app/app-sidebar.tsx`): groups items by `section` but does NOT render section headers — so "verify the manufacturing nav section is visible" effectively means "verify the items belonging to that section are rendered".
+  - i18n labels (`src/messages/en.json`): confirmed exact strings for every page heading, empty-state ("no data"), AI advisory notice, AI unavailable fallback, AI rate-limited message, analytics reports (6 cards), dashboards.dataUnavailable = "Data Unavailable", etc.
+  - List page pattern (verified on `manufacturing/products`, `quality/ncrs`, `traceability/query-log`, etc.): useQuery + Card + Table OR `<p>{t("...noData")}</p>` empty state. Acceptance: either a populated `<table>` with at least one `<tbody><tr>` OR the localized empty state — both are real outcomes (demo seed may or may not populate every entity).
+  - D5 detail pages (Phase 14 D5, already built): `quality/{ncrs,deviations,capas,changes}/[id]/page.tsx` and `batch-review/batches/[id]/page.tsx` exist and call only the existing transition/disposition APIs. NCR list page has no row-level links — to test a detail page, must look up an ID via the authenticated API.
+  - AI Assistant page (`src/app/[locale]/(app)/ai-assistant/page.tsx`, 901 lines): two-column layout (conversation sidebar `hidden lg:block` / chat panel). Persistent amber advisory banner = `t("advisoryNotice")` = "AI-generated advisory information. Not an approval or official decision. Human review required.". Send button is disabled until `effectiveSiteId` is non-empty (page auto-selects the first site from `/api/org/sites`). On send: `/api/ai/chat` POST → 200+`available:true` appends a structured-response bubble (5 parts, "Answer" header visible); 200+`available:false` appends an Alert with title `t("unavailable")` = "AI provider unavailable. Core workflows continue to function normally."; 429 sets inline Alert with `t("rateLimited")`; 403/!ok sets inline Alert with `t("unavailable")`.
+  - Delivery dashboard (`src/app/[locale]/(app)/analytics/dashboards/delivery/page.tsx`): intentionally renders a "Data Unavailable" card (PRD: delivery analytics not implemented). Honest fallback — verified.
+  - Corporate analytics (`src/app/[locale]/(app)/analytics/corporate/page.tsx`): gated by `analytics.corporate.read` (admin has it). Page renders metric checkboxes + KPI cards.
+
+- Created 8 files in `tests/e2e/` (7 spec files + 1 shared helper):
+
+  1. `tests/e2e/_helpers.ts` — shared helpers:
+     - `signInAdmin(page)`: real browser sign-in flow (goto /en/sign-in → fill email → fill password → click submit → waitForURL /\/en$/).
+     - `gotoLocale(page, path)`: navigate to /en{path}.
+     - `expectListOrEmpty(page, noDataText)`: Promise.race between "table with tbody>tr attached" and "localized empty-state text visible" — accepts either real outcome.
+     - `expectSidebarItem(page, label)`: verifies a nav link is rendered in the sidebar.
+     - `fetchUnauthenticated(request, path)`: returns Playwright APIResponse (correct return type — not native `Response`).
+     - Exports `BASE_URL`, `SIGN_IN_URL`, `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD`, `DEMO_ADMIN_NAME`.
+
+  2. `tests/e2e/auth.spec.ts` (5 tests):
+     - valid credentials → dashboard (asserts /en URL + "Welcome to Circum" heading + sidebar rendered).
+     - invalid credentials → "Invalid email or password" alert visible + still on /sign-in + sidebar NOT rendered.
+     - sign-out → user dropdown → "Sign out" menu item → redirected to /sign-in.
+     - unauthenticated GET /api/identity/users → 401 JSON with `{ error: { code: "UNAUTHORIZED", message: "Authentication required" } }` + content-type application/json.
+     - control test: same endpoint returns 200 + `{ data: [...] }` after a real next-auth credentials callback (proves the 401 was due to missing auth, not a broken endpoint).
+
+  3. `tests/e2e/manufacturing.spec.ts` (5 tests, beforeEach=signInAdmin):
+     - Products list renders (heading + table-or-empty).
+     - Work Orders list renders.
+     - Batches list renders.
+     - Work Centers list renders.
+     - Manufacturing nav section visible (sidebar items: Products, Materials, Material Lots, Suppliers) + production section items (Work Orders, Batches, Work Centers).
+
+  4. `tests/e2e/quality.spec.ts` (6 tests, beforeEach=signInAdmin):
+     - NCRs list renders.
+     - NCR detail page renders Transition card with transition buttons (or "no further transitions" notice for terminal statuses). Looks up a real NCR via authenticated `/api/quality/ncrs` — `test.skip()` if zero demo NCRs seeded.
+     - Deviations list renders.
+     - CAPAs list renders.
+     - Change Control list renders.
+     - Quality nav section visible (NCRs, Deviations, CAPAs, Change Control).
+
+  5. `tests/e2e/batch-review.spec.ts` (2 tests, beforeEach=signInAdmin):
+     - Batch Review page renders with title + disposition guard notice + "No batches ready for review" empty state (the list page never fetches a list — it intentionally shows this empty state in the demo seed).
+     - Batch detail page renders the disposition section when a batch exists. Looks up via authenticated `/api/production/batches` — `test.skip()` if zero demo batches. Asserts that SOMETHING actionable renders (transition button / disposition button / "no actions" notice) — never asserts a specific disposition button regardless of batch status.
+
+  6. `tests/e2e/traceability.spec.ts` (4 tests, beforeEach=signInAdmin):
+     - Genealogy Trace page renders (heading + entity-id input + Trace button).
+     - Impact Analysis page renders (heading + advisory notice + analyze button).
+     - Query Log page renders (heading + table-or-empty).
+     - Traceability nav section visible (Genealogy Trace, Impact Analysis, Query Log).
+
+  7. `tests/e2e/analytics.spec.ts` (10 tests, beforeEach=signInAdmin):
+     - Dashboards overview renders with KPI cards (asserts first KPI value or "Data unavailable" italic appears).
+     - OEE dashboard renders (heading + a bordered control card).
+     - Quality dashboard renders (heading).
+     - Downtime dashboard renders (heading).
+     - Critical Problems dashboard renders (heading).
+     - Overdue Actions dashboard renders (heading).
+     - Delivery dashboard renders AND honestly surfaces "Data Unavailable" (PRD-acknowledged fallback — NOT faked).
+     - Reports index renders all 6 report links (OEE Trend, Quality Trend, Downtime Pareto, Equipment Performance, Recurrence, Action Effectiveness).
+     - Corporate analytics renders (admin has analytics.corporate.read; verifies a Card renders).
+     - Analytics nav section visible (Dashboards, Reports, Corporate).
+
+  8. `tests/e2e/ai-assistant.spec.ts` (3 tests, beforeEach=signInAdmin):
+     - Page renders with: AI Assistant heading + persistent advisory notice (literal string match: "AI-generated advisory information. Not an approval or official decision. Human review required.") + conversation sidebar (desktop lg+) + site selector combobox (aria-label "Select a site") + capability selector combobox (aria-label "Capability") + input textarea (placeholder "Ask about OEE, quality, batches, trends...") + Send button.
+     - Sending a question yields ONE of three real outcomes (Promise.race): structured-response "Answer" header OR "AI provider unavailable" alert OR "Rate limit exceeded" alert. Both fallback outcomes are valid in the sandbox (D6 fallback is the EXPECTED outcome when the cloud AI provider is unreachable). Also verifies the user's typed question is echoed back as a USER bubble.
+     - AI nav section visible (AI Assistant sidebar link).
+
+- D1 rule compliance:
+  - Real flows only: every test signs in via the real browser form (no session-cookie injection); every list assertion accepts either a populated table OR the localized empty state (never asserts fake data); the AI test accepts either a structured response OR the unavailable/rate-limit fallback; the delivery test asserts the honest "Data Unavailable" fallback; the batch-review test skips the detail assertion when no batches exist (rather than fabricating an ID).
+  - Authorization boundaries: auth.spec verifies 401 on unauthenticated API request AND verifies the same endpoint returns 200 when authenticated (control test) — proving the 401 was due to missing auth.
+  - Critical state transitions: quality.spec verifies the NCR detail page renders the Transition card with valid outgoing-edge buttons (or the "no further transitions" notice for terminal statuses); batch-review.spec verifies the disposition section renders.
+  - Failure/denial behavior: auth.spec verifies invalid-credentials error alert + URL stays on /sign-in + sidebar NOT rendered; ai-assistant.spec verifies the unavailable fallback path.
+  - Each test is independent (sign-in fresh per test via `beforeEach`).
+
+- Verification:
+  - `cd /home/z/my-project && bunx tsc --noEmit 2>&1 | grep -v vitest | head -5` → exit 0, zero output (project typecheck unaffected — tests/e2e is excluded from tsconfig).
+  - Direct typecheck of all 8 e2e files (strict mode, full lib): `bunx tsc --noEmit --strict --target es2022 --module esnext --moduleResolution bundler --esModuleInterop --skipLibCheck --lib dom,dom.iterable,esnext tests/e2e/*.ts` → exit 0, zero output.
+  - `bun run lint` → 0 errors / 243 warnings (all pre-existing carry-forward; tests/e2e is in eslint ignores — ZERO new warnings introduced).
+  - Did NOT run `bunx playwright test` — per task instructions ("Do NOT run the E2E tests... Just create the spec files"). The sandbox cannot host a browser + dev server simultaneously.
+  - Dev server (`bun run dev`) is running healthy on :3000 — confirmed via `tail dev.log`.
+
+Stage Summary:
+- **7 E2E spec files + 1 shared helper created** in `tests/e2e/`. Total: 36 tests across 7 specs.
+  - auth.spec: 5 tests (valid sign-in, invalid sign-in, sign-out, unauthenticated 401, authenticated control).
+  - manufacturing.spec: 5 tests (Products, Work Orders, Batches, Work Centers, nav section).
+  - quality.spec: 6 tests (NCRs list, NCR detail w/ transitions, Deviations, CAPAs, Change Control, nav section).
+  - batch-review.spec: 2 tests (list empty state, detail page w/ disposition section).
+  - traceability.spec: 4 tests (Genealogy Trace, Impact Analysis, Query Log, nav section).
+  - analytics.spec: 10 tests (Dashboards overview, OEE, Quality, Downtime, Critical Problems, Overdue Actions, Delivery w/ "Data Unavailable", Reports index w/ 6 cards, Corporate, nav section).
+  - ai-assistant.spec: 3 tests (page rendering w/ advisory notice + sidebar + selectors + input, send-question-accepts-any-real-response, nav section).
+- **D1 rule honored**: real user workflows only; authorization boundaries verified (401 + 200 control); critical state transitions verified (NCR detail transition card, batch-review disposition section); failure/denial behavior verified (invalid credentials, AI unavailable fallback, delivery "Data Unavailable" fallback); no fake success paths.
+- **Schema impact:** ZERO. No new entities, fields, migrations, permissions, services, or UI changes.
+- **Config impact:** ZERO. `playwright.config.ts` unchanged (already correctly configured). `tsconfig.json` and `eslint.config.mjs` already exclude `tests/e2e/**` — no changes needed.
+- **Status:** D1 E2E SPEC FILES COMPLETE. STOP. Not running the suite (sandbox limitation, per task instructions).
+- **Carry-forward (unchanged):** PostgreSQL migration, RLS, distributed rate limiting, vector search, lint debt (243 warnings). E2E runtime execution remains a future CI/operations task (requires browser + dev server, which the sandbox cannot host simultaneously).
+
+---
+Task ID: d2-lint
+Agent: d2-lint-fixer (Z.ai Code)
+Task: Phase 14 D2 — conservative lint reduction. Fix ALL `@typescript-eslint/no-unused-vars` warnings by removing unused imports, variables, and function parameters. Do NOT refactor logic, do NOT suppress with eslint-disable, do NOT touch no-console or no-explicit-any.
+
+Work Log:
+- Pre-state: `bun run lint` reported 128 `no-unused-vars` warnings across 38 files (frontend pages, API routes, service/domain modules, scripts, prisma seed, and tests/integration phase2–phase13 critical test suites).
+- Audited every warning against source via `rg` to confirm the symbol was genuinely unused in its scope (verified that shadowing inner declarations like `const lot` inside describe/it blocks were separate bindings, not uses of the outer `beforeAll` const).
+- Applied mechanical removals only:
+  - **Unused imports**: removed from import lists (e.g., `useMemo`, `CardHeader`, `CardTitle`, `Button`, `Badge`, `Table*`, `NextResponse`, `noContent`, `parseOrThrow`, `PaginationSchema`, `CreateMonitoringPointSchema`, `ChangeTransitionSchema`, `ConcludeInvestigationSchema`, `CreateRiskSchema`, `UpdateRiskSchema`, `z`, `getLocale`, `UserIcon`, `PrismaClient`, `Prisma`, `emptyGraph`, `ADAPTER_TYPES`, `ValidationError`, `StateTransitionError`, `siteIdFilter`, `assertDocEditable`, `assertSampleQuantityInvariant`, `assertSpecEditable`, `assertDlTransition`, `assertMethodTransition`, `registerAdapter`).
+  - **Unused const bindings holding side-effectful calls**: converted `const X = await db.X.create(...)` / `const X = await db.X.findMany(...)` / `const X = getAdapter(...)` to bare expression statements (`await db.X.create(...)` / `await db.X.findMany(...)` / `getAdapter(...)`) to preserve DB write/read side effects while dropping the unused binding. Affected files: prisma/seed.ts (mat1, mr, de), scripts/restore.ts (count), src/modules/integration/service/index.ts (adapter, startEvent), src/modules/traceability/service/index.ts (trs), tests/integration/phase{2,3,4,5,6,7,8,9,10,11}-critical-tests.test.ts (many setup-record bindings).
+  - **Unused let bindings** (file-scope `let ctxSiteB` in phase13 test): removed declaration + its assignment line.
+  - **Unused function parameters** (intentional signature slots): renamed to `_`-prefixed per rule 3 (allowed for intentionally-unused function parameters). Affected: `params` → `_params` in cleanroom rooms [id]/points route + lean vsm [id]/edges route; `req` → `_req` in org/sites GET + production/shifts GET; `options` → `_options` in phase12 MockProvider.chat; `truncated`/`authorizationLimited` → `_truncated`/`_authorizationLimited` in traceability/domain computeSummary.
+  - **Unused `catch (e)` bindings**: converted to `catch {` (ES2019 optional catch binding) — backup-postgres.ts, restore.ts, health/route.ts, identity/service createAssignment.
+  - **Unused `for (const [key, v] of ...)` destructuring**: changed to `for (const [, v] of ...)` in analytics/service recurrence report.
+  - **Dead-code DB query**: removed unused `const deviations = await db.deviation.findMany(...)` block in analytics recurrence report (read-only SELECT with no consumer; removing it has zero runtime effect on the report output).
+  - **Dead-code const declarations removed entirely**: `const TRACEABILITY_PERM = "traceability.read";` in traceability/service (declared, never referenced).
+  - **`actionTypes` const used only as type** in src/hooks/use-toast.ts: converted `const actionTypes = {...} as const` + `type ActionType = typeof actionTypes` into a single `type ActionType = { ADD_TOAST: "ADD_TOAST"; ... }` declaration. The runtime const was dead (no consumer); only the derived type was used. Behavior unchanged (the const value was never read at runtime).
+  - **Quirk fix** in src/modules/quality/service/index.ts line 52: the `/* global entity */` comment was being parsed by ESLint as a `global` directive (declaring `entity` as an unused global), triggering a spurious no-unused-vars warning. Rewrote comment to `/* entity is global */` to break the directive pattern. No code change.
+
+Files touched (38):
+- prisma/seed.ts
+- scripts/backup-postgres.ts, scripts/migrate-sqlite-to-postgres.ts, scripts/restore.ts
+- src/app/[locale]/(app)/analytics/dashboards/page.tsx, batch-review/page.tsx, identity/roles/page.tsx, identity/users/page.tsx, lean/oee/page.tsx, quality/investigations/page.tsx, quality/risks/page.tsx
+- src/app/[locale]/layout.tsx
+- src/app/api/audit/events/route.ts, cleanroom/rooms/route.ts, cleanroom/rooms/[id]/points/route.ts, health/route.ts, identity/assignments/[id]/route.ts, identity/users/[id]/assignments/route.ts, lean/vsm/[id]/edges/route.ts, org/sites/route.ts, production/batches/route.ts, production/shifts/route.ts, quality/changes/route.ts, quality/changes/[id]/route.ts, quality/deviations/[id]/route.ts, quality/investigations/route.ts, quality/risks/route.ts
+- src/components/app/app-topbar.tsx
+- src/hooks/use-toast.ts
+- src/modules/ai/service/index.ts, analytics/service/index.ts, docs/service/index.ts, identity/service/index.ts, integration/service/index.ts, laboratory/service/index.ts, lean/domain/index.ts, lean/service/index.ts, manufacturing/service/index.ts, phase9/domain/index.ts, quality/service/index.ts, traceability/domain/index.ts, traceability/service/index.ts
+- tests/integration/phase{2,3,4,5,6,7,8,9,10,11,12,13}-critical-tests.test.ts
+
+Verification:
+- `bunx tsc --noEmit` → 0 errors (exit 0).
+- `bun run lint 2>&1 | grep -c "no-unused-vars"` → 0 (was 128).
+- `bun run lint` overall: 115 problems (0 errors, 115 warnings) — all remaining warnings are `no-console` (91) and `no-explicit-any` (24), which are explicitly out-of-scope per task rules.
+- Dev server confirmed healthy: `GET /api/health 200` and `GET /en 200` in dev.log after edits.
+
+Stats:
+- Warnings fixed: 128 / 128 (100%).
+- Files touched: 38.
+- Logic refactors: 0 (pure removal of unused bindings + 1 comment rewording to break ESLint `global` directive misinterpretation).
+- New eslint-disable directives: 0.
+- `_`-prefixed renames: 6 (all function parameters that are intentionally-unused signature slots, as permitted by rule 3).
+
+Carry-forward (unchanged): 91 `no-console` + 24 `no-explicit-any` warnings remain (out-of-scope for D2). Schema impact: ZERO. Config impact: ZERO.
+
+---
+Task ID: d1-d5+final (Phase 14 implementation)
+Agent: main-orchestrator (Z.ai Code)
+Task: Execute Phase 14 (Enterprise Hardening / Performance / Security / Final Validation — FINAL PHASE) per approved plan + owner-confirmed D1-D5. STOP. No Phase 15.
+
+Work Log:
+- D3 (vitest.config.ts fix): Removed deprecated `poolOptions: { forks: { singleFork: true } }` (vitest 4 removed this). `fileParallelism: false` + `pool: "forks"` achieves the same sequential behavior. Typecheck: 0 errors (pre-existing issue FIXED). Full regression: 402/402 PASS (sequential execution preserved).
+- D4 (middleware→proxy rename): Renamed `src/middleware.ts` → `src/proxy.ts` (Next 16 convention). Updated vitest.config.ts coverage include. Dev log confirms `proxy.ts:` in request logs (not `middleware.ts:`). No deprecation warning. Auth, API protection, locale routing, health endpoint all verified.
+- D5 (deferred UI): Delegated to full-stack-developer subagent (Task ID: d5-ui). Created 5 detail pages: NCR, Deviation, CAPA, ChangeControl, BatchReview — each with transition buttons calling existing APIs. Zero new APIs, zero new domain logic. Human-only guards surfaced as Alerts. Zero new lint warnings.
+- D2 (lint reduction): Delegated to full-stack-developer subagent (Task ID: d2-lint). Fixed 128 `@typescript-eslint/no-unused-vars` warnings across 38 files. 243 → 115 warnings (52.7% reduction). 0 errors. No suppression. Remaining: 91 no-console (ordinary debt), 24 no-explicit-any (legitimate dynamic typing). Zero security/correctness/data-integrity warnings.
+- D1 (E2E tests): Delegated to full-stack-developer subagent (Task ID: d1-e2e). Created 7 Playwright spec files + 1 helper (36 tests): auth, manufacturing, quality, batch-review, traceability, analytics, ai-assistant. ENVIRONMENT-BLOCKED: not executed (sandbox cannot sustain browser + dev server). Spec files typecheck clean.
+- Comprehensive reviews: Security (auth, authz, site isolation, AI governance, integration security, input validation, CSRF, XSS, secrets, audit, headers — all VERIFIED). Performance (query patterns, N+1, payloads, rate limiting — REVIEWED). Data-integrity (constraints, transactions, state machines, referential integrity — VERIFIED). Audit (immutability, completeness, redaction — VERIFIED). Code + domain-language (consistency, coverage, alignment — REVIEWED).
+- Verification: Typecheck 0 errors (first fully clean in project history). Lint 0 errors / 115 warnings. Full regression 402/402 PASS. Browser-verified: proxy.ts working, quality list pages render, health endpoint public.
+- Produced docs/PRD/PHASE-14-VALIDATION-REPORT.md + Production Readiness Checklist (VERIFIED / ENVIRONMENT-BLOCKED / DEFERRED / NOT IMPLEMENTED).
+- Committed.
+
+Stage Summary:
+- **Phase 14: IMPLEMENTED + VALIDATED.** Enterprise Hardening / Performance / Security / Final Validation — the FINAL phase. Zero new entities, zero new APIs, zero new domain functionality. D1 (7 E2E specs), D2 (128 lint warnings fixed; 243→115), D3 (vitest.config.ts FIXED), D4 (middleware→proxy renamed), D5 (5 detail pages with transitions). Comprehensive reviews completed. Production Readiness Checklist produced.
+- **First fully clean typecheck in project history** (0 errors — pre-existing vitest.config.ts issue resolved).
+- **Lint reduced 52.7%** (243 → 115 warnings; 0 errors; no suppression).
+- **Tests:** 402/402 PASS (366 Phase 1-12 regression + 36 Phase 13; 36 E2E specs created but ENVIRONMENT-BLOCKED).
+- **Status:** CONDITIONAL PASS. PHASE 14 STATUS: READY FOR OWNER REVIEW. STOPPED. No Phase 15.
+- **Production readiness:** VERIFIED (software validation in available environment) vs ENVIRONMENT-BLOCKED (PostgreSQL, Docker, cloud AI, E2E execution) vs DEFERRED (Redis, pgvector, automated backup) vs NOT IMPLEMENTED (concrete adapters). Honestly categorized.

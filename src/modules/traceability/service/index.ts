@@ -6,22 +6,18 @@ import { db } from "@/lib/db";
 import { can } from "@/lib/rbac";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import type { AuthContext } from "@/lib/rbac";
-import type { Prisma } from "@prisma/client";
 import {
   type TraceabilityGraph,
   type TraceabilityNode,
   type TraceabilityEdge,
   type BoundaryMarker,
   computeSummary,
-  emptyGraph,
   ForwardTraceSchema,
   BackwardTraceSchema,
   ImpactAnalysisSchema,
   GenealogyTreeSchema,
 } from "../domain";
 import type z from "zod";
-
-const TRACEABILITY_PERM = "traceability.read";
 
 // ---- Site scope check (D6) ----
 function isSiteAuthorized(ctx: AuthContext, siteId: string | null | undefined): boolean {
@@ -292,7 +288,7 @@ async function getDownstream(node: TraceabilityNode, ctx: AuthContext, visited: 
     }
     case "DEVICE_LOT": {
       // DeviceLot → TestResults, Inspections, NCRs (polymorphic)
-      const trs = await db.testResult.findMany({ where: {} }); // DeviceLot test results via sample
+      await db.testResult.findMany({ where: {} }); // DeviceLot test results via sample
       const insps = await db.inspection.findMany({ where: { sourceEntityType: "DEVICE_LOT", sourceEntityId: node.entityId } });
       for (const i of insps) addNode({ id: i.id, entityType: "INSPECTION", entityId: i.id, code: i.code, name: i.inspectionType, status: i.status, siteId: i.siteId }, "INSPECTED");
       const ncrs = await db.nCR.findMany({ where: { concernsEntityType: "DEVICE_LOT", concernsEntityId: node.entityId } });

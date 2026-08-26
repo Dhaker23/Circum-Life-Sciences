@@ -632,10 +632,6 @@ export async function getRecurrenceReport(
     where: { siteId: input.siteId, createdAt: { gte: input.fromDate, lte: input.toDate } },
     select: { id: true, code: true, concernsEntityType: true, concernsEntityId: true, createdAt: true, status: true },
   });
-  const deviations = await db.deviation.findMany({
-    where: { siteId: input.siteId, createdAt: { gte: input.fromDate, lte: input.toDate } },
-    select: { id: true, code: true, createdAt: true, status: true },
-  });
 
   // Group NCRs by subject
   const subjectMap = new Map<string, { subjectType: string; subjectId: string; occurrences: number; dates: string[]; ncrIds: string[] }>();
@@ -648,7 +644,7 @@ export async function getRecurrenceReport(
 
   // Find linked CAPAs for recurring subjects
   const items: RecurrenceReport["items"] = [];
-  for (const [key, v] of subjectMap) {
+  for (const [, v] of subjectMap) {
     if (v.occurrences < 2) continue; // recurrence = >1 occurrence
     // Find CAPAs linked to these NCRs (via CAPA.sourceType=NCR/INVESTIGATION + sourceId)
     const capas = await db.cAPA.findMany({

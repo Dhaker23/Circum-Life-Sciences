@@ -25,7 +25,23 @@
     "of": "من",
     "total": "الإجمالي",
     "export": "تصدير",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "back": "رجوع",
+    "reason": "السبب",
+    "reasonRequired": "السبب (مطلوب)",
+    "confirm": "تأكيد",
+    "confirmTransition": "تأكيد الانتقال",
+    "transition": "انتقال",
+    "transitionSuccess": "تم الانتقال بنجاح",
+    "transitionFailed": "فشل الانتقال",
+    "dispositionSuccess": "تم تسجيل الترحيل",
+    "dispositionFailed": "فشل الترحيل",
+    "notFound": "السجل غير موجود",
+    "notAvailable": "غير متاح",
+    "yes": "نعم",
+    "no": "لا",
+    "never": "أبدًا",
+    "refresh": "تحديث"
   },
   "auth": {
     "signIn": "تسجيل الدخول",
@@ -275,14 +291,66 @@
       "severity": "الخطورة",
       "concerns": "يتعلق بـ",
       "site": "الموقع",
-      "noData": "لم يتم العثور على تقارير عدم مطابقة"
+      "noData": "لم يتم العثور على تقارير عدم مطابقة",
+      "detail": {
+        "fields": {
+          "code": "الرمز",
+          "status": "الحالة",
+          "severity": "الخطورة",
+          "concernsEntityType": "نوع الكيان المعني",
+          "concernsEntityId": "معرّف الكيان المعني",
+          "description": "الوصف",
+          "containmentAction": "إجراء الاحتواء",
+          "disposition": "الترحيل",
+          "closureNotes": "ملاحظات الإغلاق",
+          "createdAt": "تاريخ الإنشاء",
+          "site": "الموقع"
+        },
+        "transitions": {
+          "CONTAINMENT": "الانتقال إلى الاحتواء",
+          "CANCELLED": "إلغاء التقرير",
+          "INVESTIGATION": "الانتقال إلى التحقيق",
+          "DISPOSITION": "الانتقال إلى الترحيل",
+          "CLOSED": "إغلاق التقرير"
+        },
+        "transitionTitle": "انتقال تقرير عدم المطابقة إلى {to}",
+        "containmentActionRequired": "إجراء الاحتواء (مطلوب)",
+        "dispositionRequired": "الترحيل (مطلوب)",
+        "closureNotesRequired": "ملاحظات الإغلاق (مطلوبة)",
+        "noTransitions": "لا توجد انتقالات متاحة من هذه الحالة."
+      }
     },
     "deviations": {
       "title": "الانحرافات",
       "subtitle": "مغادرات مخططة من العمليات المعتمدة (خاصة بالموقع)",
       "code": "الرمز",
       "appliesTo": "ينطبق على",
-      "noData": "لم يتم العثور على انحرافات"
+      "noData": "لم يتم العثور على انحرافات",
+      "detail": {
+        "fields": {
+          "code": "الرمز",
+          "status": "الحالة",
+          "appliesToEntityType": "نوع الكيان المستهدف",
+          "appliesToEntityId": "معرّف الكيان المستهدف",
+          "description": "الوصف",
+          "justification": "المبرر",
+          "impactAssessment": "تقييم الأثر",
+          "validFrom": "ساري من",
+          "validUntil": "ساري حتى",
+          "createdAt": "تاريخ الإنشاء",
+          "site": "الموقع"
+        },
+        "transitions": {
+          "ASSESSMENT": "الانتقال إلى التقييم",
+          "INVESTIGATION": "الانتقال إلى التحقيق",
+          "REVIEW": "الانتقال إلى المراجعة",
+          "CLOSED": "إغلاق الانحراف",
+          "REJECTED": "رفض الانحراف"
+        },
+        "transitionTitle": "انتقال الانحراف إلى {to}",
+        "impactAssessmentOptional": "تقييم الأثر (اختياري)",
+        "noTransitions": "لا توجد انتقالات متاحة من هذه الحالة."
+      }
     },
     "investigations": {
       "title": "التحقيقات (تحليل السبب الجذري)",
@@ -297,14 +365,74 @@
       "type": "النوع",
       "investigation": "التحقيق",
       "aiGuard": "حوكمة الذكاء الاصطناعي: يجب ألا يغلق الذكاء الاصطناعي أي CAPA. الإغلاق يتطلب تحقق بشري من الفعالية.",
-      "noData": "لم يتم العثور على CAPAs"
+      "noData": "لم يتم العثور على CAPAs",
+      "detail": {
+        "fields": {
+          "code": "الرمز",
+          "status": "الحالة",
+          "sourceType": "نوع المصدر",
+          "sourceId": "معرّف المصدر",
+          "type": "النوع",
+          "actionPlan": "خطة الإجراء",
+          "implementationOwnerUserId": "المسؤول عن التنفيذ",
+          "implementedAt": "تاريخ التنفيذ",
+          "effectivenessVerification": "التحقق من الفعالية",
+          "effectivenessVerifiedAt": "تاريخ التحقق من الفعالية",
+          "closedByUserId": "أغلق بواسطة",
+          "closedAt": "تاريخ الإغلاق",
+          "createdAt": "تاريخ الإنشاء",
+          "site": "الموقع"
+        },
+        "transitions": {
+          "ACTION_PLAN": "الانتقال إلى خطة الإجراء",
+          "IMPLEMENTATION": "الانتقال إلى التنفيذ",
+          "EFFECTIVENESS": "الانتقال إلى الفعالية",
+          "CLOSED": "إغلاق CAPA"
+        },
+        "transitionTitle": "انتقال CAPA إلى {to}",
+        "closureHumanOnlyNotice": "إغلاق CAPA بشري فقط. يجب ألا يغلق الذكاء الاصطناعي أي CAPA أبدًا. يلزم تقديم دليل التحقق من الفعالية.",
+        "effectivenessVerificationRequired": "التحقق من الفعالية (مطلوب للإغلاق)",
+        "noTransitions": "لا توجد انتقالات متاحة من هذه الحالة."
+      }
     },
     "changes": {
       "title": "مراقبة التغييرات",
       "subtitle": "تغييرات محكومة للمنتجات/العمليات/المستندات/المعدات",
       "code": "الرمز",
       "type": "النوع",
-      "noData": "لم يتم العثور على ضوابط تغيير"
+      "noData": "لم يتم العثور على ضوابط تغيير",
+      "detail": {
+        "fields": {
+          "code": "الرمز",
+          "status": "الحالة",
+          "changeType": "نوع التغيير",
+          "description": "الوصف",
+          "reason": "السبب",
+          "impactAssessment": "تقييم الأثر",
+          "implementationPlan": "خطة التنفيذ",
+          "verificationPlan": "خطة التحقق",
+          "approvedByUserId": "اعتمد بواسطة",
+          "approvedAt": "تاريخ الاعتماد",
+          "createdAt": "تاريخ الإنشاء",
+          "site": "الموقع"
+        },
+        "transitions": {
+          "IMPACT": "الانتقال إلى الأثر",
+          "RISK": "الانتقال إلى المخاطر",
+          "APPROVAL": "الانتقال إلى الاعتماد",
+          "IMPLEMENTATION": "الانتقال إلى التنفيذ",
+          "VERIFICATION": "الانتقال إلى التحقق",
+          "EFFECTIVENESS": "الانتقال إلى الفعالية",
+          "CLOSED": "إغلاق التغيير",
+          "REJECTED": "رفض التغيير"
+        },
+        "transitionTitle": "انتقال مراقبة التغيير إلى {to}",
+        "impactAssessmentRequired": "تقييم الأثر (مطلوب)",
+        "implementationPlanRequired": "خطة التنفيذ (مطلوبة)",
+        "verificationPlanRequired": "خطة التحقق (مطلوبة)",
+        "implementationNeedsApprovalNotice": "التنفيذ يتطلب اعتمادًا بشريًا مسبقًا (مرحلة الاعتماد). يجب ألا يعتمد الذكاء الاصطناعي أي تغيير أبدًا.",
+        "noTransitions": "لا توجد انتقالات متاحة من هذه الحالة."
+      }
     },
     "risks": {
       "title": "تقييمات المخاطر",
@@ -419,7 +547,41 @@
     "title": "مراجعة الدفعة",
     "subtitle": "مراجعة ضمان الجودة والتصرف",
     "dispositionGuard": "التصرف بالدفعة بشري فقط.",
-    "noData": "لا توجد دفعات جاهزة للمراجعة"
+    "noData": "لا توجد دفعات جاهزة للمراجعة",
+    "detail": {
+      "back": "رجوع",
+      "fields": {
+        "code": "رمز الدفعة",
+        "status": "الحالة",
+        "plannedQuantity": "الكمية المخططة",
+        "actualQuantity": "الكمية الفعلية",
+        "reviewFindings": "نتائج المراجعة",
+        "disposition": "الترحيل",
+        "dispositionNotes": "ملاحظات الترحيل",
+        "workOrder": "أمر الإنتاج",
+        "product": "المنتج",
+        "site": "الموقع",
+        "reviewedBy": "راجع بواسطة",
+        "reviewedAt": "تاريخ المراجعة",
+        "dispositionedBy": "رحّل بواسطة",
+        "dispositionedAt": "تاريخ الترحيل",
+        "createdAt": "تاريخ الإنشاء"
+      },
+      "transitionTitle": "بدء مراجعة ضمان الجودة",
+      "reviewFindingsRequired": "نتائج المراجعة (مطلوبة)",
+      "dispositionNotesRequired": "ملاحظات الترحيل (مطلوبة)",
+      "transitionButton": "بدء مراجعة ضمان الجودة",
+      "dispositionHumanOnlyNotice": "الترحيل بشري فقط. يجب ألا يرحّل الذكاء الاصطناعي أي منتج أبدًا. تتطلب جميع الترحيلات نتائج مراجعة موثقة.",
+      "dispositions": {
+        "APPROVED": "اعتماد الدفعة",
+        "HOLD": "وضع قيد الانتظار",
+        "REWORK": "إرسال للإعادة",
+        "REJECT": "رفض الدفعة"
+      },
+      "dispositionTitle": "ترحيل: {disposition}",
+      "noActions": "لا توجد إجراءات متاحة من هذه الحالة.",
+      "batchNotFound": "الدفعة غير موجودة"
+    }
   },
   "lean": {
     "downtime": {

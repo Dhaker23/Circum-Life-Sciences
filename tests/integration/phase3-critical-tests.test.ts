@@ -4,7 +4,6 @@ import { resetTestDb, disconnectTestDb, getTestDb } from "./test-db";
 import {
   assertBatchTransition,
   assertConsumptionQuantity,
-  assertDlTransition,
   assertReservationQuantity,
   assertRoutingEditable,
   assertWoTransition,
@@ -28,18 +27,18 @@ beforeAll(async () => {
   const siteB = await db.site.create({ data: { code: "T-SITE-B", name: "Test Site B", isDemo: true, status: "ACTIVE" } });
   const supplier = await db.supplier.create({ data: { code: "T-SUP-01", name: "Approved Supplier", qualificationStatus: "APPROVED", isDemo: true } });
   const material = await db.material.create({ data: { code: "T-MAT-01", name: "Test Material", materialType: "RAW", defaultUnit: "kg", isDemo: true } });
-  const lot = await db.materialLot.create({ data: { lotCode: "T-LOT-A1", materialId: material.id, supplierId: supplier.id, siteId: site.id, quantityReceived: "100", quantityAvailable: "100", quantityReserved: "0", unit: "kg", status: "APPROVED", isDemo: true } });
-  const lotB = await db.materialLot.create({ data: { lotCode: "T-LOT-B1", materialId: material.id, supplierId: supplier.id, siteId: siteB.id, quantityReceived: "50", quantityAvailable: "50", quantityReserved: "0", unit: "kg", status: "APPROVED", isDemo: true } });
+  await db.materialLot.create({ data: { lotCode: "T-LOT-A1", materialId: material.id, supplierId: supplier.id, siteId: site.id, quantityReceived: "100", quantityAvailable: "100", quantityReserved: "0", unit: "kg", status: "APPROVED", isDemo: true } });
+  await db.materialLot.create({ data: { lotCode: "T-LOT-B1", materialId: material.id, supplierId: supplier.id, siteId: siteB.id, quantityReceived: "50", quantityAvailable: "50", quantityReserved: "0", unit: "kg", status: "APPROVED", isDemo: true } });
   const product = await db.product.create({ data: { code: "T-PROD-01", name: "Test Product", productType: "DEVICE", deviceClass: "IIa", isDemo: true } });
   const rev = await db.productRevision.create({ data: { productId: product.id, revisionCode: "REV-A", status: "EFFECTIVE", effectiveFrom: new Date(), isDemo: true } });
   const routing = await db.routing.create({ data: { productRevisionId: rev.id, status: "EFFECTIVE" } });
-  const op = await db.operation.create({ data: { routingId: routing.id, sequence: 10, name: "Molding", instructions: "Mold per SOP" } });
-  const wc = await db.workCenter.create({ data: { code: "WC-A-01", name: "Station A", siteId: site.id, isDemo: true } });
-  const emp = await db.employee.create({ data: { employeeCode: "EMP-T-01", firstName: "Test", lastName: "Operator", fullName: "Test Operator", siteId: site.id, isDemo: true } });
+  await db.operation.create({ data: { routingId: routing.id, sequence: 10, name: "Molding", instructions: "Mold per SOP" } });
+  await db.workCenter.create({ data: { code: "WC-A-01", name: "Station A", siteId: site.id, isDemo: true } });
+  await db.employee.create({ data: { employeeCode: "EMP-T-01", firstName: "Test", lastName: "Operator", fullName: "Test Operator", siteId: site.id, isDemo: true } });
   const wo = await db.workOrder.create({ data: { code: "WO-A-01", productRevisionId: rev.id, siteId: site.id, plannedQuantity: "100", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
   const woB = await db.workOrder.create({ data: { code: "WO-B-01", productRevisionId: rev.id, siteId: siteB.id, plannedQuantity: "50", unit: "pcs", status: "PLANNED", isDemo: true } });
-  const batch = await db.manufacturingBatch.create({ data: { code: "BATCH-A-01", workOrderId: wo.id, productRevisionId: rev.id, siteId: site.id, plannedQuantity: "100", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
-  const batchB = await db.manufacturingBatch.create({ data: { code: "BATCH-B-01", workOrderId: woB.id, productRevisionId: rev.id, siteId: siteB.id, plannedQuantity: "50", unit: "pcs", status: "PLANNED", isDemo: true } });
+  await db.manufacturingBatch.create({ data: { code: "BATCH-A-01", workOrderId: wo.id, productRevisionId: rev.id, siteId: site.id, plannedQuantity: "100", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
+  await db.manufacturingBatch.create({ data: { code: "BATCH-B-01", workOrderId: woB.id, productRevisionId: rev.id, siteId: siteB.id, plannedQuantity: "50", unit: "pcs", status: "PLANNED", isDemo: true } });
 });
 afterAll(async () => { await disconnectTestDb(); });
 

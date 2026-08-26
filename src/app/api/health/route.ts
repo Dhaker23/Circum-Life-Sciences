@@ -12,7 +12,7 @@ export async function GET() {
     const start = Date.now();
     await db.$queryRaw`SELECT 1`;
     checks.database = { status: "healthy", latencyMs: Date.now() - start };
-  } catch (e) {
+  } catch {
     checks.database = { status: "unhealthy", error: "database connection failed" };
     overall = "unhealthy";
   }

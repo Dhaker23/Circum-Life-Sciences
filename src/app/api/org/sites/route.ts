@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import { ok, fail, parseOrThrow } from "@/lib/api-envelope";
 import { requirePermission } from "@/lib/auth-context";
-import { CreateSiteSchema, PaginationSchema } from "@/lib/zod-schemas";
+import { CreateSiteSchema } from "@/lib/zod-schemas";
 import * as orgService from "@/modules/organization/service";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const ctx = await requirePermission("org.site.read");
     const sites = await orgService.listSites(ctx);

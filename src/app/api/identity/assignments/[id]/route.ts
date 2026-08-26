@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { ok, fail, noContent } from "@/lib/api-envelope";
+import { fail, noContent } from "@/lib/api-envelope";
 import { requirePermission } from "@/lib/auth-context";
 import * as identityService from "@/modules/identity/service";
 

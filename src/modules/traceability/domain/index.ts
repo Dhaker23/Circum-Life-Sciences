@@ -109,7 +109,7 @@ export function emptyGraph(root: TraceabilityNode): TraceabilityGraph {
 }
 
 // ---- Helper: compute summary from nodes ----
-export function computeSummary(nodes: TraceabilityNode[], truncated: boolean, authorizationLimited: boolean): TraceabilityGraph["summary"] {
+export function computeSummary(nodes: TraceabilityNode[], _truncated: boolean, _authorizationLimited: boolean): TraceabilityGraph["summary"] {
   const nodesByType: Record<string, number> = {};
   for (const n of nodes) {
     nodesByType[n.entityType] = (nodesByType[n.entityType] ?? 0) + 1;

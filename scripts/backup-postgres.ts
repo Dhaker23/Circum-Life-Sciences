@@ -21,7 +21,7 @@ mkdirSync(OUTPUT_DIR, { recursive: true });
 try {
   execSync(`pg_dump --format=custom --file="${OUTPUT_PATH}" "${DATABASE_URL}"`, { stdio: "inherit" });
   console.log(`✓ PostgreSQL backup created: ${OUTPUT_PATH}`);
-} catch (e) {
+} catch {
   console.error("ERROR: pg_dump failed. Is PostgreSQL available and pg_dump installed?");
   process.exit(1);
 }

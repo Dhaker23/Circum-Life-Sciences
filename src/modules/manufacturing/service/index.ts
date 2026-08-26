@@ -10,7 +10,6 @@ import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
-  StateTransitionError,
   ValidationError,
 } from "@/lib/errors";
 import type { AuthContext } from "@/lib/rbac";

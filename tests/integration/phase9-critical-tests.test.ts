@@ -15,11 +15,11 @@ beforeAll(async () => {
   const rev = await db.productRevision.create({ data: { productId: product.id, revisionCode: "REV-A", status: "EFFECTIVE", effectiveFrom: new Date(), isDemo: true } });
   const wo = await db.workOrder.create({ data: { code: "WO-A", productRevisionId: rev.id, siteId: site.id, plannedQuantity: "100", unit: "pcs", status: "IN_PRODUCTION", isDemo: true } });
   const batch = await db.manufacturingBatch.create({ data: { code: "BAT-A", workOrderId: wo.id, productRevisionId: rev.id, siteId: site.id, plannedQuantity: "100", unit: "pcs", status: "READY_FOR_REVIEW", isDemo: true } });
-  const dl = await db.deviceLot.create({ data: { code: "DL-A", batchId: batch.id, siteId: site.id, quantity: "50", unit: "pcs", status: "COMPLETED", isDemo: true } });
+  await db.deviceLot.create({ data: { code: "DL-A", batchId: batch.id, siteId: site.id, quantity: "50", unit: "pcs", status: "COMPLETED", isDemo: true } });
   const cr = await db.cleanroom.create({ data: { code: "CR-A", name: "Cleanroom A", siteId: site.id, classification: "ISO 7", isDemo: true } });
-  const mp = await db.monitoringPoint.create({ data: { cleanroomId: cr.id, code: "MP-A", name: "Particles", parameter: "Particle Count", unit: "CFU/m3", alertLimit: 100, actionLimit: 1000, isDemo: true } });
-  const crB = await db.cleanroom.create({ data: { code: "CR-B", name: "Cleanroom B", siteId: siteB.id, isDemo: true } });
-  const eq = await db.equipment.create({ data: { code: "EQ-A", name: "Molder", equipmentType: "Molding", siteId: site.id, isDemo: true } });
+  await db.monitoringPoint.create({ data: { cleanroomId: cr.id, code: "MP-A", name: "Particles", parameter: "Particle Count", unit: "CFU/m3", alertLimit: 100, actionLimit: 1000, isDemo: true } });
+  await db.cleanroom.create({ data: { code: "CR-B", name: "Cleanroom B", siteId: siteB.id, isDemo: true } });
+  await db.equipment.create({ data: { code: "EQ-A", name: "Molder", equipmentType: "Molding", siteId: site.id, isDemo: true } });
 });
 afterAll(async () => { await disconnectTestDb(); });
 
