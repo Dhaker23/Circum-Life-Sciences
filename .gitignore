@@ -67,9 +67,10 @@ backups-test/
 tool-results/
 agent-ctx/
 
-# sandbox-specific runtime artifacts
-.zscripts/dev.pid
-.zscripts/dev.log
+# sandbox-specific artifacts (not needed for GitHub/Vercel/local)
+.zscripts/
+Caddyfile
+download/
 
 # skills directory (Z.ai platform skills — not Circum application code)
 /skills/
