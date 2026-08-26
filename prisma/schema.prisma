@@ -68,6 +68,7 @@ model User {
   sterilizationReleasedBy    SterilizationLot[]     @relation("SterilizationReleaseBy") // Phase 9
   batchReviewsReviewed       BatchReviewRecord[]    @relation("BatchReviewReviewer") // Phase 9
   batchReviewsDispositioned  BatchReviewRecord[]    @relation("BatchReviewDispositioner") // Phase 9
+  aiConversations            AiConversation[]       // Phase 12
 
   @@index([status])
 }
@@ -220,6 +221,7 @@ model Site {
   batchReviewRecords         BatchReviewRecord[] // Phase 9
   downtimeEvents             DowntimeEvent[]
   valueStreamMaps            ValueStreamMap[]
+  aiConversations            AiConversation[] // Phase 12
 
   @@index([status])
 }
@@ -1735,4 +1737,51 @@ model VsmEdge {
 
   @@index([fromNodeId])
   @@index([toNodeId])
+}
+
+// ============================================================================
+// Phase 12 — AI Assistant / RAG / Controlled Intelligence
+// D3: AiConversation + AiMessage (append-only, site-owned, user-scoped).
+// D4: reuses AuditEvent (action="ai.chat"). D6: advisory-only, Local-First.
+// D9: AI has ZERO mutation permissions; operates in the user's context.
+// D10: PRD §9-derived system prompt (versioned, no invented rules).
+// ============================================================================
+
+model AiConversation {
+  id         String   @id @default(cuid())
+  userId     String?
+  siteId     String   // the site scope at query time (site-scoped)
+  title      String   @default("New conversation")
+  status     String   @default("ACTIVE") // ACTIVE | ARCHIVED
+  capability String?  // general | batch-investigation | root-cause | recurrence | trend-explanation | kpi-analysis | report-draft
+  isDemo     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  site     Site          @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  messages AiMessage[]
+
+  @@index([userId])
+  @@index([siteId])
+  @@index([status])
+}
+
+model AiMessage {
+  id                 String   @id @default(cuid())
+  conversationId     String
+  role               String   // USER | ASSISTANT
+  content            String   // the text content
+  structuredResponse String?  // JSON: { answer, evidence, interpretation, recommendation, limitations } (ASSISTANT only)
+  sources            String?  // JSON: [{ service, entityCode, entityType }] — what Phase 1-11 data was consulted
+  tokensUsed         Int?     // prompt + completion tokens (ASSISTANT only)
+  provider           String?  // "zai" | future providers
+  available          Boolean  @default(true) // false if provider was unavailable (D6)
+  createdAt          DateTime @default(now())
+  // NOTE: no updatedAt — append-only. No update/delete methods on the repository.
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([role])
 }

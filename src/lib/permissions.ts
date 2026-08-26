@@ -219,6 +219,14 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { key: "analytics.export", module: "analytics", description: "Export reports as CSV (human-only; AI MUST NEVER)" },
   { key: "analytics.corporate.read", module: "analytics", description: "Read corporate-aggregated (cross-site) analytics (human-only; AI MUST NEVER)" },
   { key: "analytics.snapshot.create", module: "analytics", description: "Create an AnalyticsSnapshot (human-only; RESERVED - not implemented in Phase 11)" },
+  // ai (Phase 12; D9: AI is advisory-only, operates in user's context, ZERO mutation permissions)
+  // D9 role grants (documented, least-privilege): only roles with existing analytics/quality/traceability read access.
+  // ai.chat: super_admin, site_admin, plant_manager, production_manager, quality_manager, qa_reviewer, quality_engineer, lean_manager, auditor, executive_viewer
+  // ai.history.read: quality_manager, auditor, executive_viewer, super_admin, site_admin
+  // ai.history.delete: quality_manager, site_admin, super_admin (archive only; AuditEvent preserved)
+  { key: "ai.chat", module: "ai", description: "Use the AI Assistant (advisory-only; operates in user's authorized context)" },
+  { key: "ai.history.read", module: "ai", description: "Read AI conversation history (user/site-scoped)" },
+  { key: "ai.history.delete", module: "ai", description: "Archive AI conversations (human-only; AuditEvent records preserved)" },
 ];
 
 // Role system keys (stable enum-like strings). The 19 PRD roles (PRD §3).
@@ -288,6 +296,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "equipment.read", "equipment.create", "equipment.update", "equipment.maintenance.read", "equipment.maintenance.create", "equipment.maintenance.transition", "equipment.calibration.read", "equipment.calibration.create", "equipment.qualification.read", "equipment.qualification.create", "equipment.qualification.transition", "equipment.qualification.approve",
     "lean.read", "lean.downtime.create", "lean.downtime.close", "lean.vsm.create",
     "analytics.read", "analytics.export", "analytics.corporate.read", "analytics.snapshot.create",
+    "ai.chat", "ai.history.read", "ai.history.delete",
     "session.sign-in", "session.sign-out",
   ],
   site_admin: [
@@ -317,6 +326,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "production.shift.read", "production.shift.create", "production.shift.update",
     "lean.read",
     "analytics.read", "analytics.export",
+    "ai.chat", "ai.history.read",
     "session.sign-in", "session.sign-out",
   ],
   plant_manager: [
@@ -340,6 +350,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "equipment.read", "equipment.maintenance.read", "equipment.calibration.read", "equipment.qualification.read",
     "lean.read",
     "analytics.read", "analytics.export",
+    "ai.chat",
     "session.sign-in", "session.sign-out",
   ],
   production_manager: [
@@ -363,6 +374,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "traceability.read",
     "lean.read", "lean.downtime.create", "lean.downtime.close",
     "analytics.read", "analytics.export",
+    "ai.chat",
     "session.sign-in", "session.sign-out",
   ],
   production_planner: [
@@ -430,6 +442,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "equipment.read", "equipment.create", "equipment.update", "equipment.maintenance.read", "equipment.maintenance.create", "equipment.maintenance.transition", "equipment.calibration.read", "equipment.calibration.create", "equipment.qualification.read", "equipment.qualification.create", "equipment.qualification.transition", "equipment.qualification.approve",
     "lean.read",
     "analytics.read", "analytics.export",
+    "ai.chat", "ai.history.read", "ai.history.delete",
     "session.sign-in", "session.sign-out",
   ],
   qa_reviewer: [
@@ -450,6 +463,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "lab.specification.read", "lab.specification.create", "lab.specification.transition", "lab.specification.approve", "lab.testmethod.read", "lab.testmethod.create", "lab.testmethod.transition", "lab.sample.read", "lab.testresult.read", "lab.testresult.transition", "lab.testresult.disposition", "inspection.read", "inspection.transition",
     "traceability.read", "traceability.query-log.read",
     "analytics.read",
+    "ai.chat",
     "session.sign-in", "session.sign-out",
   ],
   quality_engineer: [
@@ -474,6 +488,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "equipment.read", "equipment.create", "equipment.update", "equipment.maintenance.read", "equipment.maintenance.create", "equipment.maintenance.transition", "equipment.calibration.read", "equipment.calibration.create", "equipment.qualification.read", "equipment.qualification.create", "equipment.qualification.transition", "equipment.qualification.approve",
     "lean.read",
     "analytics.read", "analytics.export",
+    "ai.chat", "ai.history.read", "ai.history.delete",
     "session.sign-in", "session.sign-out",
   ],
   lab_technician: [
@@ -509,6 +524,7 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "org.site.read", "org.department.read", "audit.read",
     "lean.read",
     "analytics.read", "analytics.export",
+    "ai.chat",
     "session.sign-in", "session.sign-out",
   ],
   auditor: [
@@ -530,10 +546,12 @@ export const DEFAULT_ROLE_GRANTS: Record<RoleSystemKey, string[]> = {
     "equipment.read", "equipment.maintenance.read", "equipment.calibration.read", "equipment.qualification.read",
     "lean.read",
     "analytics.read", "analytics.export",
+    "ai.chat", "ai.history.read",
     "session.sign-in", "session.sign-out",
   ],
   executive_viewer: [
     "analytics.read", "analytics.corporate.read",
+    "ai.chat", "ai.history.read",
     "org.site.read",
     "manufacturing.product.read", "production.workorder.read", "production.batch.read",
     "quality.ncr.read", "quality.deviation.read", "quality.capa.read", "quality.change.read", "quality.risk.read",

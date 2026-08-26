@@ -92,7 +92,9 @@
     "analyticsReports": "التقارير",
     "analyticsVsm": "تحليل VSM",
     "analyticsCorporate": "مستوى المؤسسة",
-    "analyticsSection": "التحليلات"
+    "analyticsSection": "التحليلات",
+    "aiAssistant": "مساعد الذكاء الاصطناعي",
+    "aiSection": "الذكاء الاصطناعي"
   },
   "users": {
     "title": "المستخدمون",
@@ -537,5 +539,39 @@
       "liveComputation": "حساب مباشر",
       "noSnapshot": "لا توجد لقطات — جميع المقاييس محسوبة عند الطلب"
     }
+  },
+  "ai": {
+    "title": "مساعد الذكاء الاصطناعي",
+    "subtitle": "تحليل استشاري بالذكاء الاصطناعي للبيانات المصرح بها",
+    "placeholder": "اسأل عن OEE أو الجودة أو الدفعات...",
+    "send": "إرسال",
+    "newConversation": "محادثة جديدة",
+    "conversations": "المحادثات",
+    "capability": "القدرة",
+    "capabilities": {
+      "general": "عام",
+      "batch-investigation": "تحقيق الدفعة",
+      "root-cause": "السبب الجذري",
+      "recurrence": "التكرار",
+      "trend-explanation": "شرح الاتجاه",
+      "kpi-analysis": "تحليل KPI",
+      "report-draft": "مسودة التقرير"
+    },
+    "answer": "الإجابة",
+    "evidence": "الأدلة",
+    "interpretation": "التفسير",
+    "recommendation": "التوصية",
+    "limitations": "القيود",
+    "sources": "المصادر المستشار بها",
+    "unavailable": "مزود الذكاء الاصطناعي غير متاح. تستمر سير العمل الأساسية بشكل طبيعي.",
+    "rateLimited": "تم تجاوز حد المعدل. يرجى الانتظار بضع دقائق.",
+    "loading": "يفكر الذكاء الاصطناعي...",
+    "advisoryNotice": "معلومات استشارية من الذكاء الاصطناعي. ليست موافقة. مطلوب مراجعة بشرية.",
+    "tokensUsed": "رمز مستخدم",
+    "archive": "أرشفة",
+    "archived": "مؤرشف",
+    "noConversations": "لا توجد محادثات بعد",
+    "askAi": "اسأل الذكاء الاصطناعي",
+    "selectSite": "اختر موقعًا"
   }
 }

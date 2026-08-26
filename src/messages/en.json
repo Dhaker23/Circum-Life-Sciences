@@ -92,7 +92,9 @@
     "analyticsReports": "Reports",
     "analyticsVsm": "VSM Analytics",
     "analyticsCorporate": "Corporate",
-    "analyticsSection": "Analytics"
+    "analyticsSection": "Analytics",
+    "aiAssistant": "AI Assistant",
+    "aiSection": "AI"
   },
   "users": {
     "title": "Users",
@@ -537,5 +539,39 @@
       "liveComputation": "Live computation",
       "noSnapshot": "No snapshots — all metrics computed on-demand"
     }
+  },
+  "ai": {
+    "title": "AI Assistant",
+    "subtitle": "Advisory-only AI analysis of authorized factory/QMS data",
+    "placeholder": "Ask about OEE, quality, batches, trends...",
+    "send": "Send",
+    "newConversation": "New conversation",
+    "conversations": "Conversations",
+    "capability": "Capability",
+    "capabilities": {
+      "general": "General",
+      "batch-investigation": "Batch Investigation",
+      "root-cause": "Root Cause",
+      "recurrence": "Recurrence",
+      "trend-explanation": "Trend Explanation",
+      "kpi-analysis": "KPI Analysis",
+      "report-draft": "Report Draft"
+    },
+    "answer": "Answer",
+    "evidence": "Evidence",
+    "interpretation": "Interpretation",
+    "recommendation": "Recommendation",
+    "limitations": "Limitations",
+    "sources": "Sources consulted",
+    "unavailable": "AI provider unavailable. Core workflows continue to function normally.",
+    "rateLimited": "Rate limit exceeded. Please wait a few minutes.",
+    "loading": "AI is thinking...",
+    "advisoryNotice": "AI-generated advisory information. Not an approval or official decision. Human review required.",
+    "tokensUsed": "tokens used",
+    "archive": "Archive",
+    "archived": "Archived",
+    "noConversations": "No conversations yet",
+    "askAi": "Ask AI",
+    "selectSite": "Select a site"
   }
 }

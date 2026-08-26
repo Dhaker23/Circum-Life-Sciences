@@ -92,7 +92,9 @@
     "analyticsReports": "Rapports",
     "analyticsVsm": "Analyse VSM",
     "analyticsCorporate": "Entreprise",
-    "analyticsSection": "Analytique"
+    "analyticsSection": "Analytique",
+    "aiAssistant": "Assistant IA",
+    "aiSection": "IA"
   },
   "users": {
     "title": "Utilisateurs",
@@ -537,5 +539,39 @@
       "liveComputation": "Calcul en temps réel",
       "noSnapshot": "Aucun instantané — toutes les métriques calculées à la demande"
     }
+  },
+  "ai": {
+    "title": "Assistant IA",
+    "subtitle": "Analyse IA consultative des données autorisées",
+    "placeholder": "Posez une question sur l'OEE, la qualité, les lots...",
+    "send": "Envoyer",
+    "newConversation": "Nouvelle conversation",
+    "conversations": "Conversations",
+    "capability": "Capacité",
+    "capabilities": {
+      "general": "Général",
+      "batch-investigation": "Investigation de lot",
+      "root-cause": "Cause racine",
+      "recurrence": "Récurrence",
+      "trend-explanation": "Explication de tendance",
+      "kpi-analysis": "Analyse KPI",
+      "report-draft": "Brouillon de rapport"
+    },
+    "answer": "Réponse",
+    "evidence": "Preuves",
+    "interpretation": "Interprétation",
+    "recommendation": "Recommandation",
+    "limitations": "Limitations",
+    "sources": "Sources consultées",
+    "unavailable": "Fournisseur IA indisponible. Les flux de travail core continuent normalement.",
+    "rateLimited": "Limite de débit dépassée. Patientez quelques minutes.",
+    "loading": "L'IA réfléchit...",
+    "advisoryNotice": "Information consultative générée par IA. Pas une approbation. Révision humaine requise.",
+    "tokensUsed": "jetons utilisés",
+    "archive": "Archiver",
+    "archived": "Archivé",
+    "noConversations": "Aucune conversation",
+    "askAi": "Demander à l'IA",
+    "selectSite": "Sélectionner un site"
   }
 }

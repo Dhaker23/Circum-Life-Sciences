@@ -96,6 +96,12 @@ const NAV: { section: string; items: NavItem[] }[] = [
     ],
   },
   {
+    section: "ai",
+    items: [
+      { href: "/ai-assistant", labelKey: "nav.aiAssistant", icon: Activity, permission: "ai.chat" },
+    ],
+  },
+  {
     section: "phase9",
     items: [
       { href: "/cleanroom/rooms", labelKey: "nav.cleanroom", icon: Wind, permission: "cleanroom.read" },
