@@ -52,10 +52,3 @@ export default async function middleware(req: NextRequest) {
 
   return intlResponse ?? NextResponse.next();
 }
-
-export const config = {
-  // Match all paths except static assets and next internals.
-  matcher: ["/((?!_next|_vercel|.*\\..*).*)"],
-};
-
-export const runtime = "nodejs";
