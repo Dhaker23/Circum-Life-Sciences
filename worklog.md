@@ -918,3 +918,30 @@ Stage Summary:
 - **Status:** CONDITIONAL PASS. PHASE 13 STATUS: READY FOR OWNER REVIEW. STOPPED. Not starting Phase 14.
 - **Environment-blocked:** PostgreSQL cutover + RLS (no PostgreSQL in sandbox). Docker build (sandbox cannot run Docker). Cloud AI provider (Phase 12 carry-forward). All reported as unverified, not falsely claimed.
 - **Production blockers (carry-forward):** PostgreSQL migration execution (ADR-0002 — script + RLS ready); distributed rate limiting (Phase 14); vector search (Phase 14+); concrete integration adapters (future phases per real target system); automated backup scheduling (operations); lint debt (243 warnings, must not grow uncontrolled).
+
+---
+Task ID: p14-plan
+Agent: main-orchestrator (Z.ai Code)
+Task: Phase 13 approved/closed. Produce CIRCUM PHASE 14 DOMAIN & IMPLEMENTATION PLAN (Enterprise Hardening / Performance / Security / Final Validation — the FINAL phase). Use grill-with-docs → domain-modeling → codebase-design. Do NOT implement. STOP.
+
+Work Log:
+- Inspected complete project state through Phase 13:
+  - Master PRD §18 Phase 14: "Enterprise hardening / performance / security / final validation" — the final phase.
+  - PRD §19 Phase Gate: includes E2E tests, security review, data-integrity review, audit review, domain-language review, code review, performance review, browser/console review.
+  - PRD §22 Success Criteria: reliable, secure, maintainable, scalable, testable, observable, multilingual, traceable, audit-ready, validation-minded, usable by factory personnel, capable of controlled QMS workflows, production analytics, safe AI usage.
+  - 71 Prisma models, 402/402 tests pass, 168 permissions, 0 lint errors / 243 warnings.
+  - Carry-forward items from Phase 13: PostgreSQL/RLS (ENVIRONMENT-BLOCKED), Docker build (ENVIRONMENT-BLOCKED), Z.ai provider (ENVIRONMENT-BLOCKED), lint debt (243 warnings), vitest.config.ts typecheck issue, distributed rate limiting (DEFERRED), vector search (DEFERRED), concrete adapters (NOT IMPLEMENTED), automated backup (DEFERRED), deferred UI, Playwright E2E (NOT IMPLEMENTED), middleware→proxy rename.
+  - playwright.config.ts exists but tests/e2e/ is empty — E2E coverage is a Phase 14 deliverable.
+  - Matt Pocock skills: grill-with-docs, domain-modeling, codebase-design.
+- Applied grill-with-docs + domain-modeling + codebase-design: identified that Phase 14 is fundamentally different from Phases 1-13 — it is a hardening/validation phase, not a feature phase. ZERO new domain entities. Phase 14 introduces only: E2E tests, lint reduction, vitest.config.ts fix, middleware→proxy rename, deferred UI completion, and comprehensive reviews (security, performance, data-integrity, audit, code, domain-language).
+- Identified 5 domain decisions (D1-D5) requiring owner confirmation: D1 (E2E scope — 7 critical workflows), D2 (lint reduction strategy — conservative), D3 (vitest.config.ts fix — safe with regression), D4 (middleware→proxy rename — safe with verification), D5 (deferred UI — transition buttons on quality/batch-review detail pages).
+- Produced docs/PRD/PHASE-14-IMPLEMENTATION-PLAN.md (17 sections): context, objectives, PRD traceability (R1-R13), domain model (D1-D5), no schema changes, E2E architecture, performance review, security review, data-integrity review, audit review, code/domain-language review, testing, carry-forward item resolution (VERIFIED/ENVIRONMENT-BLOCKED/DEFERRED/NOT IMPLEMENTED), technical-debt implications, OWNER DECISION REQUIRED, mandatory STOP, Production Readiness Checklist deliverable.
+- Did NOT implement Phase 14. No E2E tests, no lint fixes, no config changes, no UI changes.
+
+Stage Summary:
+- **Phase 14 Plan: PRODUCED.** Enterprise Hardening / Performance / Security / Final Validation — the FINAL phase. Zero new entities. E2E coverage (7 workflows). Lint reduction (243 → ~200-210). vitest.config.ts fix. middleware→proxy rename. Deferred UI completion. Comprehensive reviews (security, performance, data-integrity, audit, code, domain-language). Production Readiness Checklist.
+- **5 decisions (D1-D5) require owner confirmation.** All have sensible defaults.
+- **Schema impact:** ZERO. No new entities, no new fields, no migrations.
+- **Status:** WAITING FOR OWNER APPROVAL. STOPPED. Not starting Phase 14 implementation. No Phase 15 (Phase 14 is final).
+- **Carry-forward resolution:** ENVIRONMENT-BLOCKED items (PostgreSQL, Docker, Z.ai provider) documented as production-deployment gates; DEFERRED items (Redis rate limiting, pgvector, automated backup) documented as future requirements; NOT IMPLEMENTED items (concrete adapters) documented as future phases; VERIFIED items (lint, vitest.config.ts, middleware→proxy, deferred UI, E2E) to be resolved in Phase 14.
+- **Autonomous cron conflict:** Host standing "15-min webDevReview cron" remains superseded by Circum Phase 0 Q5 owner-approved decision. No autonomous-continuation cron created.
