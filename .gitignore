@@ -1,4 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# See https://help.github.com/articles/ignoring-files/ for more about about ignoring files.
 
 # dependencies
 node_modules
@@ -30,30 +30,46 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — NEVER commit real secrets. Use .env.example for the template.
+.env
+.env.*
+!.env.example
 
 # vercel
 .vercel
 
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local development artifacts
 local-*
 .claude
 .z-ai-config
 *.log
 dev.log
 dev.out.log
-test
+server.log
 prompt
 
-server.log
-# Skills directory
-/skills/db/custom.db
+# database files (SQLite local dev/test databases — never commit)
+db/custom.db
 db/test.db
 db/*.db-wal
 db/*.db-shm
-dev.log
+db/*.db-journal
+
+# backup artifacts
+backups/
+backups-test/
+
+# tool/agent temporary output
 tool-results/
+agent-ctx/
+
+# sandbox-specific runtime artifacts
+.zscripts/dev.pid
+.zscripts/dev.log
+
+# skills directory (Z.ai platform skills — not Circum application code)
+/skills/
