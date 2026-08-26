@@ -8,6 +8,16 @@ const intlMiddleware = createMiddleware(routing);
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Static assets and Next.js internals: bypass proxy entirely (Next.js 16 compatible — no matcher export needed).
+  // Without this, the proxy would intercept /_next/*, /logo.svg, *.css, *.js, *.woff2, etc. and redirect them to /en/sign-in.
+  if (
+    pathname.startsWith("/_next/") ||
+    pathname.startsWith("/favicon.ico") ||
+    /\.(svg|png|jpg|jpeg|webp|gif|ico|css|js|woff|woff2|ttf|eot|map)$/i.test(pathname)
+  ) {
+    return NextResponse.next();
+  }
+
   // next-auth API routes: pass through.
   if (pathname.startsWith("/api/auth")) {
     return NextResponse.next();
