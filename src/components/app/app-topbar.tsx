@@ -2,7 +2,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter, usePathname } from "next/navigation";
-import { LogOut, Globe } from "lucide-react";
+import { LogOut, Globe, Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "./theme-toggle";
+import { useUIStore } from "@/lib/ui-store";
 
 export function AppTopbar() {
   const { data: session } = useSession();
@@ -20,6 +21,9 @@ export function AppTopbar() {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
+
+  const setSidebarMobileOpen = useUIStore((s) => s.setSidebarMobileOpen);
+  const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
 
   const switchLocale = (next: string) => {
     const path = pathname.replace(/^\/(en|fr|ar)/, "") || "/";
@@ -34,11 +38,40 @@ export function AppTopbar() {
     .toUpperCase();
 
   return (
-    <header className="flex h-14 items-center justify-between border-b bg-card px-4">
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-muted-foreground">{t("dashboard.title")}</span>
+    <header className="flex h-14 items-center justify-between gap-2 border-b bg-card px-4">
+      <div className="flex items-center gap-2 min-w-0">
+        {/* Mobile (<md): sidebar drawer trigger */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden h-8 w-8 shrink-0"
+          onClick={() => setSidebarMobileOpen(true)}
+          aria-label={t("common.sidebar.expand")}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+
+        {/* md+: command palette search trigger */}
+        <Button
+          variant="outline"
+          className="hidden md:flex w-full max-w-xs justify-start gap-2 text-muted-foreground font-normal"
+          onClick={() => setCommandPaletteOpen(true)}
+          aria-label={t("common.search.placeholder")}
+        >
+          <Search className="h-4 w-4" />
+          <span className="truncate">{t("common.search.placeholder")}</span>
+          <kbd className="ms-auto rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono">
+            ⌘K
+          </kbd>
+        </Button>
+
+        {/* Visible page title on mobile only (search trigger hidden) */}
+        <span className="md:hidden text-sm font-medium text-muted-foreground truncate">
+          {t("dashboard.title")}
+        </span>
       </div>
-      <div className="flex items-center gap-2">
+
+      <div className="flex items-center gap-2 shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="gap-2">

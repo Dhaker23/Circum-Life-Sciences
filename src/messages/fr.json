@@ -41,7 +41,32 @@
     "yes": "Oui",
     "no": "Non",
     "never": "Jamais",
-    "refresh": "Rafraichir"
+    "refresh": "Rafraichir",
+    "search": {
+      "placeholder": "Rechercher...",
+      "navigation": "Navigation",
+      "settings": "Parametres",
+      "noResults": "Aucun resultat"
+    },
+    "filters": {
+      "active": "{count} actif(s)",
+      "reset": "Reinitialiser"
+    },
+    "pagination": {
+      "previous": "Precedent",
+      "next": "Suivant",
+      "page": "Page",
+      "of": "de",
+      "total": "total"
+    },
+    "sidebar": {
+      "collapse": "Reduire",
+      "expand": "Agrandir"
+    },
+    "empty": {
+      "noData": "Aucune donnee",
+      "noDataDescription": "Aucun enregistrement a afficher."
+    }
   },
   "auth": {
     "signIn": "Se connecter",

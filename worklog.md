@@ -1210,3 +1210,107 @@ Stage Summary:
 - **All 15 phases (0-14) approved and closed.**
 - **No Phase 15. No autonomous continuation. No autonomous cron.**
 - **STOP.** Awaiting any future explicit owner authorization for post-development activities.
+
+---
+Task ID: ui1-components
+Agent: ui1-components (Z.ai Code)
+Task: Phase UI-1 — Build shared UI components (PageHeader, EmptyState, LoadingSkeleton, StatusBadge, FilterBar, DataTable, CommandPalette) + responsive sidebar (collapse/mobile Sheet) + topbar (mobile trigger + search trigger) + i18n keys.
+
+Work Log:
+- Read worklog.md and existing sidebar/topbar/layout files to understand context. Project is Circum QMS — Next.js 16 App Router, TypeScript, Tailwind 4, shadcn/ui (New York), next-intl v4, next-themes, zustand already installed. 48 shadcn components in `src/components/ui/`.
+- Added i18n keys under `common.search.*`, `common.filters.*`, `common.pagination.*`, `common.sidebar.*`, `common.empty.*` to all 3 locale files (en/fr/ar). Validated JSON with `node -e JSON.parse`.
+- Created `src/lib/ui-store.ts` (zustand store) for cross-component state: `sidebarMobileOpen` (Sheet drawer) and `commandPaletteOpen` (cmd+k dialog). Tiny — only transient UI flags, no domain state.
+- Extracted NAV array from `app-sidebar.tsx` into shared `src/components/app/nav-config.ts` (plain module, no "use client") so both sidebar and command palette use the same source of truth for routes/icons/permissions.
+- Created 7 components in `src/components/app/`:
+  1. `page-header.tsx` — title (text-2xl font-bold tracking-tight) + optional subtitle (text-sm text-muted-foreground) + optional actions (flex gap-2). Responsive: stacks on mobile, row on sm+.
+  2. `empty-state.tsx` — centered Card with dashed border, optional icon (h-10 w-10 text-muted-foreground), title (text-base font-medium), description (text-sm text-muted-foreground), optional action. Falls back to i18n `common.empty.noData` / `common.empty.noDataDescription` when title not provided.
+  3. `loading-skeleton.tsx` — 4 variants (page/table/card/dashboard) using existing shadcn `Skeleton`. count prop for table/card. Includes aria-busy / aria-live / role=status for accessibility.
+  4. `status-badge.tsx` — semantic status badge with 6 types (success/warning/error/info/neutral/pending). Maps domain statuses (CLOSED/APPROVED/OPEN/DRAFT/REJECTED/etc.) via lookup table; falls back to neutral. Colors: success=emerald, warning=amber, error=red, info=sky (informational only, not primary), neutral=slate, pending=violet. Light + dark variants. No indigo.
+  5. `filter-bar.tsx` — horizontal flex-wrap row with search Input (Search icon overlay) + N Select filters + active-count pill + Reset button. Uses `__all__` sentinel for "no filter selected".
+  6. `data-table.tsx` — generic `<T extends { id: string }>` data table with optional FilterBar, sticky header (`sticky top-0 z-10 bg-card`), scrollable body (`max-h-[32rem] overflow-auto`), loading skeleton (variant=table), empty state (default `<EmptyState />` or custom node), accessible pagination footer (`role=navigation aria-label=pagination`, "Page X of Y (Z total)" + prev/next buttons with `aria-label` and `rtl:rotate-180` chevrons). Optional sortable column headers with `aria-sort` and `ChevronsUpDown` icon.
+  7. `command-palette.tsx` — global cmd+k dialog. Listens for Cmd/Ctrl+K via `window.addEventListener("keydown", ...)`. Uses `CommandDialog` from shadcn Command (cmdk). Two groups: Navigation (all NAV sections except "system") and Settings (the "system" section). Permission-gated via `usePermissions()`. Each item value is `${label} ${href}` so users can search by route path too. On select: closes dialog and `router.push(href)`.
+- Modified `app-sidebar.tsx` for responsive behavior:
+  - **Mobile (<md):** hidden inline; uses shadcn `Sheet` drawer (side=`left` for LTR, `right` for RTL). Closes on link navigation via `onNavigate` callback.
+  - **Tablet (md only, <lg):** always collapsed (64px), no toggle button.
+  - **Desktop (lg+):** expanded (240px) or collapsed (64px) — toggle button in header (`PanelLeftClose` / `PanelLeftOpen` icons). Persisted to `localStorage["circum.sidebar.collapsed"]`.
+  - When collapsed: icons only (labels hidden), each icon wrapped in shadcn `Tooltip` with `side="right"` (LTR) / `side="left"` (RTL).
+  - Added `useIsLg()` hook (matchMedia for min-width:1024px) to distinguish lg vs md.
+  - All `useTranslations()` calls preserve the original `t(item.labelKey)` pattern; uses `t("common.sidebar.expand" | "common.sidebar.collapse")` for the toggle aria-label.
+  - Preserved: RBAC filtering, i18n labels, RTL (`border-e`, `ms-`/`me-`), existing routes/icons, "DEMO" footer badge.
+- Modified `app-topbar.tsx`:
+  - Added **mobile sidebar trigger** (Menu icon, `md:hidden`) that opens the Sheet via `setSidebarMobileOpen(true)`.
+  - Added **search trigger button** (md+ only) that opens the command palette via `setCommandPaletteOpen(true)`. Shows "Search..." placeholder + ⌘K keyboard hint.
+  - On mobile, the dashboard title is shown instead of the search trigger (preserves existing pattern).
+  - Preserved: locale switcher (Globe icon + EN/FR/AR menu), theme toggle, user menu (initials + sign out), existing layout.
+- Updated `src/app/[locale]/(app)/layout.tsx` to mount `<CommandPalette />` once at the app shell level (after auth check). Also added `min-w-0` to the main content column so the search trigger doesn't push layout overflow.
+
+Files created (9):
+- src/lib/ui-store.ts
+- src/components/app/nav-config.ts
+- src/components/app/page-header.tsx
+- src/components/app/empty-state.tsx
+- src/components/app/loading-skeleton.tsx
+- src/components/app/status-badge.tsx
+- src/components/app/filter-bar.tsx
+- src/components/app/data-table.tsx
+- src/components/app/command-palette.tsx
+
+Files modified (5):
+- src/messages/en.json (added 5 nested namespaces under `common`)
+- src/messages/fr.json (same)
+- src/messages/ar.json (same)
+- src/components/app/app-sidebar.tsx (rewritten for responsive collapse + mobile Sheet)
+- src/components/app/app-topbar.tsx (added mobile menu trigger + search trigger)
+- src/app/[locale]/(app)/layout.tsx (mounted CommandPalette, min-w-0 fix)
+
+Verification:
+- `bunx tsc --noEmit` → 0 errors (exit 0). Fixed one initial error: `activeFilterCount ?? 0` default for the `t("filters.active", { count })` interpolation (count param requires string | number | Date, not undefined).
+- `bun run lint` → 0 errors, 115 warnings (all pre-existing no-console/no-explicit-any; ZERO new warnings from the 9 new files or 6 modified files — verified via grep).
+- JSON validity: all 3 message files pass `JSON.parse` after the i18n key additions.
+
+Architecture notes:
+- All 7 components are `"use client"` (they use hooks/state).
+- DataTable is properly generic: `DataTable<T extends { id: string }>` — row keys are stable.
+- StatusBadge uses Tailwind classes (not inline styles) for color tokens; no indigo/blue primary. Blue is restricted to the `info` semantic type (low-prominence informational badges), which is allowed per the spec.
+- Sidebar collapse state is persisted per-browser (localStorage key `circum.sidebar.collapsed`). The mobile drawer state is in-memory only (zustand) — should not survive a refresh.
+- The `useIsLg()` hook in the sidebar follows the same matchMedia pattern as the existing `useIsMobile()` hook.
+- RTL: tooltip side flips (left for RTL, right for LTR); Sheet side flips (right for RTL, left for LTR); chevrons in pagination use `rtl:rotate-180`; all spacing uses logical properties (`ms-`, `me-`, `ps-`, `pe-`, `border-e`).
+- Accessibility: aria-labels on icon-only buttons, `scope="col"` on `<th>`, `aria-sort` on sortable columns, `role="navigation" aria-label="pagination"` on pagination footer, `aria-busy` / `aria-live` / `role="status"` on loading skeletons, sr-only `SheetTitle` for the mobile drawer.
+- No new npm dependencies added. cmdk was already installed via shadcn's Command component.
+
+---
+Task ID: ui1-migrate
+Agent: ui1-migrate (Z.ai Code)
+Task: Migrate 4 representative list pages to use the new shared UI components (PageHeader, DataTable, EmptyState, LoadingSkeleton via DataTable, StatusBadge, FilterBar via DataTable).
+
+Work Log:
+- Read worklog.md and the shared component source files in `src/components/app/` (page-header, data-table, empty-state, loading-skeleton, status-badge, filter-bar) to understand the exact prop contracts.
+- Read all 4 target list pages to understand the current data shape, fetch pattern, and column layout. Cross-referenced the API route handlers + service modules to confirm the actual Prisma response shape (e.g. `createdAt` is returned by the work-orders API but was omitted from the original page's TypeScript cast).
+- Migrated each page following the same pattern: `"use client"`; typed row interface with `id: string` (DataTable generic constraint); `useTranslations(namespace)` + `useTranslations("common")` (second call fixes a latent bug where the original code called `t("common.status")` from a namespaced `t`); preserved `useQuery` + `fetch` call unchanged (only added explicit `useQuery<T[]>` type parameter); client-side filter `(data ?? []).filter(...)` with search + status predicates; `<PageHeader>` + `<DataTable>` replacing the old Card/Table/Badge stack.
+
+Files migrated (4):
+1. `src/app/[locale]/(app)/production/work-orders/page.tsx` — Columns: code, product, site, planned qty, status (`<StatusBadge>`), createdAt. Search on `code`. Status filter (7 options). No `onRowClick` (no detail page; DataTable hover-only). EmptyState icon=PackageSearch.
+2. `src/app/[locale]/(app)/quality/ncrs/page.tsx` — Columns: code, severity (`<StatusBadge>` with explicit type override: MINOR=info, MAJOR=warning, CRITICAL=error), status (`<StatusBadge>`), concernsEntityType, description (truncated with tooltip), site. Search on `code`. Status filter (6) + severity filter (3). `onRowClick` navigates to `/quality/ncrs/[id]`. EmptyState icon=FileWarning.
+3. `src/app/[locale]/(app)/quality/capas/page.tsx` — Columns: code, type, sourceType, status (`<StatusBadge>`), site, createdAt. Search on `code`. Status filter (5). `onRowClick` navigates to `/quality/capas/[id]`. **Preserved the AI governance notice** (`t("capas.aiGuard")` dashed-border advisory above the DataTable — domain-critical human-only-closure notice). EmptyState icon=ClipboardCheck.
+4. `src/app/[locale]/(app)/docs/documents/page.tsx` — Columns: code, title (truncated), documentType, version, status (`<StatusBadge>`), updatedAt. Search on `code` OR `title`. Status filter (6). No `onRowClick` (no detail page; DataTable hover-only). EmptyState icon=FileText (uses default `common.empty.noData` fallback — docs namespace has no `noData` key).
+
+Decisions:
+- StatusBadge used for ALL status AND severity columns (per spec). For severity, explicit `type` overrides passed because the StatusBadge's `STATUS_TO_TYPE` inference map doesn't include MINOR/MAJOR/CRITICAL.
+- New `createdAt`/`updatedAt` column headers use existing `common.createdAt` ("Created") or literal "Updated" (no `common.updatedAt` key exists; adding one is out of scope per "Do NOT change the i18n keys" rule).
+- Documents page column headers kept as literal English ("Code"/"Title"/"Type"/"Version") to match the original page's pattern — the `docs` namespace only has `title` + `subtitle` keys, no per-column keys.
+- No `Create` action button added to any PageHeader — none of the 4 original pages had create dialogs/buttons (task spec's "if the original page had one" conditional was not triggered).
+- Work-orders and documents: no `onRowClick` passed — DataTable's `cursor-pointer` class only applies when `onRowClick` is set, so these rows show only the default hover highlight (matching the "just highlight" intent in the spec for pages without a detail page).
+
+Files NOT touched: API routes, service modules, i18n message files, shared components in `src/components/app/`, create dialogs (none existed).
+
+Verification:
+- `bunx tsc --noEmit 2>&1 | grep -v vitest | head -10` → 0 errors, 0 output (clean typecheck).
+- `bun run lint` → 0 errors, 115 warnings (all pre-existing `no-explicit-any` / `no-console` debt — same baseline as `d2-lint` / `ui1-components`). ZERO new warnings introduced in the 4 migrated files (verified via grep for the file paths in lint output → no matches).
+- Dev server confirmed healthy in `dev.log` (only the pre-existing `NEXTAUTH_URL` warning).
+
+Stage Summary:
+- 4 list pages migrated to the shared UI component system. Each page now uses `<PageHeader>` + `<DataTable>` + `<EmptyState>` + `<StatusBadge>` + (internally) `<FilterBar>` + `<LoadingSkeleton variant="table">`.
+- All existing functionality preserved: fetch logic unchanged, i18n keys unchanged, CAPA AI guard notice preserved, row-click navigation on NCRs/CAPAs intact.
+- 0 typecheck errors, 0 new lint warnings. Dev server healthy.
+- Schema impact: ZERO. Config impact: ZERO. i18n impact: ZERO.
+- Detailed work record: `/home/z/my-project/agent-ctx/ui1-migrate-agent.md`.

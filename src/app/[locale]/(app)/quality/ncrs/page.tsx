@@ -1,66 +1,158 @@
 "use client";
+
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useRouter } from "next/navigation";
+import { FileWarning } from "lucide-react";
+import { PageHeader } from "@/components/app/page-header";
+import { DataTable, type Column } from "@/components/app/data-table";
+import { EmptyState } from "@/components/app/empty-state";
+import { StatusBadge, type StatusType } from "@/components/app/status-badge";
 
-const NCR_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  DRAFT: "outline", CONTAINMENT: "default", INVESTIGATION: "default", DISPOSITION: "secondary", CLOSED: "secondary", CANCELLED: "destructive",
-};
-const SEVERITY_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
-  MINOR: "secondary", MAJOR: "default", CRITICAL: "destructive",
+interface NcrRow {
+  id: string;
+  code: string;
+  status: string;
+  severity: string;
+  concernsEntityType: string;
+  description: string;
+  site: { code: string };
+}
+
+const STATUS_OPTIONS = [
+  "DRAFT",
+  "CONTAINMENT",
+  "INVESTIGATION",
+  "DISPOSITION",
+  "CLOSED",
+  "CANCELLED",
+];
+
+const SEVERITY_OPTIONS = ["MINOR", "MAJOR", "CRITICAL"];
+
+const SEVERITY_TYPE: Record<string, StatusType> = {
+  MINOR: "info",
+  MAJOR: "warning",
+  CRITICAL: "error",
 };
 
 export default function NcrsPage() {
   const t = useTranslations("quality");
-  const { data, isLoading } = useQuery({
+  const tCommon = useTranslations("common");
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [severity, setSeverity] = useState("");
+
+  const { data, isLoading } = useQuery<NcrRow[]>({
     queryKey: ["ncrs"],
     queryFn: async () => {
-      const res = await fetch("/api/quality/ncrs?pageSize=100", { credentials: "same-origin" });
+      const res = await fetch("/api/quality/ncrs?pageSize=100", {
+        credentials: "same-origin",
+      });
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as Array<{ id: string; code: string; status: string; severity: string; concernsEntityType: string; description: string; site: { code: string } }>;
+      return json.data as NcrRow[];
     },
   });
+
+  const filtered = (data ?? []).filter((n) => {
+    const matchesSearch = n.code
+      .toLowerCase()
+      .includes(search.trim().toLowerCase());
+    const matchesStatus = !status || n.status === status;
+    const matchesSeverity = !severity || n.severity === severity;
+    return matchesSearch && matchesStatus && matchesSeverity;
+  });
+
+  const columns: Column<NcrRow>[] = [
+    {
+      key: "code",
+      header: t("ncrs.code"),
+      render: (n) => <span className="font-mono text-xs">{n.code}</span>,
+    },
+    {
+      key: "severity",
+      header: t("ncrs.severity"),
+      render: (n) => (
+        <StatusBadge
+          status={n.severity}
+          type={SEVERITY_TYPE[n.severity]}
+        />
+      ),
+    },
+    {
+      key: "status",
+      header: tCommon("status"),
+      render: (n) => <StatusBadge status={n.status} />,
+    },
+    {
+      key: "concernsEntityType",
+      header: t("ncrs.concerns"),
+      render: (n) => (
+        <span className="font-mono text-xs">{n.concernsEntityType}</span>
+      ),
+    },
+    {
+      key: "description",
+      header: t("ncrs.detail.fields.description"),
+      render: (n) => (
+        <span
+          className="block max-w-[24rem] truncate text-xs text-muted-foreground"
+          title={n.description}
+        >
+          {n.description}
+        </span>
+      ),
+    },
+    {
+      key: "site",
+      header: tCommon("site"),
+      render: (n) => <span className="font-mono text-xs">{n.site.code}</span>,
+    },
+  ];
+
+  const activeFilterCount =
+    (search ? 1 : 0) + (status ? 1 : 0) + (severity ? 1 : 0);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("ncrs.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("ncrs.subtitle")}</p>
-      </div>
-      <Card>
-        <CardHeader><CardTitle className="text-base">{t("ncrs.title")}</CardTitle></CardHeader>
-        <CardContent>
-          {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> :
-           data && data.length > 0 ? (
-            <div className="max-h-[32rem] overflow-auto rounded-md border">
-              <Table>
-                <TableHeader className="sticky top-0 bg-card">
-                  <TableRow>
-                    <TableHead>{t("ncrs.code")}</TableHead>
-                    <TableHead>{t("ncrs.severity")}</TableHead>
-                    <TableHead>{t("ncrs.concerns")}</TableHead>
-                    <TableHead>{t("ncrs.site")}</TableHead>
-                    <TableHead>{t("common.status")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.map((n) => (
-                    <TableRow key={n.id}>
-                      <TableCell className="font-mono text-xs">{n.code}</TableCell>
-                      <TableCell><Badge variant={SEVERITY_VARIANT[n.severity] ?? "outline"}>{n.severity}</Badge></TableCell>
-                      <TableCell className="text-xs"><span className="font-mono">{n.concernsEntityType}</span><span className="ms-2 text-muted-foreground truncate">{n.description}</span></TableCell>
-                      <TableCell className="font-mono text-xs">{n.site.code}</TableCell>
-                      <TableCell><Badge variant={NCR_VARIANT[n.status] ?? "outline"}>{n.status}</Badge></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : <p className="text-sm text-muted-foreground">{t("ncrs.noData")}</p>}
-        </CardContent>
-      </Card>
+      <PageHeader title={t("ncrs.title")} subtitle={t("ncrs.subtitle")} />
+      <DataTable<NcrRow>
+        columns={columns}
+        data={filtered}
+        loading={isLoading}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={tCommon("search.placeholder")}
+        filters={[
+          {
+            key: "status",
+            label: tCommon("status"),
+            value: status,
+            onChange: setStatus,
+            options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
+          },
+          {
+            key: "severity",
+            label: t("ncrs.severity"),
+            value: severity,
+            onChange: setSeverity,
+            options: SEVERITY_OPTIONS.map((s) => ({ value: s, label: s })),
+          },
+        ]}
+        onResetFilters={() => {
+          setSearch("");
+          setStatus("");
+          setSeverity("");
+        }}
+        activeFilterCount={activeFilterCount}
+        emptyState={
+          <EmptyState icon={FileWarning} title={t("ncrs.noData")} />
+        }
+        onRowClick={(n) => router.push(`/quality/ncrs/${n.id}`)}
+      />
     </div>
   );
 }

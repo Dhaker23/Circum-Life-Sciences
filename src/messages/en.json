@@ -41,7 +41,32 @@
     "yes": "Yes",
     "no": "No",
     "never": "Never",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "search": {
+      "placeholder": "Search...",
+      "navigation": "Navigation",
+      "settings": "Settings",
+      "noResults": "No results found"
+    },
+    "filters": {
+      "active": "{count} active",
+      "reset": "Reset filters"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page",
+      "of": "of",
+      "total": "total"
+    },
+    "sidebar": {
+      "collapse": "Collapse",
+      "expand": "Expand"
+    },
+    "empty": {
+      "noData": "No data available",
+      "noDataDescription": "There are no records to display."
+    }
   },
   "auth": {
     "signIn": "Sign in",

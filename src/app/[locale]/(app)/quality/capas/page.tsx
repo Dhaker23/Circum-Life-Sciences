@@ -1,64 +1,130 @@
 "use client";
+
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useRouter } from "next/navigation";
+import { ClipboardCheck } from "lucide-react";
+import { PageHeader } from "@/components/app/page-header";
+import { DataTable, type Column } from "@/components/app/data-table";
+import { EmptyState } from "@/components/app/empty-state";
+import { StatusBadge } from "@/components/app/status-badge";
 
-const CAPA_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  OPEN: "outline", ACTION_PLAN: "default", IMPLEMENTATION: "default", EFFECTIVENESS: "secondary", CLOSED: "secondary",
-};
+interface CapaRow {
+  id: string;
+  code: string;
+  status: string;
+  sourceType: string;
+  type: string;
+  createdAt: string;
+  investigation: { code: string } | null;
+  site: { code: string };
+}
+
+const STATUS_OPTIONS = [
+  "OPEN",
+  "ACTION_PLAN",
+  "IMPLEMENTATION",
+  "EFFECTIVENESS",
+  "CLOSED",
+];
 
 export default function CapasPage() {
   const t = useTranslations("quality");
-  const { data, isLoading } = useQuery({
+  const tCommon = useTranslations("common");
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+
+  const { data, isLoading } = useQuery<CapaRow[]>({
     queryKey: ["capas"],
     queryFn: async () => {
-      const res = await fetch("/api/quality/capas?pageSize=100", { credentials: "same-origin" });
+      const res = await fetch("/api/quality/capas?pageSize=100", {
+        credentials: "same-origin",
+      });
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as Array<{ id: string; code: string; status: string; sourceType: string; type: string; investigation: { code: string } | null; site: { code: string } }>;
+      return json.data as CapaRow[];
     },
   });
+
+  const filtered = (data ?? []).filter((c) => {
+    const matchesSearch = c.code
+      .toLowerCase()
+      .includes(search.trim().toLowerCase());
+    const matchesStatus = !status || c.status === status;
+    return matchesSearch && matchesStatus;
+  });
+
+  const columns: Column<CapaRow>[] = [
+    {
+      key: "code",
+      header: t("capas.code"),
+      render: (c) => <span className="font-mono text-xs">{c.code}</span>,
+    },
+    {
+      key: "type",
+      header: t("capas.type"),
+      render: (c) => <span className="text-xs">{c.type}</span>,
+    },
+    {
+      key: "sourceType",
+      header: t("capas.source"),
+      render: (c) => <span className="font-mono text-xs">{c.sourceType}</span>,
+    },
+    {
+      key: "status",
+      header: tCommon("status"),
+      render: (c) => <StatusBadge status={c.status} />,
+    },
+    {
+      key: "site",
+      header: tCommon("site"),
+      render: (c) => <span className="font-mono text-xs">{c.site.code}</span>,
+    },
+    {
+      key: "createdAt",
+      header: tCommon("createdAt"),
+      render: (c) => (
+        <span className="text-xs text-muted-foreground">
+          {new Date(c.createdAt).toLocaleDateString()}
+        </span>
+      ),
+    },
+  ];
+
+  const activeFilterCount = (search ? 1 : 0) + (status ? 1 : 0);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("capas.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("capas.subtitle")}</p>
+      <PageHeader title={t("capas.title")} subtitle={t("capas.subtitle")} />
+      <div className="rounded-md border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
+        {t("capas.aiGuard")}
       </div>
-      <div className="rounded-md border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">{t("capas.aiGuard")}</div>
-      <Card>
-        <CardHeader><CardTitle className="text-base">{t("capas.title")}</CardTitle></CardHeader>
-        <CardContent>
-          {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> :
-           data && data.length > 0 ? (
-            <div className="max-h-[32rem] overflow-auto rounded-md border">
-              <Table>
-                <TableHeader className="sticky top-0 bg-card">
-                  <TableRow>
-                    <TableHead>{t("capas.code")}</TableHead>
-                    <TableHead>{t("capas.source")}</TableHead>
-                    <TableHead>{t("capas.type")}</TableHead>
-                    <TableHead>{t("capas.investigation")}</TableHead>
-                    <TableHead>{t("common.status")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.map((c) => (
-                    <TableRow key={c.id}>
-                      <TableCell className="font-mono text-xs">{c.code}</TableCell>
-                      <TableCell className="text-xs font-mono">{c.sourceType}</TableCell>
-                      <TableCell className="text-xs">{c.type}</TableCell>
-                      <TableCell className="text-xs font-mono">{c.investigation?.code ?? "-"}</TableCell>
-                      <TableCell><Badge variant={CAPA_VARIANT[c.status] ?? "outline"}>{c.status}</Badge></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : <p className="text-sm text-muted-foreground">{t("capas.noData")}</p>}
-        </CardContent>
-      </Card>
+      <DataTable<CapaRow>
+        columns={columns}
+        data={filtered}
+        loading={isLoading}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={tCommon("search.placeholder")}
+        filters={[
+          {
+            key: "status",
+            label: tCommon("status"),
+            value: status,
+            onChange: setStatus,
+            options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
+          },
+        ]}
+        onResetFilters={() => {
+          setSearch("");
+          setStatus("");
+        }}
+        activeFilterCount={activeFilterCount}
+        emptyState={<EmptyState icon={ClipboardCheck} title={t("capas.noData")} />}
+        onRowClick={(c) => router.push(`/quality/capas/${c.id}`)}
+      />
     </div>
   );
 }

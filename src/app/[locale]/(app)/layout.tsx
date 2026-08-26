@@ -2,6 +2,7 @@
 import { useMe, usePermissions } from "@/hooks/use-me";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppTopbar } from "@/components/app/app-topbar";
+import { CommandPalette } from "@/components/app/command-palette";
 import { useTranslations } from "next-intl";
 import { CircleAlert } from "lucide-react";
 
@@ -31,7 +32,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
     <div className="flex min-h-screen flex-col">
       <div className="flex flex-1">
         <AppSidebar permissions={permissions} />
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col min-w-0">
           <AppTopbar />
           <main className="flex-1 overflow-y-auto bg-muted/20 p-4 md:p-6">{children}</main>
         </div>
@@ -50,6 +51,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
           </span>
         </div>
       </footer>
+      <CommandPalette />
     </div>
   );
 }

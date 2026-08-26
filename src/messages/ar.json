@@ -41,7 +41,32 @@
     "yes": "نعم",
     "no": "لا",
     "never": "أبدًا",
-    "refresh": "تحديث"
+    "refresh": "تحديث",
+    "search": {
+      "placeholder": "بحث...",
+      "navigation": "التنقل",
+      "settings": "الإعدادات",
+      "noResults": "لا توجد نتائج"
+    },
+    "filters": {
+      "active": "{count} نشط",
+      "reset": "إعادة تعيين"
+    },
+    "pagination": {
+      "previous": "السابق",
+      "next": "التالي",
+      "page": "صفحة",
+      "of": "من",
+      "total": "المجموع"
+    },
+    "sidebar": {
+      "collapse": "طي",
+      "expand": "توسيع"
+    },
+    "empty": {
+      "noData": "لا توجد بيانات",
+      "noDataDescription": "لا توجد سجلات لعرضها."
+    }
   },
   "auth": {
     "signIn": "تسجيل الدخول",
