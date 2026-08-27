@@ -20,6 +20,7 @@ import { ArrowLeft, Loader2, RefreshCw, ShieldAlert, Gavel } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/app/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -35,6 +36,7 @@ import { cn } from "@/lib/utils";
 // ---------------------------------------------------------------------------
 interface BatchReviewRecord {
   id: string;
+  status: string;
   reviewFindings: string | null;
   disposition: string | null;
   dispositionNotes: string | null;
@@ -212,6 +214,10 @@ export default function BatchReviewDetailPage() {
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+              <Field
+                label={t("detail.fields.status")}
+                value={<StatusBadge status={reviewRecord.status} />}
+              />
               <Field
                 label={t("detail.fields.reviewFindings")}
                 value={reviewRecord.reviewFindings

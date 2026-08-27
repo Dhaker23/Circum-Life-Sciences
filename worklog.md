@@ -1314,3 +1314,49 @@ Stage Summary:
 - 0 typecheck errors, 0 new lint warnings. Dev server healthy.
 - Schema impact: ZERO. Config impact: ZERO. i18n impact: ZERO.
 - Detailed work record: `/home/z/my-project/agent-ctx/ui1-migrate-agent.md`.
+
+---
+Task ID: d005-pagination
+Agent: d005-pagination (Z.ai Code)
+Task: Implement server-side pagination on 4 representative list pages (NCRs, CAPAs, Work Orders, Documents) — fetch `?page=${page}&pageSize=20`, parse `meta.total` from the API envelope, pass `pagination` prop to DataTable, reset page to 1 on search/filter change.
+
+Work Log:
+- Read worklog.md (UI-1 + ui1-migrate context) to understand the DataTable pagination prop contract and the existing fetch/filter pattern on the 4 target pages.
+- Inspected `src/lib/api-envelope.ts` and the 4 API route handlers to confirm the response envelope shape: `{ data: T; meta?: { page; pageSize; total } }`. All 4 GET handlers (`/api/quality/ncrs`, `/api/quality/capas`, `/api/production/work-orders`, `/api/docs/documents`) call `ok(r.items, { page, pageSize, total })` — so `json.meta?.total` is always present on success.
+- Inspected `src/components/app/data-table.tsx` to confirm the pagination prop contract: `pagination?: { page; pageSize; total; onPageChange }` rendered as "Page X of Y (Z total)" + prev/next buttons.
+- Inspected `src/components/app/filter-bar.tsx` to confirm filter `onChange` signature is `(v: string) => void` — so inline arrow handlers are type-safe.
+- Applied the same 5-step pattern to each of the 4 pages:
+  1. Added `const [page, setPage] = useState(1);`
+  2. Changed fetch URL from `?pageSize=100` to `?page=${page}&pageSize=20`
+  3. Added `page` to the `useQuery` queryKey (`["ncrs", page]`, `["capas", page]`, `["work-orders", page]`, `["documents", page]`) so it refetches on page change
+  4. Changed the `useQuery<T>` type param from the row array to `{ data: Row[]; total: number }` and parsed both `json.data` (array) and `json.meta?.total` from the response envelope (defensive `?? 0` fallback for type safety)
+  5. Wrapped the client-side filter input from `(data ?? [])` to `(data?.data ?? [])` (the now-nested array)
+  6. Passed the `pagination` prop to DataTable (gated on `data` being defined so pagination hides during initial load): `{ page, pageSize: 20, total: data.total, onPageChange: setPage }`
+  7. Wrapped `onSearchChange`, each filter's `onChange`, and `onResetFilters` to also call `setPage(1)` (reset page to 1 on any filter/search mutation)
+
+Files modified (4):
+1. `src/app/[locale]/(app)/quality/ncrs/page.tsx` — pagination + page-reset on search/status/severity change. Severity filter has 2 filters (status + severity); both reset page on change.
+2. `src/app/[locale]/(app)/quality/capas/page.tsx` — pagination + page-reset on search/status change. Preserved the AI governance notice (`t("capas.aiGuard")` dashed-border advisory above the DataTable).
+3. `src/app/[locale]/(app)/production/work-orders/page.tsx` — pagination + page-reset on search/status change.
+4. `src/app/[locale]/(app)/docs/documents/page.tsx` — pagination + page-reset on search/status change. Search matches both `code` and `title` (preserved).
+
+Decisions / pattern notes:
+- **Client-side search/filtering on the current page's data only** (per task spec): the API returns the full page (20 rows); the existing `filtered` derivation runs against that page's rows. This is the pragmatic approach since none of the 4 APIs support server-side search params.
+- **Page resets on filter change**: when `search`, `status` (or `severity` on NCRs) changes, the user is bounced back to page 1. This avoids the "empty page" UX bug where a user could be on page 5, apply a filter that returns 0 rows on page 5, and see no results.
+- **Pagination prop gated on `data` being defined**: when `useQuery` is still loading (initial mount, no cached data), `data` is `undefined`, so `pagination` is `undefined` and the DataTable footer is hidden — same UX as before pagination existed. Once data arrives (even an empty page), the footer shows "Page X of Y (Z total)".
+- **`json.meta?.total` defensive fallback**: `(json.meta?.total as number | undefined) ?? 0`. Even though the API always returns `meta` on success, the cast keeps TypeScript strict-mode happy without changing the API envelope types.
+- **queryKey uses only `[resource, page]`** (not `[..., search, statusFilter]`): the existing pattern keeps search/filter as client-side state — they don't trigger server refetches. This matches the spec's "client-side filtering on the current page's data" rule and avoids unnecessary network requests on every keystroke.
+- **No changes to**: API routes, service modules, DataTable component, FilterBar component, i18n keys, StatusBadge usage, EmptyState, row-click navigation, CAPA AI guard notice, column definitions.
+
+Verification:
+- `bunx tsc --noEmit 2>&1 | grep -v vitest | head -10` → 0 errors, 0 output (clean typecheck).
+- `bun run lint` → 0 errors, 111 warnings (all pre-existing `no-explicit-any` in modules/services — same baseline as previous tasks). Verified via grep: ZERO warnings reference any of the 4 modified page paths.
+- Dev server confirmed healthy in `dev.log` (Next.js 16.1.3 Turbopack, ready in ~1s, no compile errors).
+
+Stage Summary:
+- 4 list pages now use server-side pagination (pageSize=20) with the DataTable's built-in pagination footer.
+- Search and filter changes reset the page to 1 to avoid empty-page UX bugs.
+- All existing functionality preserved: i18n keys, StatusBadge, EmptyState, CAPA AI guard notice, row-click navigation, column layouts, client-side filtering on the current page's data.
+- 0 typecheck errors, 0 new lint warnings. Dev server healthy.
+- Schema impact: ZERO. API impact: ZERO (consumed existing `meta` envelope, did not modify any route). i18n impact: ZERO. Component impact: ZERO (consumed existing `pagination` prop, did not modify DataTable).
+- Detailed work record: `/home/z/my-project/agent-ctx/d005-pagination-agent.md`.

@@ -44,20 +44,28 @@ export default function NcrsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [severity, setSeverity] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<NcrRow[]>({
-    queryKey: ["ncrs"],
+  const { data, isLoading } = useQuery<{
+    data: NcrRow[];
+    total: number;
+  }>({
+    queryKey: ["ncrs", page],
     queryFn: async () => {
-      const res = await fetch("/api/quality/ncrs?pageSize=100", {
-        credentials: "same-origin",
-      });
+      const res = await fetch(
+        `/api/quality/ncrs?page=${page}&pageSize=20`,
+        { credentials: "same-origin" },
+      );
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as NcrRow[];
+      return {
+        data: json.data as NcrRow[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
   });
 
-  const filtered = (data ?? []).filter((n) => {
+  const filtered = (data?.data ?? []).filter((n) => {
     const matchesSearch = n.code
       .toLowerCase()
       .includes(search.trim().toLowerCase());
@@ -124,21 +132,30 @@ export default function NcrsPage() {
         data={filtered}
         loading={isLoading}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         searchPlaceholder={tCommon("search.placeholder")}
         filters={[
           {
             key: "status",
             label: tCommon("status"),
             value: status,
-            onChange: setStatus,
+            onChange: (v) => {
+              setStatus(v);
+              setPage(1);
+            },
             options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
           },
           {
             key: "severity",
             label: t("ncrs.severity"),
             value: severity,
-            onChange: setSeverity,
+            onChange: (v) => {
+              setSeverity(v);
+              setPage(1);
+            },
             options: SEVERITY_OPTIONS.map((s) => ({ value: s, label: s })),
           },
         ]}
@@ -146,8 +163,19 @@ export default function NcrsPage() {
           setSearch("");
           setStatus("");
           setSeverity("");
+          setPage(1);
         }}
         activeFilterCount={activeFilterCount}
+        pagination={
+          data
+            ? {
+                page,
+                pageSize: 20,
+                total: data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
         emptyState={
           <EmptyState icon={FileWarning} title={t("ncrs.noData")} />
         }

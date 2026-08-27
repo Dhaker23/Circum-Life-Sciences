@@ -1627,6 +1627,7 @@ model BatchReviewRecord {
   id                    String              @id @default(cuid())
   batchId               String              @unique
   siteId                String
+  status                String              @default("PENDING") // PENDING | REVIEWED | DISPOSITIONED (distinct from ManufacturingBatch.status)
   reviewedByUserId      String?
   reviewedAt            DateTime?
   reviewFindings        String?

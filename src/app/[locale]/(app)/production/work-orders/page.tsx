@@ -39,20 +39,28 @@ export default function WorkOrdersPage() {
   const tCommon = useTranslations("common");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<WorkOrder[]>({
-    queryKey: ["work-orders"],
+  const { data, isLoading } = useQuery<{
+    data: WorkOrder[];
+    total: number;
+  }>({
+    queryKey: ["work-orders", page],
     queryFn: async () => {
-      const res = await fetch("/api/production/work-orders?pageSize=100", {
-        credentials: "same-origin",
-      });
+      const res = await fetch(
+        `/api/production/work-orders?page=${page}&pageSize=20`,
+        { credentials: "same-origin" },
+      );
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as WorkOrder[];
+      return {
+        data: json.data as WorkOrder[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
   });
 
-  const filtered = (data ?? []).filter((wo) => {
+  const filtered = (data?.data ?? []).filter((wo) => {
     const matchesSearch = wo.code
       .toLowerCase()
       .includes(search.trim().toLowerCase());
@@ -119,22 +127,39 @@ export default function WorkOrdersPage() {
         data={filtered}
         loading={isLoading}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         searchPlaceholder={tCommon("search.placeholder")}
         filters={[
           {
             key: "status",
             label: tCommon("status"),
             value: status,
-            onChange: setStatus,
+            onChange: (v) => {
+              setStatus(v);
+              setPage(1);
+            },
             options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
           },
         ]}
         onResetFilters={() => {
           setSearch("");
           setStatus("");
+          setPage(1);
         }}
         activeFilterCount={activeFilterCount}
+        pagination={
+          data
+            ? {
+                page,
+                pageSize: 20,
+                total: data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
         emptyState={
           <EmptyState
             icon={PackageSearch}

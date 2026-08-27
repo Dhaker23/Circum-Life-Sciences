@@ -134,7 +134,7 @@ export async function transitionBatchReview(ctx: AuthContext, batchId: string, i
   assertSiteAccess(ctx, batch.siteId); assertBatchReviewTransition(batch.status, input.to);
   await db.manufacturingBatch.update({ where: { id: batchId }, data: { status: input.to } });
   // Create or update BatchReviewRecord
-  await db.batchReviewRecord.upsert({ where: { batchId }, update: { reviewedByUserId: ctx.user.id, reviewedAt: new Date() }, create: { batchId, siteId: batch.siteId, reviewedByUserId: ctx.user.id, reviewedAt: new Date(), isDemo: false } });
+  await db.batchReviewRecord.upsert({ where: { batchId }, update: { status: "REVIEWED", reviewedByUserId: ctx.user.id, reviewedAt: new Date() }, create: { batchId, siteId: batch.siteId, status: "REVIEWED", reviewedByUserId: ctx.user.id, reviewedAt: new Date(), isDemo: false } });
   await audit({ actorUserId: ctx.user.id, action: "batchreview.transition", entityType: "ManufacturingBatch", entityId: batchId, previousState: { status: batch.status }, newState: { status: input.to }, reason: input.reason }); return { batchId, status: input.to };
 }
 // D5/D8: Disposition is human-only. AI MUST NEVER release product.
@@ -145,6 +145,6 @@ export async function dispositionBatch(ctx: AuthContext, batchId: string, input:
   if (batch.status !== "QA_REVIEW") throw new StateTransitionError("Batch can only be dispositioned from QA_REVIEW status");
   assertBatchReviewTransition("QA_REVIEW", input.disposition);
   await db.manufacturingBatch.update({ where: { id: batchId }, data: { status: input.disposition } });
-  await db.batchReviewRecord.update({ where: { batchId }, data: { disposition: input.disposition, dispositionedByUserId: ctx.user.id, dispositionedAt: new Date(), dispositionNotes: input.dispositionNotes ?? null, reviewFindings: input.reviewFindings ?? null } });
+  await db.batchReviewRecord.update({ where: { batchId }, data: { status: "DISPOSITIONED", disposition: input.disposition, dispositionedByUserId: ctx.user.id, dispositionedAt: new Date(), dispositionNotes: input.dispositionNotes ?? null, reviewFindings: input.reviewFindings ?? null } });
   await audit({ actorUserId: ctx.user.id, action: "batchreview.disposition", entityType: "ManufacturingBatch", entityId: batchId, previousState: { status: "QA_REVIEW" }, newState: { status: input.disposition, dispositionedByUserId: ctx.user.id }, reason: `Human disposition: ${input.disposition}` }); return { batchId, disposition: input.disposition };
 }

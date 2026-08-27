@@ -861,7 +861,7 @@ async function seedPhase9(siteByCode: Record<string, Site>) {
   // Batch Review (for BATCH-CH-002 which is READY_FOR_REVIEW)
   const reviewBatch = await db_.manufacturingBatch.findFirst({ where: { siteId: chSite.id, status: "READY_FOR_REVIEW" } });
   if (reviewBatch) {
-    await db_.batchReviewRecord.create({ data: { batchId: reviewBatch.id, siteId: chSite.id, isDemo: true } }).catch(() => null);
+    await db_.batchReviewRecord.create({ data: { batchId: reviewBatch.id, siteId: chSite.id, status: "PENDING", isDemo: true } }).catch(() => null);
   }
   console.log("  batch review record: 1 (for READY_FOR_REVIEW batch)");
 
