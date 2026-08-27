@@ -21,11 +21,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { ActivityTimeline } from "@/components/app/activity-timeline";
+import { FormField } from "@/components/app/form-field";
 
 // ---------------------------------------------------------------------------
 // Types — mirror the API contract
@@ -234,6 +234,7 @@ export default function DeviationDetailPage() {
                   reasonLabel={tc("reasonRequired")}
                   cancelLabel={tc("cancel")}
                   confirmLabel={tc("confirmTransition")}
+                  fieldRequiredLabel={tc("fieldRequired")}
                   onSuccess={async () => {
                     await qc.invalidateQueries({ queryKey: ["quality", "deviation", dev.id] });
                     await qc.invalidateQueries({ queryKey: ["deviations"] });
@@ -279,23 +280,28 @@ interface TransitionDialogProps {
   reasonLabel: string;
   cancelLabel: string;
   confirmLabel: string;
+  fieldRequiredLabel: string;
   onSuccess: () => Promise<void> | void;
   onError: (msg: string) => void;
 }
 
 function TransitionDialog({
   spec, deviationId, translateLabel, translateTitle, impactLabel,
-  reasonLabel, cancelLabel, confirmLabel, onSuccess, onError,
+  reasonLabel, cancelLabel, confirmLabel, fieldRequiredLabel, onSuccess, onError,
 }: TransitionDialogProps) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [impactAssessment, setImpactAssessment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   function reset() {
     setReason("");
     setImpactAssessment("");
+    setSubmitAttempted(false);
   }
+
+  const reasonError = submitAttempted && !reason.trim() ? fieldRequiredLabel : null;
 
   function canSubmit(): boolean {
     if (!reason.trim()) return false;
@@ -304,6 +310,8 @@ function TransitionDialog({
   }
 
   async function handleSubmit() {
+    // Flag any empty required fields on submit attempt.
+    setSubmitAttempted(true);
     if (!canSubmit() || submitting) return;
     setSubmitting(true);
     try {
@@ -346,20 +354,27 @@ function TransitionDialog({
           <DialogDescription>{translateLabel(spec.labelKey)}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="dev-reason">{reasonLabel}</Label>
+          <FormField
+            label={reasonLabel}
+            required
+            error={reasonError}
+            htmlFor="dev-reason"
+          >
             <Textarea
               id="dev-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
               maxLength={500}
+              aria-invalid={Boolean(reasonError)}
             />
-          </div>
+          </FormField>
 
           {spec.fields.includes("impactAssessment") && (
-            <div className="space-y-1.5">
-              <Label htmlFor="dev-impact">{impactLabel}</Label>
+            <FormField
+              label={impactLabel}
+              htmlFor="dev-impact"
+            >
               <Textarea
                 id="dev-impact"
                 value={impactAssessment}
@@ -367,7 +382,7 @@ function TransitionDialog({
                 rows={4}
                 maxLength={2000}
               />
-            </div>
+            </FormField>
           )}
 
           {(spec.to === "CLOSED" || spec.to === "REJECTED") && (
@@ -383,7 +398,7 @@ function TransitionDialog({
           <Button variant="outline" onClick={() => { setOpen(false); reset(); }} disabled={submitting}>
             {cancelLabel}
           </Button>
-          <Button onClick={handleSubmit} disabled={!canSubmit() || submitting} className="gap-1.5">
+          <Button onClick={handleSubmit} disabled={!reason.trim() || submitting} className="gap-1.5">
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {confirmLabel}
           </Button>

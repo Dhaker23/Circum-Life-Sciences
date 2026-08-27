@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { GitPullRequestArrow } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { DataTable, type Column } from "@/components/app/data-table";
 import { EmptyState } from "@/components/app/empty-state";
 import { StatusBadge } from "@/components/app/status-badge";
+import { QuickViewDrawer, type QuickViewField } from "@/components/app/quick-view-drawer";
 
 interface ChangeRow {
   id: string;
@@ -33,10 +33,10 @@ const STATUS_OPTIONS = [
 export default function ChangesPage() {
   const t = useTranslations("quality");
   const tCommon = useTranslations("common");
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [quickViewId, setQuickViewId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery<{
     data: ChangeRow[];
@@ -141,7 +141,24 @@ export default function ChangesPage() {
         emptyState={
           <EmptyState icon={GitPullRequestArrow} title={t("changes.noData")} />
         }
-        onRowClick={(c) => router.push(`/quality/changes/${c.id}`)}
+        onRowClick={(c) => setQuickViewId(c.id)}
+      />
+
+      <QuickViewDrawer
+        open={!!quickViewId}
+        onOpenChange={(v) => !v && setQuickViewId(null)}
+        recordId={quickViewId}
+        entityType="ChangeControl"
+        title="Change Control"
+        detailHref={(id) => `/quality/changes/${id}`}
+        fetchUrl={(id) => `/api/quality/changes/${id}`}
+        fields={[
+          { key: "code", label: "Code" },
+          { key: "status", label: "Status" },
+          { key: "changeType", label: "Change Type" },
+          { key: "description", label: "Description" },
+          { key: "reason", label: "Reason" },
+        ] satisfies QuickViewField[]}
       />
     </div>
   );

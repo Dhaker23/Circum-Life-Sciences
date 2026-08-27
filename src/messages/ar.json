@@ -73,7 +73,14 @@
     "qualityOverview": "نظرة عامة على الجودة",
     "productionStatus": "حالة الإنتاج",
     "systemHealth": "صحة النظام",
-    "fieldRequired": "هذا الحقل مطلوب"
+    "fieldRequired": "هذا الحقل مطلوب",
+    "shortcutsTitle": "اختصارات لوحة المفاتيح",
+    "shortcutsDescription": "استخدم هذه الاختصارات للتنقل بسرعة.",
+    "shortcutsHelp": "إظهار مساعدة الاختصارات",
+    "skipToContent": "تخطي إلى المحتوى",
+    "recentlyVisited": "زار مؤخرًا",
+    "noResultsFor": "لا توجد نتائج لـ \"{query}\"",
+    "chartSummary": "ملخص الرسم البياني"
   },
   "auth": {
     "signIn": "تسجيل الدخول",

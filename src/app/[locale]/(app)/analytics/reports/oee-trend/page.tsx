@@ -32,6 +32,7 @@ const METRICS = [
 
 export default function OeeTrendReportPage() {
   const t = useTranslations("analytics");
+  const tc = useTranslations("common");
   const [siteId, setSiteId] = useState<string>("");
   const [granularity, setGranularity] = useState<"HOUR" | "DAY" | "WEEK" | "MONTH">("DAY");
   const today = new Date().toISOString().slice(0, 10);
@@ -74,6 +75,22 @@ export default function OeeTrendReportPage() {
       return acc;
     }, {} as Record<string, number | null>),
   }));
+
+  // Chart accessibility: textual summary computed from the live data so
+  // screen readers can announce the chart's shape (no fabricated numbers).
+  const buckets = dataQ.data?.buckets ?? [];
+  const firstBucket = buckets[0]?.bucketStart;
+  const lastBucket = buckets[buckets.length - 1]?.bucketStart;
+  const oeeValues = buckets
+    .map((b) => b.values.oee)
+    .filter((v): v is number => v !== null && v !== undefined)
+    .map((v) => v * 100);
+  const oeeMin = oeeValues.length > 0 ? Math.min(...oeeValues) : null;
+  const oeeMax = oeeValues.length > 0 ? Math.max(...oeeValues) : null;
+  const chartAriaLabel = `${t("reports.oeeTrend")} ${tc("chartSummary")}: ${buckets.length} data points, OEE, availability, performance, quality`;
+  const chartSummary = buckets.length > 0
+    ? `${tc("chartSummary")}: ${t("reports.oeeTrend")}. ${buckets.length} data points from ${firstBucket ?? ""} to ${lastBucket ?? ""}. OEE range: ${oeeMin !== null ? oeeMin.toFixed(1) : "—"}% to ${oeeMax !== null ? oeeMax.toFixed(1) : "—"}%. Metrics: OEE, availability, performance, quality.`
+    : `${tc("chartSummary")}: ${t("dashboards.noData")}`;
 
   const handleExport = async () => {
     const res = await fetch("/api/analytics/export", {
@@ -138,7 +155,7 @@ export default function OeeTrendReportPage() {
                 {chartData.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{t("dashboards.noData")}</p>
                 ) : (
-                  <div className="h-80">
+                  <div className="h-80" role="img" aria-label={chartAriaLabel}>
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -153,6 +170,7 @@ export default function OeeTrendReportPage() {
                     </ResponsiveContainer>
                   </div>
                 )}
+                <p className="sr-only">{chartSummary}</p>
               </CardContent>
             </Card>
 

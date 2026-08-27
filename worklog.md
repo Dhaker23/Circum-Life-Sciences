@@ -1572,3 +1572,72 @@ Stage Summary:
 - **0 typecheck errors, 0 new lint warnings.**
 - Schema impact: ZERO. API impact: ZERO (consumed existing Prisma queries + `getProvider().health()` directly; did not modify `/api/health`). i18n impact: 9 new keys per locale × 3 locales = 27 new strings. Component impact: 1 new component (`form-field.tsx`), 1 additive backward-compatible extension to `stat-card.tsx`.
 - Detailed work record: `/home/z/my-project/agent-ctx/ui3-sub2-agent.md`.
+
+---
+Task ID: ui3-sub3
+Agent: ui3-sub3 (Z.ai Code)
+Task: Implement remaining UI-3 Sub-phase 3 items — FormField adoption on 4 detail pages (Deviation/CAPA/ChangeControl/BatchReview), QuickViewDrawer on 3 list pages (CAPAs/Deviations/Changes), chart accessibility on 6 analytics pages, topbar breadcrumb improvements.
+
+Work Log:
+- Read `worklog.md` (UI-3 sub2 + ui3-integrate context) and inspected the FormField + QuickViewDrawer components, the 4 target detail pages, the 3 target list pages, the 6 target analytics pages, the existing `app-topbar.tsx` + `nav-config.ts`, and the quality service module + API routes to confirm the actual API surface (deviations/capas/changes had NO GET-by-id; changes was even missing GET-list).
+
+Files modified — Task 1 (FormField adoption on 4 detail pages):
+1. `src/app/[locale]/(app)/quality/deviations/[id]/page.tsx` — imported FormField; removed unused Label import; added `submitAttempted` state + `fieldRequiredLabel` prop on TransitionDialogProps; `reasonError` computed; `reason` Textarea wrapped in `<FormField label required error htmlFor>` with `aria-invalid`; optional `impactAssessment` Textarea wrapped in `<FormField>` (no `required`/`error`); `setSubmitAttempted(true)` at top of `handleSubmit()` before early-return; reset clears `submitAttempted`; submit button disabled when `!reason.trim()`.
+2. `src/app/[locale]/(app)/quality/capas/[id]/page.tsx` — same pattern; required `reason` (always) + `effectivenessVerification` (when transitioning to CLOSED); added `effectivenessError` computed.
+3. `src/app/[locale]/(app)/quality/changes/[id]/page.tsx` — same pattern; required `reason` (always) + `impactAssessment`/`implementationPlan`/`verificationPlan` per-transition; added `impactError`/`implementationError`/`verificationError` computed.
+4. `src/app/[locale]/(app)/batch-review/batches/[id]/page.tsx` — same pattern applied to BOTH `TransitionDialog` (required `reason`) and `DispositionDialog` (required `reviewFindings` + `dispositionNotes`); added `reviewFindingsError` + `dispositionNotesError` computed.
+
+Files modified — Task 2 (QuickViewDrawer on 3 list pages):
+5. `src/app/[locale]/(app)/quality/capas/page.tsx` — imported `QuickViewDrawer` + `QuickViewField`; removed unused `useRouter` import; added `quickViewId` state; changed `onRowClick` from `router.push` to `setQuickViewId`; added `<QuickViewDrawer>` block with 5 fields (code, status, type, sourceType, actionPlan) typed via `satisfies QuickViewField[]`; `detailHref` + `fetchUrl` per spec.
+6. `src/app/[locale]/(app)/quality/deviations/page.tsx` — same pattern; fields: code, status, appliesToEntityType, description, justification.
+7. `src/app/[locale]/(app)/quality/changes/page.tsx` — same pattern; fields: code, status, changeType, description, reason.
+
+Supporting API additions (necessary for Task 2's `fetchUrl={(id) => \`/api/quality/{type}/${id}\`}` pattern — these endpoints had NO GET-by-id handler):
+- `src/modules/quality/service/index.ts` — added 4 exported functions: `getDeviation`, `getCapa`, `getChange`, `listChanges`. Each enforces RBAC (`can(permission)`) + multi-site isolation (`assertSiteAccess`) + throws `NotFoundError` when the record doesn't exist. `listChanges` was missing entirely (the changes list page was calling GET on a route that only had POST — silently failing).
+- `src/app/api/quality/deviations/[id]/route.ts` — added `GET` handler calling `svc.getDeviation`. POST (approve) unchanged.
+- `src/app/api/quality/changes/[id]/route.ts` — added `GET` handler calling `svc.getChange`. POST (approve) unchanged.
+- `src/app/api/quality/changes/route.ts` — added `GET` handler calling `svc.listChanges`. POST (create) unchanged.
+- `src/app/api/quality/capas/[id]/route.ts` — NEW file. Previously the `[id]/` directory only had `transition/route.ts`. Added `GET` handler calling `svc.getCapa`.
+
+Files modified — Task 3 (Chart accessibility on 6 analytics pages):
+8. `src/app/[locale]/(app)/analytics/dashboards/downtime/page.tsx` — added `tc = useTranslations("common")`; computed `chartAriaLabel` + `chartSummary` from `dataQ.data?.pareto` (N categories, total downtime, count, cumulative %, top category); added `role="img"` + `aria-label` on the `h-80` chart wrapper; added `<p className="sr-only">{chartSummary}</p>` after the chart.
+9. `src/app/[locale]/(app)/analytics/dashboards/production/page.tsx` — same pattern; summary includes N data points from-to, planned/actual/variance totals.
+10. `src/app/[locale]/(app)/analytics/dashboards/quality/page.tsx` — same pattern; summary includes test pass/fail counts + pass rate %.
+11. `src/app/[locale]/(app)/analytics/reports/oee-trend/page.tsx` — same pattern; summary includes N buckets from-to, OEE min/max range, metrics list.
+12. `src/app/[locale]/(app)/analytics/reports/quality-trend/page.tsx` — same pattern; summary includes N buckets from-to, FPY min/max range, metrics list.
+13. `src/app/[locale]/(app)/analytics/reports/downtime-pareto/page.tsx` — same pattern; summary includes N categories, total downtime, count, cumulative %, top category.
+
+All 6 summaries degrade gracefully to `{tc("chartSummary")}: {t("dashboards.noData")}` when data is empty. No fabricated numbers — every value comes from the live API response.
+
+Files modified — Task 4 (Topbar breadcrumbs):
+14. `src/components/app/app-topbar.tsx` — full rewrite of the breadcrumb JSX:
+    - Always renders "Dashboard" as the first crumb (visible on md+): `BreadcrumbPage` when `isRoot` (currently on dashboard), otherwise `BreadcrumbLink` (clickable to `/`).
+    - Section link now points to a real route: previous code used `item.href.split("/").slice(0, 2).join("/")` which produced e.g. `/quality` (no page.tsx → 404). New code uses `group?.items?.[0]?.href ?? "/"` — the first item in the matched nav group's section.
+    - Current item is now a link (was a `BreadcrumbPage` span): rendered as `BreadcrumbLink` with `aria-current="page"`. Spec said "both section and item should be links".
+    - Added `aria-label="breadcrumb"` explicitly on the `<Breadcrumb>` nav (shadcn's `Breadcrumb` already adds it internally, but the spec asked for it explicitly).
+    - Mobile (`<md`) unchanged: still shows just the current page label as a compact truncated span (no full trail).
+    - Added `rtl:rotate-180` to all `ChevronRight` breadcrumb separators.
+
+Decisions / pattern notes:
+- **Adding GET-by-id endpoints vs. fetch-from-list-and-filter**: the spec said "if no GET-by-id API exists, fetch from list and filter — but most quality APIs have GET by ID". The reality was that deviations/capas/changes had NO GET-by-id (only POST-approve or POST-transition), and changes was even missing GET-list entirely. I added the GET handlers + service functions because (1) it matches the spec's preferred URL pattern (`fetchUrl={(id) => \`/api/quality/{type}/${id}\`}`), (2) it's more efficient (1 record vs. 100), and (3) it surfaces the same RBAC + multi-site isolation contract as the existing NCR GET-by-id. The existing detail pages continue to fetch from the list-and-filter approach (unchanged — preserves existing functionality).
+- **`listChanges` was missing**: the changes list page (`/quality/changes`) was calling GET on `/api/quality/changes` which only had POST — silently failing. Added the GET handler so the list page actually works (the QuickViewDrawer wouldn't have a list to display otherwise).
+- **Section link target**: choosing `group?.items?.[0]?.href` over the previous `item.href.split("/").slice(0, 2).join("/")` because the latter produced non-existent routes (`/quality`, `/production`, `/identity`, etc.). The former always lands on a real page (the first item in the section).
+- **Current item as link (not BreadcrumbPage)**: the spec said "both section and item should be links", so I made the current item a `BreadcrumbLink` with `aria-current="page"` (still semantically marked as the current page, but clickable to refresh/re-navigate).
+- **Chart summaries computed from live data**: every number in the sr-only summary comes from the actual API response — no fabricated ranges. When data is empty/loading, the summary degrades to a "no data" message rather than displaying misleading zeros.
+- **`aria-invalid` on inputs**: all required form fields in the 4 detail page dialogs now have `aria-invalid={Boolean(<field>Error)}` so screen readers announce the error state, not just the visible red text.
+- **No changes to**: existing transitions, state machines, AI/Human-only notices, status variant maps, disposition options, RBAC middleware (other than the additive GET handlers), Prisma schema, the underlying FormField/QuickViewDrawer components, the i18n JSON files (used existing keys).
+
+Verification:
+- `bunx tsc --noEmit 2>&1 | grep -v vitest | head -10` → **0 errors, 0 output** (clean typecheck, exit code 0).
+- `bun run lint` → **0 errors, 111 warnings** (all pre-existing `no-explicit-any`/`no-console` in modules/services/tests — same baseline as previous tasks). Verified via grep: ZERO warnings reference any of the 14 modified file paths.
+- Dev server confirmed healthy in `dev.log` (Next.js 16.1.3 Turbopack, ready in 913ms, no compile errors, only `/api/health` probe in the log).
+
+Stage Summary:
+- **Task 1**: 4 detail pages (Deviation, CAPA, ChangeControl, BatchReview) now use `<FormField>` on their transition/disposition dialogs with required-field asterisks + field-level errors on submit attempt + `aria-invalid` for screen readers. Submit buttons disable until required fields are filled.
+- **Task 2**: 3 list pages (CAPAs, Deviations, Changes) now open `<QuickViewDrawer>` on row click instead of navigating. Each shows status + 5 fields; "View Full Details" button navigates to the full detail page.
+- **Task 2 supporting APIs**: added `getDeviation`, `getCapa`, `getChange`, `listChanges` service functions + GET-by-id handlers on 3 API routes + GET-list handler on `/api/quality/changes` (was missing). All enforce RBAC + multi-site isolation.
+- **Task 3**: 6 analytics pages now have accessible charts (`role="img"` + `aria-label` + sr-only summary computed from live data). No fabricated numbers.
+- **Task 4**: topbar breadcrumb now shows Dashboard > Section > Current Item. Dashboard always visible. Section link points to a real route (no more 404s). Current item is clickable. `aria-label="breadcrumb"` on the nav. `rtl:rotate-180` on chevron separators. Mobile still shows just the current page label.
+- **0 typecheck errors, 0 new lint warnings. Dev server healthy.**
+- Schema impact: ZERO. i18n impact: ZERO (reused existing `common.chartSummary` + `common.fieldRequired` keys from `ui3-sub2`). Component impact: ZERO new components (reused FormField + QuickViewDrawer). API impact: 3 new GET handlers + 4 new service functions (additive — no existing endpoint modified).
+- Detailed work record: `/home/z/my-project/agent-ctx/ui3-sub3-agent.md`.

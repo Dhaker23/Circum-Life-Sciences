@@ -79,6 +79,11 @@ export function AppTopbar() {
 
   const sectionLabel = group?.sectionLabelKey ? t(group.sectionLabelKey) : null;
   const itemLabel = item ? t(item.labelKey) : null;
+  const dashboardLabel = t("nav.dashboard");
+
+  // Section landing href: the first item in the matched nav group's section.
+  // Falls back to "/" when there's no group (no match) — never 404s.
+  const sectionHref = group?.items?.[0]?.href ?? "/";
 
   return (
     <header className="flex h-14 items-center justify-between gap-2 border-b bg-card px-4">
@@ -96,38 +101,51 @@ export function AppTopbar() {
 
         {/* Breadcrumb: section / current page (md+) or compact item label (mobile) */}
         <div className="min-w-0 flex-1 md:flex-none">
-          {/* Mobile: compact page label only */}
+          {/* Mobile: compact current-page label only (full trail hidden on <md) */}
           {itemLabel && (
             <span className="md:hidden text-sm font-medium text-foreground truncate block">
               {itemLabel}
             </span>
           )}
-          {/* md+: full breadcrumb with section + item */}
-          <Breadcrumb className="hidden md:block">
+          {/* md+: full breadcrumb trail — Dashboard > Section > Current Item */}
+          <Breadcrumb aria-label="breadcrumb" className="hidden md:block">
             <BreadcrumbList className="text-sm">
-              {sectionLabel && !isRoot ? (
+              <BreadcrumbItem>
+                {isRoot ? (
+                  <BreadcrumbPage className="font-medium">
+                    {dashboardLabel}
+                  </BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild>
+                    <Link href="/" aria-label={dashboardLabel}>
+                      {dashboardLabel}
+                    </Link>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+              {sectionLabel && !isRoot && item ? (
                 <>
+                  <BreadcrumbSeparator>
+                    <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
+                  </BreadcrumbSeparator>
                   <BreadcrumbItem>
                     <BreadcrumbLink asChild>
-                      <Link
-                        href={item ? item.href.split("/").slice(0, 2).join("/") : "/"}
-                        aria-label={sectionLabel}
-                      >
+                      <Link href={sectionHref} aria-label={sectionLabel}>
                         {sectionLabel}
                       </Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator>
-                    <ChevronRight className="h-3.5 w-3.5" />
+                    <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
                   </BreadcrumbSeparator>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link href={item.href} aria-current="page">
+                        {itemLabel}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
                 </>
-              ) : null}
-              {itemLabel ? (
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="font-medium">
-                    {itemLabel}
-                  </BreadcrumbPage>
-                </BreadcrumbItem>
               ) : null}
             </BreadcrumbList>
           </Breadcrumb>

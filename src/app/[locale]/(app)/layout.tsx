@@ -1,8 +1,12 @@
 "use client";
+import { useState } from "react";
 import { useMe, usePermissions } from "@/hooks/use-me";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppTopbar } from "@/components/app/app-topbar";
 import { CommandPalette } from "@/components/app/command-palette";
+import { PageTransition } from "@/components/app/page-transition";
+import { ShortcutsHelpDialog } from "@/components/app/shortcuts-help-dialog";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useTranslations } from "next-intl";
 import { CircleAlert } from "lucide-react";
 
@@ -10,6 +14,9 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
   const t = useTranslations("common");
   const { data: me, isLoading } = useMe();
   const permissions = usePermissions();
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  useKeyboardShortcuts(permissions, () => setShortcutsOpen(true));
 
   if (isLoading) {
     return (
@@ -30,11 +37,18 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="flex min-h-screen flex-col">
+      {/* Skip to content link for keyboard users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-1.5 focus:text-primary-foreground focus:text-sm"
+      >
+        {t("skipToContent")}
+      </a>
       <div className="flex flex-1">
         <AppSidebar permissions={permissions} />
         <div className="flex flex-1 flex-col min-w-0">
           <AppTopbar />
-          <main className="flex-1 overflow-y-auto bg-muted/20 p-4 md:p-6">{children}</main>
+          <PageTransition>{children}</PageTransition>
         </div>
       </div>
       <footer className="mt-auto border-t bg-card px-4 py-2.5">
@@ -52,6 +66,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
         </div>
       </footer>
       <CommandPalette />
+      <ShortcutsHelpDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </div>
   );
 }

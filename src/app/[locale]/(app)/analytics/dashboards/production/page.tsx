@@ -20,6 +20,7 @@ type ProductionData = {
 
 export default function ProductionDashboardPage() {
   const t = useTranslations("analytics");
+  const tc = useTranslations("common");
   const [siteId, setSiteId] = useState<string>("");
   const today = new Date().toISOString().slice(0, 10);
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
@@ -52,6 +53,14 @@ export default function ProductionDashboardPage() {
     },
     enabled: !!effectiveSiteId,
   });
+
+  // Chart accessibility: textual summary computed from the live data so
+  // screen readers can announce the chart's shape (no fabricated numbers).
+  const byDay = dataQ.data?.byDay ?? [];
+  const chartAriaLabel = `${t("dashboards.production")} ${tc("chartSummary")}: ${byDay.length} data points, ${t("dashboards.planned")} ${dataQ.data?.plannedTotal ?? 0}, ${t("dashboards.actual")} ${dataQ.data?.actualTotal ?? 0}`;
+  const chartSummary = byDay.length > 0
+    ? `${tc("chartSummary")}: ${t("dashboards.production")}. ${byDay.length} data points from ${byDay[0]?.date ?? ""} to ${byDay[byDay.length - 1]?.date ?? ""}. ${t("dashboards.planned")}: ${dataQ.data?.plannedTotal ?? 0}. ${t("dashboards.actual")}: ${dataQ.data?.actualTotal ?? 0}. ${t("dashboards.variance")}: ${dataQ.data?.variance ?? 0}.`
+    : `${tc("chartSummary")}: ${t("dashboards.noData")}`;
 
   return (
     <div className="space-y-6">
@@ -91,7 +100,7 @@ export default function ProductionDashboardPage() {
                 {dataQ.data.byDay.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{t("dashboards.noData")}</p>
                 ) : (
-                  <div className="h-80">
+                  <div className="h-80" role="img" aria-label={chartAriaLabel}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={dataQ.data.byDay}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -105,6 +114,7 @@ export default function ProductionDashboardPage() {
                     </ResponsiveContainer>
                   </div>
                 )}
+                <p className="sr-only">{chartSummary}</p>
               </CardContent>
             </Card>
 

@@ -6,6 +6,15 @@ import { z } from "zod";
 
 const ApproveSchema = z.object({ reason: z.string().min(1).max(500) });
 
+// Change control detail (used by QuickViewDrawer on the list page).
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const ctx = await requirePermission("quality.change.read");
+    return ok(await svc.getChange(ctx, id));
+  } catch (e) { return fail(e); }
+}
+
 // Change approve
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

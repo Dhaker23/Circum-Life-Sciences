@@ -16,6 +16,7 @@ type DowntimeData = {
 
 export default function DowntimeDashboardPage() {
   const t = useTranslations("analytics");
+  const tc = useTranslations("common");
   const [siteId, setSiteId] = useState<string>("");
   const today = new Date().toISOString().slice(0, 10);
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
@@ -51,6 +52,15 @@ export default function DowntimeDashboardPage() {
 
   const totalCount = dataQ.data?.pareto.reduce((s, p) => s + p.count, 0) ?? 0;
 
+  // Chart accessibility: textual summary computed from the live data so
+  // screen readers can announce the chart's shape (no fabricated numbers).
+  const pareto = dataQ.data?.pareto ?? [];
+  const topCategory = pareto[0];
+  const chartAriaLabel = `${t("dashboards.downtime")} ${tc("chartSummary")}: ${pareto.length} ${t("dashboards.category")}, ${totalCount} ${t("dashboards.count")}, ${dataQ.data?.totalDowntimeMinutes ?? 0} min`;
+  const chartSummary = pareto.length > 0
+    ? `${tc("chartSummary")}: ${t("dashboards.downtime")}. ${pareto.length} ${t("dashboards.category")}. ${t("dashboards.totalDowntime")}: ${dataQ.data?.totalDowntimeMinutes ?? 0} min. ${t("dashboards.count")}: ${totalCount}. ${t("dashboards.cumulative")}: ${pareto[pareto.length - 1]?.cumulativePercent ?? 0}%. Top ${t("dashboards.category")}: ${topCategory?.category ?? ""} (${topCategory?.totalDurationMinutes ?? 0} min).`
+    : `${tc("chartSummary")}: ${t("dashboards.noData")}`;
+
   return (
     <div className="space-y-6">
       <PageHeader title={t("dashboards.downtime")} subtitle={t("dashboards.subtitle")} />
@@ -85,7 +95,7 @@ export default function DowntimeDashboardPage() {
                 {dataQ.data.pareto.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{t("dashboards.noData")}</p>
                 ) : (
-                  <div className="h-80">
+                  <div className="h-80" role="img" aria-label={chartAriaLabel}>
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={dataQ.data.pareto}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -100,6 +110,7 @@ export default function DowntimeDashboardPage() {
                     </ResponsiveContainer>
                   </div>
                 )}
+                <p className="sr-only">{chartSummary}</p>
               </CardContent>
             </Card>
 

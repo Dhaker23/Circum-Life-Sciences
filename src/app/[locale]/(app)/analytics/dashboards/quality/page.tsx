@@ -23,6 +23,7 @@ type QualityData = {
 
 export default function QualityDashboardPage() {
   const t = useTranslations("analytics");
+  const tc = useTranslations("common");
   const [siteId, setSiteId] = useState<string>("");
   const today = new Date().toISOString().slice(0, 10);
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
@@ -63,6 +64,14 @@ export default function QualityDashboardPage() {
       ]
     : [];
 
+  // Chart accessibility: textual summary computed from the live data so
+  // screen readers can announce the chart's shape (no fabricated numbers).
+  const totalTests = (dataQ.data?.testPassCount ?? 0) + (dataQ.data?.testFailCount ?? 0);
+  const chartAriaLabel = `${t("dashboards.quality")} ${tc("chartSummary")}: ${t("dashboards.testPass")} ${dataQ.data?.testPassCount ?? 0}, ${t("dashboards.testFail")} ${dataQ.data?.testFailCount ?? 0}`;
+  const chartSummary = totalTests > 0
+    ? `${tc("chartSummary")}: ${t("dashboards.quality")}. ${t("dashboards.testPass")}: ${dataQ.data?.testPassCount ?? 0}. ${t("dashboards.testFail")}: ${dataQ.data?.testFailCount ?? 0}. Total: ${totalTests}. Pass rate: ${totalTests > 0 ? Math.round(((dataQ.data?.testPassCount ?? 0) / totalTests) * 100) : 0}%.`
+    : `${tc("chartSummary")}: ${t("dashboards.noData")}`;
+
   return (
     <div className="space-y-6">
       <PageHeader title={t("dashboards.quality")} subtitle={t("dashboards.subtitle")} />
@@ -102,7 +111,7 @@ export default function QualityDashboardPage() {
                 {dataQ.data.testPassCount + dataQ.data.testFailCount === 0 ? (
                   <p className="text-sm text-muted-foreground">{t("dashboards.noData")}</p>
                 ) : (
-                  <div className="h-64">
+                  <div className="h-64" role="img" aria-label={chartAriaLabel}>
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
@@ -116,6 +125,7 @@ export default function QualityDashboardPage() {
                     </ResponsiveContainer>
                   </div>
                 )}
+                <p className="sr-only">{chartSummary}</p>
               </CardContent>
             </Card>
 

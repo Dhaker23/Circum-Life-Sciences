@@ -31,6 +31,7 @@ const METRICS = [
 
 export default function QualityTrendReportPage() {
   const t = useTranslations("analytics");
+  const tc = useTranslations("common");
   const [siteId, setSiteId] = useState<string>("");
   const [granularity, setGranularity] = useState<"HOUR" | "DAY" | "WEEK" | "MONTH">("DAY");
   const today = new Date().toISOString().slice(0, 10);
@@ -73,6 +74,22 @@ export default function QualityTrendReportPage() {
       return acc;
     }, {} as Record<string, number | null>),
   }));
+
+  // Chart accessibility: textual summary computed from the live data so
+  // screen readers can announce the chart's shape (no fabricated numbers).
+  const buckets = dataQ.data?.buckets ?? [];
+  const firstBucket = buckets[0]?.bucketStart;
+  const lastBucket = buckets[buckets.length - 1]?.bucketStart;
+  const fpyValues = buckets
+    .map((b) => b.values.fpy)
+    .filter((v): v is number => v !== null && v !== undefined)
+    .map((v) => v * 100);
+  const fpyMin = fpyValues.length > 0 ? Math.min(...fpyValues) : null;
+  const fpyMax = fpyValues.length > 0 ? Math.max(...fpyValues) : null;
+  const chartAriaLabel = `${t("reports.qualityTrend")} ${tc("chartSummary")}: ${buckets.length} data points, FPY, scrap rate, rework rate`;
+  const chartSummary = buckets.length > 0
+    ? `${tc("chartSummary")}: ${t("reports.qualityTrend")}. ${buckets.length} data points from ${firstBucket ?? ""} to ${lastBucket ?? ""}. FPY range: ${fpyMin !== null ? fpyMin.toFixed(1) : "—"}% to ${fpyMax !== null ? fpyMax.toFixed(1) : "—"}%. Metrics: FPY, scrap rate, rework rate.`
+    : `${tc("chartSummary")}: ${t("dashboards.noData")}`;
 
   const handleExport = async () => {
     const res = await fetch("/api/analytics/export", {
@@ -137,7 +154,7 @@ export default function QualityTrendReportPage() {
                 {chartData.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{t("dashboards.noData")}</p>
                 ) : (
-                  <div className="h-80">
+                  <div className="h-80" role="img" aria-label={chartAriaLabel}>
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -152,6 +169,7 @@ export default function QualityTrendReportPage() {
                     </ResponsiveContainer>
                   </div>
                 )}
+                <p className="sr-only">{chartSummary}</p>
               </CardContent>
             </Card>
 

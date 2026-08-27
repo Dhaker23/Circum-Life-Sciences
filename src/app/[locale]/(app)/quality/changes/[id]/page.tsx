@@ -26,11 +26,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { ActivityTimeline } from "@/components/app/activity-timeline";
+import { FormField } from "@/components/app/form-field";
 
 // ---------------------------------------------------------------------------
 // Types — mirror the API contract
@@ -273,6 +273,7 @@ export default function ChangeDetailPage() {
                   reasonLabel={tc("reasonRequired")}
                   cancelLabel={tc("cancel")}
                   confirmLabel={tc("confirmTransition")}
+                  fieldRequiredLabel={tc("fieldRequired")}
                   onSuccess={async () => {
                     await qc.invalidateQueries({ queryKey: ["quality", "change", change.id] });
                     await qc.invalidateQueries({ queryKey: ["changes"] });
@@ -321,13 +322,14 @@ interface TransitionDialogProps {
   reasonLabel: string;
   cancelLabel: string;
   confirmLabel: string;
+  fieldRequiredLabel: string;
   onSuccess: () => Promise<void> | void;
   onError: (msg: string) => void;
 }
 
 function TransitionDialog({
   spec, changeId, translateLabel, translateTitle, impactLabel, implementationLabel,
-  verificationLabel, approvalNotice, reasonLabel, cancelLabel, confirmLabel, onSuccess, onError,
+  verificationLabel, approvalNotice, reasonLabel, cancelLabel, confirmLabel, fieldRequiredLabel, onSuccess, onError,
 }: TransitionDialogProps) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -335,13 +337,29 @@ function TransitionDialog({
   const [implementationPlan, setImplementationPlan] = useState("");
   const [verificationPlan, setVerificationPlan] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   function reset() {
     setReason("");
     setImpactAssessment("");
     setImplementationPlan("");
     setVerificationPlan("");
+    setSubmitAttempted(false);
   }
+
+  const reasonError = submitAttempted && !reason.trim() ? fieldRequiredLabel : null;
+  const impactError =
+    submitAttempted && spec.fields.includes("impactAssessment") && !impactAssessment.trim()
+      ? fieldRequiredLabel
+      : null;
+  const implementationError =
+    submitAttempted && spec.fields.includes("implementationPlan") && !implementationPlan.trim()
+      ? fieldRequiredLabel
+      : null;
+  const verificationError =
+    submitAttempted && spec.fields.includes("verificationPlan") && !verificationPlan.trim()
+      ? fieldRequiredLabel
+      : null;
 
   function canSubmit(): boolean {
     if (!reason.trim()) return false;
@@ -352,6 +370,8 @@ function TransitionDialog({
   }
 
   async function handleSubmit() {
+    // Flag any empty required fields on submit attempt.
+    setSubmitAttempted(true);
     if (!canSubmit() || submitting) return;
     setSubmitting(true);
     try {
@@ -405,54 +425,74 @@ function TransitionDialog({
             </Alert>
           )}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="chg-reason">{reasonLabel}</Label>
+          <FormField
+            label={reasonLabel}
+            required
+            error={reasonError}
+            htmlFor="chg-reason"
+          >
             <Textarea
               id="chg-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
               maxLength={500}
+              aria-invalid={Boolean(reasonError)}
             />
-          </div>
+          </FormField>
 
           {spec.fields.includes("impactAssessment") && (
-            <div className="space-y-1.5">
-              <Label htmlFor="chg-impact">{impactLabel}</Label>
+            <FormField
+              label={impactLabel}
+              required
+              error={impactError}
+              htmlFor="chg-impact"
+            >
               <Textarea
                 id="chg-impact"
                 value={impactAssessment}
                 onChange={(e) => setImpactAssessment(e.target.value)}
                 rows={4}
                 maxLength={2000}
+                aria-invalid={Boolean(impactError)}
               />
-            </div>
+            </FormField>
           )}
 
           {spec.fields.includes("implementationPlan") && (
-            <div className="space-y-1.5">
-              <Label htmlFor="chg-impl">{implementationLabel}</Label>
+            <FormField
+              label={implementationLabel}
+              required
+              error={implementationError}
+              htmlFor="chg-impl"
+            >
               <Textarea
                 id="chg-impl"
                 value={implementationPlan}
                 onChange={(e) => setImplementationPlan(e.target.value)}
                 rows={5}
                 maxLength={5000}
+                aria-invalid={Boolean(implementationError)}
               />
-            </div>
+            </FormField>
           )}
 
           {spec.fields.includes("verificationPlan") && (
-            <div className="space-y-1.5">
-              <Label htmlFor="chg-verif">{verificationLabel}</Label>
+            <FormField
+              label={verificationLabel}
+              required
+              error={verificationError}
+              htmlFor="chg-verif"
+            >
               <Textarea
                 id="chg-verif"
                 value={verificationPlan}
                 onChange={(e) => setVerificationPlan(e.target.value)}
                 rows={5}
                 maxLength={5000}
+                aria-invalid={Boolean(verificationError)}
               />
-            </div>
+            </FormField>
           )}
 
           {isTerminal && (

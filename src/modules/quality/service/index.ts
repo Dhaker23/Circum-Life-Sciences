@@ -132,6 +132,17 @@ export async function listDeviations(ctx: AuthContext, page: number, pageSize: n
   return { items, total, page, pageSize };
 }
 
+export async function getDeviation(ctx: AuthContext, id: string) {
+  if (!can(ctx, "quality.deviation.read")) throw new ForbiddenError();
+  const dev = await db.deviation.findUnique({
+    where: { id },
+    include: { site: { select: { code: true } } },
+  });
+  if (!dev) throw new NotFoundError("Deviation");
+  assertSiteAccess(ctx, dev.siteId);
+  return dev;
+}
+
 export async function createDeviation(ctx: AuthContext, input: z.infer<typeof CreateDeviationSchema>) {
   if (!can(ctx, "quality.deviation.create", input.siteId)) throw new ForbiddenError();
   assertSiteAccess(ctx, input.siteId);
@@ -222,6 +233,17 @@ export async function listCapas(ctx: AuthContext, page: number, pageSize: number
   return { items, total, page, pageSize };
 }
 
+export async function getCapa(ctx: AuthContext, id: string) {
+  if (!can(ctx, "quality.capa.read")) throw new ForbiddenError();
+  const capa = await db.cAPA.findUnique({
+    where: { id },
+    include: { site: { select: { code: true } }, investigation: { select: { code: true } } },
+  });
+  if (!capa) throw new NotFoundError("CAPA");
+  assertSiteAccess(ctx, capa.siteId);
+  return capa;
+}
+
 export async function createCapa(ctx: AuthContext, input: z.infer<typeof CreateCapaSchema>) {
   if (!can(ctx, "quality.capa.create", input.siteId)) throw new ForbiddenError();
   assertSiteAccess(ctx, input.siteId);
@@ -284,6 +306,28 @@ export async function createChange(ctx: AuthContext, input: z.infer<typeof Creat
   const ch = await db.changeControl.create({ data: { ...input, isDemo: false } });
   await audit({ actorUserId: ctx.user.id, action: "quality.change.create", entityType: "ChangeControl", entityId: ch.id, newState: { code: ch.code, changeType: ch.changeType } });
   return ch;
+}
+
+export async function getChange(ctx: AuthContext, id: string) {
+  if (!can(ctx, "quality.change.read")) throw new ForbiddenError();
+  const ch = await db.changeControl.findUnique({
+    where: { id },
+    include: { site: { select: { code: true } } },
+  });
+  if (!ch) throw new NotFoundError("ChangeControl");
+  assertSiteAccess(ctx, ch.siteId);
+  return ch;
+}
+
+export async function listChanges(ctx: AuthContext, page: number, pageSize: number) {
+  if (!can(ctx, "quality.change.read")) throw new ForbiddenError();
+  const where: Prisma.ChangeControlWhereInput = {};
+  if (ctx.resolvedSites !== "*") where.siteId = { in: [...ctx.resolvedSites] };
+  const [items, total] = await Promise.all([
+    db.changeControl.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize, include: { site: { select: { code: true } } } }),
+    db.changeControl.count({ where }),
+  ]);
+  return { items, total, page, pageSize };
 }
 
 export async function transitionChange(ctx: AuthContext, id: string, input: z.infer<typeof ChangeTransitionSchema>) {

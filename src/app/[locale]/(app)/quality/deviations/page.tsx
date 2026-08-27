@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { GitBranch } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { DataTable, type Column } from "@/components/app/data-table";
 import { EmptyState } from "@/components/app/empty-state";
 import { StatusBadge } from "@/components/app/status-badge";
+import { QuickViewDrawer, type QuickViewField } from "@/components/app/quick-view-drawer";
 
 interface DeviationRow {
   id: string;
@@ -31,10 +31,10 @@ const STATUS_OPTIONS = [
 export default function DeviationsPage() {
   const t = useTranslations("quality");
   const tCommon = useTranslations("common");
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [quickViewId, setQuickViewId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery<{
     data: DeviationRow[];
@@ -141,7 +141,24 @@ export default function DeviationsPage() {
         emptyState={
           <EmptyState icon={GitBranch} title={t("deviations.noData")} />
         }
-        onRowClick={(d) => router.push(`/quality/deviations/${d.id}`)}
+        onRowClick={(d) => setQuickViewId(d.id)}
+      />
+
+      <QuickViewDrawer
+        open={!!quickViewId}
+        onOpenChange={(v) => !v && setQuickViewId(null)}
+        recordId={quickViewId}
+        entityType="Deviation"
+        title="Deviation"
+        detailHref={(id) => `/quality/deviations/${id}`}
+        fetchUrl={(id) => `/api/quality/deviations/${id}`}
+        fields={[
+          { key: "code", label: "Code" },
+          { key: "status", label: "Status" },
+          { key: "appliesToEntityType", label: "Applies To" },
+          { key: "description", label: "Description" },
+          { key: "justification", label: "Justification" },
+        ] satisfies QuickViewField[]}
       />
     </div>
   );

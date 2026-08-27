@@ -26,11 +26,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { ActivityTimeline } from "@/components/app/activity-timeline";
+import { FormField } from "@/components/app/form-field";
 
 // ---------------------------------------------------------------------------
 // Types — mirror the API contract
@@ -283,6 +283,7 @@ export default function BatchReviewDetailPage() {
                 reasonLabel={tc("reasonRequired")}
                 cancelLabel={tc("cancel")}
                 confirmLabel={tc("confirmTransition")}
+                fieldRequiredLabel={tc("fieldRequired")}
                 onSuccess={async () => {
                   await qc.invalidateQueries({ queryKey: ["batch-review", "batch", batch.id] });
                   toast({ title: tc("transitionSuccess"), description: `${batch.code} → QA_REVIEW` });
@@ -307,6 +308,7 @@ export default function BatchReviewDetailPage() {
                     dispositionNotesLabel={t("detail.dispositionNotesRequired")}
                     cancelLabel={tc("cancel")}
                     confirmLabel={tc("confirm")}
+                    fieldRequiredLabel={tc("fieldRequired")}
                     onSuccess={async () => {
                       await qc.invalidateQueries({ queryKey: ["batch-review", "batch", batch.id] });
                       toast({ title: tc("dispositionSuccess"), description: `${batch.code} → ${disp}` });
@@ -352,23 +354,32 @@ interface TransitionDialogProps {
   reasonLabel: string;
   cancelLabel: string;
   confirmLabel: string;
+  fieldRequiredLabel: string;
   onSuccess: () => Promise<void> | void;
   onError: (msg: string) => void;
 }
 
 function TransitionDialog({
-  batchId, translateTitle, translateButton, reasonLabel, cancelLabel, confirmLabel,
+  batchId, translateTitle, translateButton, reasonLabel, cancelLabel, confirmLabel, fieldRequiredLabel,
   onSuccess, onError,
 }: TransitionDialogProps) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
-  function reset() { setReason(""); }
+  function reset() {
+    setReason("");
+    setSubmitAttempted(false);
+  }
+
+  const reasonError = submitAttempted && !reason.trim() ? fieldRequiredLabel : null;
 
   function canSubmit(): boolean { return reason.trim().length > 0; }
 
   async function handleSubmit() {
+    // Flag any empty required fields on submit attempt.
+    setSubmitAttempted(true);
     if (!canSubmit() || submitting) return;
     setSubmitting(true);
     try {
@@ -407,22 +418,27 @@ function TransitionDialog({
           <DialogDescription>{translateButton()}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="br-reason">{reasonLabel}</Label>
+          <FormField
+            label={reasonLabel}
+            required
+            error={reasonError}
+            htmlFor="br-reason"
+          >
             <Textarea
               id="br-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
               maxLength={500}
+              aria-invalid={Boolean(reasonError)}
             />
-          </div>
+          </FormField>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => { setOpen(false); reset(); }} disabled={submitting}>
             {cancelLabel}
           </Button>
-          <Button onClick={handleSubmit} disabled={!canSubmit() || submitting} className="gap-1.5">
+          <Button onClick={handleSubmit} disabled={!reason.trim() || submitting} className="gap-1.5">
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {confirmLabel}
           </Button>
@@ -444,29 +460,37 @@ interface DispositionDialogProps {
   dispositionNotesLabel: string;
   cancelLabel: string;
   confirmLabel: string;
+  fieldRequiredLabel: string;
   onSuccess: () => Promise<void> | void;
   onError: (msg: string) => void;
 }
 
 function DispositionDialog({
   batchId, disposition, translateButton, translateTitle, reviewFindingsLabel,
-  dispositionNotesLabel, cancelLabel, confirmLabel, onSuccess, onError,
+  dispositionNotesLabel, cancelLabel, confirmLabel, fieldRequiredLabel, onSuccess, onError,
 }: DispositionDialogProps) {
   const [open, setOpen] = useState(false);
   const [reviewFindings, setReviewFindings] = useState("");
   const [dispositionNotes, setDispositionNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   function reset() {
     setReviewFindings("");
     setDispositionNotes("");
+    setSubmitAttempted(false);
   }
+
+  const reviewFindingsError = submitAttempted && !reviewFindings.trim() ? fieldRequiredLabel : null;
+  const dispositionNotesError = submitAttempted && !dispositionNotes.trim() ? fieldRequiredLabel : null;
 
   function canSubmit(): boolean {
     return reviewFindings.trim().length > 0 && dispositionNotes.trim().length > 0;
   }
 
   async function handleSubmit() {
+    // Flag any empty required fields on submit attempt.
+    setSubmitAttempted(true);
     if (!canSubmit() || submitting) return;
     setSubmitting(true);
     try {
@@ -516,27 +540,37 @@ function DispositionDialog({
             </AlertDescription>
           </Alert>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="br-findings">{reviewFindingsLabel}</Label>
+          <FormField
+            label={reviewFindingsLabel}
+            required
+            error={reviewFindingsError}
+            htmlFor="br-findings"
+          >
             <Textarea
               id="br-findings"
               value={reviewFindings}
               onChange={(e) => setReviewFindings(e.target.value)}
               rows={5}
               maxLength={5000}
+              aria-invalid={Boolean(reviewFindingsError)}
             />
-          </div>
+          </FormField>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="br-notes">{dispositionNotesLabel}</Label>
+          <FormField
+            label={dispositionNotesLabel}
+            required
+            error={dispositionNotesError}
+            htmlFor="br-notes"
+          >
             <Textarea
               id="br-notes"
               value={dispositionNotes}
               onChange={(e) => setDispositionNotes(e.target.value)}
               rows={4}
               maxLength={2000}
+              aria-invalid={Boolean(dispositionNotesError)}
             />
-          </div>
+          </FormField>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => { setOpen(false); reset(); }} disabled={submitting}>

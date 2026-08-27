@@ -26,11 +26,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { ActivityTimeline } from "@/components/app/activity-timeline";
+import { FormField } from "@/components/app/form-field";
 
 // ---------------------------------------------------------------------------
 // Types — mirror the API contract
@@ -266,6 +266,7 @@ export default function CapaDetailPage() {
                   reasonLabel={tc("reasonRequired")}
                   cancelLabel={tc("cancel")}
                   confirmLabel={tc("confirmTransition")}
+                  fieldRequiredLabel={tc("fieldRequired")}
                   onSuccess={async () => {
                     await qc.invalidateQueries({ queryKey: ["quality", "capa", capa.id] });
                     await qc.invalidateQueries({ queryKey: ["capas"] });
@@ -312,23 +313,32 @@ interface TransitionDialogProps {
   reasonLabel: string;
   cancelLabel: string;
   confirmLabel: string;
+  fieldRequiredLabel: string;
   onSuccess: () => Promise<void> | void;
   onError: (msg: string) => void;
 }
 
 function TransitionDialog({
   spec, capaId, translateLabel, translateTitle, effectivenessLabel, closureNotice,
-  reasonLabel, cancelLabel, confirmLabel, onSuccess, onError,
+  reasonLabel, cancelLabel, confirmLabel, fieldRequiredLabel, onSuccess, onError,
 }: TransitionDialogProps) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [effectivenessVerification, setEffectivenessVerification] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   function reset() {
     setReason("");
     setEffectivenessVerification("");
+    setSubmitAttempted(false);
   }
+
+  const reasonError = submitAttempted && !reason.trim() ? fieldRequiredLabel : null;
+  const effectivenessError =
+    submitAttempted && spec.fields.includes("effectivenessVerification") && !effectivenessVerification.trim()
+      ? fieldRequiredLabel
+      : null;
 
   function canSubmit(): boolean {
     if (!reason.trim()) return false;
@@ -337,6 +347,8 @@ function TransitionDialog({
   }
 
   async function handleSubmit() {
+    // Flag any empty required fields on submit attempt.
+    setSubmitAttempted(true);
     if (!canSubmit() || submitting) return;
     setSubmitting(true);
     try {
@@ -390,28 +402,38 @@ function TransitionDialog({
             </Alert>
           )}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="capa-reason">{reasonLabel}</Label>
+          <FormField
+            label={reasonLabel}
+            required
+            error={reasonError}
+            htmlFor="capa-reason"
+          >
             <Textarea
               id="capa-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
               maxLength={500}
+              aria-invalid={Boolean(reasonError)}
             />
-          </div>
+          </FormField>
 
           {spec.fields.includes("effectivenessVerification") && (
-            <div className="space-y-1.5">
-              <Label htmlFor="capa-effectiveness">{effectivenessLabel}</Label>
+            <FormField
+              label={effectivenessLabel}
+              required
+              error={effectivenessError}
+              htmlFor="capa-effectiveness"
+            >
               <Textarea
                 id="capa-effectiveness"
                 value={effectivenessVerification}
                 onChange={(e) => setEffectivenessVerification(e.target.value)}
                 rows={5}
                 maxLength={5000}
+                aria-invalid={Boolean(effectivenessError)}
               />
-            </div>
+            </FormField>
           )}
         </div>
         <DialogFooter>

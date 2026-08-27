@@ -73,7 +73,14 @@
     "qualityOverview": "Quality Overview",
     "productionStatus": "Production Status",
     "systemHealth": "System Health",
-    "fieldRequired": "This field is required"
+    "fieldRequired": "This field is required",
+    "shortcutsTitle": "Keyboard Shortcuts",
+    "shortcutsDescription": "Use these shortcuts to navigate quickly.",
+    "shortcutsHelp": "Show shortcuts help",
+    "skipToContent": "Skip to content",
+    "recentlyVisited": "Recently Visited",
+    "noResultsFor": "No results found for \"{query}\"",
+    "chartSummary": "Chart summary"
   },
   "auth": {
     "signIn": "Sign in",

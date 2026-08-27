@@ -73,7 +73,14 @@
     "qualityOverview": "Aperçu qualité",
     "productionStatus": "Statut production",
     "systemHealth": "Santé du système",
-    "fieldRequired": "Ce champ est requis"
+    "fieldRequired": "Ce champ est requis",
+    "shortcutsTitle": "Raccourcis clavier",
+    "shortcutsDescription": "Utilisez ces raccourcis pour naviguer rapidement.",
+    "shortcutsHelp": "Afficher l'aide des raccourcis",
+    "skipToContent": "Aller au contenu",
+    "recentlyVisited": "Récemment visités",
+    "noResultsFor": "Aucun résultat pour « {query} »",
+    "chartSummary": "Résumé du graphique"
   },
   "auth": {
     "signIn": "Se connecter",

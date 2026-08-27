@@ -6,6 +6,15 @@ import { z } from "zod";
 
 const ApproveSchema = z.object({ reason: z.string().min(1).max(500) });
 
+// Deviation detail (used by QuickViewDrawer on the list page).
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const ctx = await requirePermission("quality.deviation.read");
+    return ok(await svc.getDeviation(ctx, id));
+  } catch (e) { return fail(e); }
+}
+
 // Deviation approve
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
