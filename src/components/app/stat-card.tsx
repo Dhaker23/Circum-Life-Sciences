@@ -82,6 +82,10 @@ export interface StatCardProps {
   delta?: StatCardDelta;
   href?: string;
   accent?: StatCardAccent;
+  /** Optional 0–100 progress value rendered as a thin bar under the value. */
+  progress?: number;
+  /** Optional tooltip text applied to the whole card via the native `title` attribute. */
+  tooltip?: string;
 }
 
 const ACCENT_ICON_CLASS: Record<StatCardAccent, string> = {
@@ -92,6 +96,14 @@ const ACCENT_ICON_CLASS: Record<StatCardAccent, string> = {
   neutral: "bg-muted text-muted-foreground",
 };
 
+const ACCENT_PROGRESS_CLASS: Record<StatCardAccent, string> = {
+  primary: "bg-primary",
+  success: "bg-emerald-500",
+  warning: "bg-amber-500",
+  error: "bg-red-500",
+  neutral: "bg-muted-foreground/50",
+};
+
 export function StatCard({
   icon: iconName,
   label,
@@ -99,10 +111,17 @@ export function StatCard({
   delta,
   href,
   accent = "primary",
+  progress,
+  tooltip,
 }: StatCardProps) {
   const iconClass = ACCENT_ICON_CLASS[accent];
+  const progressClass = ACCENT_PROGRESS_CLASS[accent];
   const isInteractive = Boolean(href);
   const Icon = ICON_REGISTRY[iconName] ?? AlertTriangle;
+  const progressValue =
+    typeof progress === "number" && Number.isFinite(progress)
+      ? Math.max(0, Math.min(100, Math.round(progress)))
+      : null;
 
   const inner = (
     <Card
@@ -154,19 +173,36 @@ export function StatCard({
               {delta.label}
             </span>
           ) : null}
+          {progressValue !== null ? (
+            <div
+              className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted"
+              role="presentation"
+              aria-hidden="true"
+            >
+              <div
+                className={cn("h-full rounded-full transition-all", progressClass)}
+                style={{ width: `${progressValue}%` }}
+              />
+            </div>
+          ) : null}
         </div>
       </CardContent>
     </Card>
   );
 
   if (!isInteractive) {
-    return inner;
+    return (
+      <div title={tooltip} className="h-full">
+        {inner}
+      </div>
+    );
   }
 
   return (
     <Link
       href={href as string}
       aria-label={`${label}: ${value}`}
+      title={tooltip}
       className="block h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
     >
       {inner}

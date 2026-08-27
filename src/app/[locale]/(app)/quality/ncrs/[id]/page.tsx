@@ -19,7 +19,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -27,6 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { ActivityTimeline } from "@/components/app/activity-timeline";
+import { FormField } from "@/components/app/form-field";
 
 // ---------------------------------------------------------------------------
 // Types — mirror the API contract (Prisma NCR + relations)
@@ -249,6 +249,7 @@ export default function NcrDetailPage() {
                   reasonLabel={tc("reasonRequired")}
                   cancelLabel={tc("cancel")}
                   confirmLabel={tc("confirmTransition")}
+                  fieldRequiredLabel={tc("fieldRequired")}
                   onSuccess={async () => {
                     await qc.invalidateQueries({ queryKey: ["quality", "ncr", ncr.id] });
                     await qc.invalidateQueries({ queryKey: ["ncrs"] });
@@ -294,13 +295,14 @@ interface TransitionDialogProps {
   reasonLabel: string;
   cancelLabel: string;
   confirmLabel: string;
+  fieldRequiredLabel: string;
   onSuccess: () => Promise<void> | void;
   onError: (msg: string) => void;
 }
 
 function TransitionDialog({
   spec, ncrId, translateLabel, translateTitle, translateFieldLabel,
-  reasonLabel, cancelLabel, confirmLabel, onSuccess, onError,
+  reasonLabel, cancelLabel, confirmLabel, fieldRequiredLabel, onSuccess, onError,
 }: TransitionDialogProps) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -308,13 +310,32 @@ function TransitionDialog({
   const [disposition, setDisposition] = useState<DispositionOption | "">("");
   const [closureNotes, setClosureNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   function reset() {
     setReason("");
     setContainmentAction("");
     setDisposition("");
     setClosureNotes("");
+    setSubmitAttempted(false);
   }
+
+  // Field-level error computation — only surfaces errors after a submit
+  // attempt (or, in future, after blur). Returns the localized "required"
+  // message for any required field that is currently empty.
+  const reasonError = submitAttempted && !reason.trim() ? fieldRequiredLabel : null;
+  const containmentError =
+    submitAttempted && spec.fields.includes("containmentAction") && !containmentAction.trim()
+      ? fieldRequiredLabel
+      : null;
+  const dispositionError =
+    submitAttempted && spec.fields.includes("disposition") && !disposition
+      ? fieldRequiredLabel
+      : null;
+  const closureError =
+    submitAttempted && spec.fields.includes("closureNotes") && !closureNotes.trim()
+      ? fieldRequiredLabel
+      : null;
 
   function canSubmit(): boolean {
     if (!reason.trim()) return false;
@@ -327,6 +348,8 @@ function TransitionDialog({
   }
 
   async function handleSubmit() {
+    // Flag any empty required fields on submit attempt.
+    setSubmitAttempted(true);
     if (!canSubmit() || submitting) return;
     setSubmitting(true);
     try {
@@ -369,35 +392,48 @@ function TransitionDialog({
           <DialogDescription>{translateLabel(spec.labelKey)}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="ncr-reason">{reasonLabel}</Label>
+          <FormField
+            label={reasonLabel}
+            required
+            error={reasonError}
+            htmlFor="ncr-reason"
+          >
             <Textarea
               id="ncr-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
               maxLength={500}
+              aria-invalid={Boolean(reasonError)}
             />
-          </div>
+          </FormField>
 
           {spec.fields.includes("containmentAction") && (
-            <div className="space-y-1.5">
-              <Label htmlFor="ncr-containment">{translateFieldLabel("containmentAction")}</Label>
+            <FormField
+              label={translateFieldLabel("containmentAction")}
+              required
+              error={containmentError}
+              htmlFor="ncr-containment"
+            >
               <Textarea
                 id="ncr-containment"
                 value={containmentAction}
                 onChange={(e) => setContainmentAction(e.target.value)}
                 rows={4}
                 maxLength={2000}
+                aria-invalid={Boolean(containmentError)}
               />
-            </div>
+            </FormField>
           )}
 
           {spec.fields.includes("disposition") && (
-            <div className="space-y-1.5">
-              <Label>{translateFieldLabel("disposition")}</Label>
+            <FormField
+              label={translateFieldLabel("disposition")}
+              required
+              error={dispositionError}
+            >
               <Select value={disposition} onValueChange={(v) => setDisposition(v as DispositionOption)}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" aria-invalid={Boolean(dispositionError)}>
                   <SelectValue placeholder="" />
                 </SelectTrigger>
                 <SelectContent>
@@ -406,20 +442,25 @@ function TransitionDialog({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
           )}
 
           {spec.fields.includes("closureNotes") && (
-            <div className="space-y-1.5">
-              <Label htmlFor="ncr-closure">{translateFieldLabel("closureNotes")}</Label>
+            <FormField
+              label={translateFieldLabel("closureNotes")}
+              required
+              error={closureError}
+              htmlFor="ncr-closure"
+            >
               <Textarea
                 id="ncr-closure"
                 value={closureNotes}
                 onChange={(e) => setClosureNotes(e.target.value)}
                 rows={4}
                 maxLength={2000}
+                aria-invalid={Boolean(closureError)}
               />
-            </div>
+            </FormField>
           )}
 
           {(spec.to === "CLOSED" || spec.to === "CANCELLED") && (

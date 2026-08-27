@@ -69,7 +69,11 @@
     "activityTimeline": "Activity Timeline",
     "noActivity": "No activity recorded",
     "quickView": "Quick View",
-    "viewFullDetails": "View Full Details"
+    "viewFullDetails": "View Full Details",
+    "qualityOverview": "Quality Overview",
+    "productionStatus": "Production Status",
+    "systemHealth": "System Health",
+    "fieldRequired": "This field is required"
   },
   "auth": {
     "signIn": "Sign in",
@@ -83,7 +87,12 @@
     "invalidCredentials": "Invalid email or password",
     "accountLocked": "Account locked. Try again later.",
     "demoCredentials": "DEMO credentials (DEMO/TEST only)",
-    "signedOut": "You have been signed out"
+    "signedOut": "You have been signed out",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Please enter a valid email address",
+    "passwordRequired": "Password is required",
+    "welcomeBack": "Welcome back",
+    "securePlatform": "Secure regulated platform"
   },
   "nav": {
     "dashboard": "Dashboard",

@@ -69,7 +69,11 @@
     "activityTimeline": "سجل النشاط",
     "noActivity": "لا يوجد نشاط مسجل",
     "quickView": "عرض سريع",
-    "viewFullDetails": "عرض التفاصيل الكاملة"
+    "viewFullDetails": "عرض التفاصيل الكاملة",
+    "qualityOverview": "نظرة عامة على الجودة",
+    "productionStatus": "حالة الإنتاج",
+    "systemHealth": "صحة النظام",
+    "fieldRequired": "هذا الحقل مطلوب"
   },
   "auth": {
     "signIn": "تسجيل الدخول",
@@ -83,7 +87,12 @@
     "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
     "accountLocked": "تم قفل الحساب. حاول مرة أخرى لاحقًا.",
     "demoCredentials": "بيانات اعتماد تجريبية (للتجربة/الاختبار فقط)",
-    "signedOut": "تم تسجيل خروجك"
+    "signedOut": "تم تسجيل خروجك",
+    "emailRequired": "البريد الإلكتروني مطلوب",
+    "emailInvalid": "يرجى إدخال بريد إلكتروني صحيح",
+    "passwordRequired": "كلمة المرور مطلوبة",
+    "welcomeBack": "مرحبًا بعودتك",
+    "securePlatform": "منصة منظمة آمنة"
   },
   "nav": {
     "dashboard": "لوحة التحكم",

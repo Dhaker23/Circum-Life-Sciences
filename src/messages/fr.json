@@ -69,7 +69,11 @@
     "activityTimeline": "Journal d'activité",
     "noActivity": "Aucune activité enregistrée",
     "quickView": "Aperçu rapide",
-    "viewFullDetails": "Voir les détails complets"
+    "viewFullDetails": "Voir les détails complets",
+    "qualityOverview": "Aperçu qualité",
+    "productionStatus": "Statut production",
+    "systemHealth": "Santé du système",
+    "fieldRequired": "Ce champ est requis"
   },
   "auth": {
     "signIn": "Se connecter",
@@ -83,7 +87,12 @@
     "invalidCredentials": "E-mail ou mot de passe invalide",
     "accountLocked": "Compte verrouille. Reessayez plus tard.",
     "demoCredentials": "Identifiants DEMO (DEMO/TEST uniquement)",
-    "signedOut": "Vous avez ete deconnecte"
+    "signedOut": "Vous avez ete deconnecte",
+    "emailRequired": "L'email est requis",
+    "emailInvalid": "Veuillez saisir un email valide",
+    "passwordRequired": "Le mot de passe est requis",
+    "welcomeBack": "Bon retour",
+    "securePlatform": "Plateforme réglementée sécurisée"
   },
   "nav": {
     "dashboard": "Tableau de bord",
