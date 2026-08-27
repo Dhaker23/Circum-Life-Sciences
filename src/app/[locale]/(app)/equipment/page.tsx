@@ -40,20 +40,27 @@ export default function EquipmentPage() {
   const tCommon = useTranslations("common");
   const [search, setSearch] = useState("");
   const [operational, setOperational] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<EquipmentRow[]>({
-    queryKey: ["equipment"],
+  const { data, isLoading } = useQuery<{
+    data: EquipmentRow[];
+    total: number;
+  }>({
+    queryKey: ["equipment", page],
     queryFn: async () => {
-      const res = await fetch("/api/equipment?pageSize=100", {
+      const res = await fetch(`/api/equipment?page=${page}&pageSize=20`, {
         credentials: "same-origin",
       });
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as EquipmentRow[];
+      return {
+        data: json.data as EquipmentRow[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
   });
 
-  const filtered = (data ?? []).filter((e) => {
+  const filtered = (data?.data ?? []).filter((e) => {
     const q = search.trim().toLowerCase();
     const matchesSearch =
       !q ||
@@ -116,14 +123,20 @@ export default function EquipmentPage() {
         data={filtered}
         loading={isLoading}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         searchPlaceholder={tCommon("search.placeholder")}
         filters={[
           {
             key: "operational",
             label: tCommon("status"),
             value: operational,
-            onChange: setOperational,
+            onChange: (v) => {
+              setOperational(v);
+              setPage(1);
+            },
             options: OPERATIONAL_OPTIONS.map((o) => ({
               value: o,
               label: o,
@@ -133,8 +146,19 @@ export default function EquipmentPage() {
         onResetFilters={() => {
           setSearch("");
           setOperational("");
+          setPage(1);
         }}
         activeFilterCount={activeFilterCount}
+        pagination={
+          data
+            ? {
+                page,
+                pageSize: 20,
+                total: data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
         emptyState={<EmptyState icon={Cog} />}
       />
     </div>

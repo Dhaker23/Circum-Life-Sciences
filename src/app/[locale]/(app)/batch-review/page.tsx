@@ -35,16 +35,23 @@ export default function BatchReviewPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<BatchReviewRow[]>({
-    queryKey: ["batch-review-batches"],
+  const { data, isLoading } = useQuery<{
+    data: BatchReviewRow[];
+    total: number;
+  }>({
+    queryKey: ["batch-review-batches", page],
     queryFn: async () => {
-      const res = await fetch("/api/production/batches?pageSize=100", {
+      const res = await fetch(`/api/production/batches?page=${page}&pageSize=20`, {
         credentials: "same-origin",
       });
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as BatchReviewRow[];
+      return {
+        data: json.data as BatchReviewRow[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
   });
 
@@ -52,7 +59,7 @@ export default function BatchReviewPage() {
   // specific status is selected (in which case we honor the user's choice).
   const inReviewLifecycle = (s: string) => STATUS_OPTIONS.includes(s);
 
-  const filtered = (data ?? []).filter((b) => {
+  const filtered = (data?.data ?? []).filter((b) => {
     const q = search.trim().toLowerCase();
     const matchesSearch = !q || b.code.toLowerCase().includes(q);
     const matchesStatus = !status
@@ -105,22 +112,39 @@ export default function BatchReviewPage() {
         data={filtered}
         loading={isLoading}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         searchPlaceholder={tCommon("search.placeholder")}
         filters={[
           {
             key: "status",
             label: tCommon("status"),
             value: status,
-            onChange: setStatus,
+            onChange: (v) => {
+              setStatus(v);
+              setPage(1);
+            },
             options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
           },
         ]}
         onResetFilters={() => {
           setSearch("");
           setStatus("");
+          setPage(1);
         }}
         activeFilterCount={activeFilterCount}
+        pagination={
+          data
+            ? {
+                page,
+                pageSize: 20,
+                total: data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
         emptyState={<EmptyState icon={ClipboardCheck} title={t("noData")} />}
         onRowClick={(b) => router.push(`/batch-review/batches/${b.id}`)}
       />

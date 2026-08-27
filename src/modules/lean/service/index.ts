@@ -215,13 +215,23 @@ export async function computeLeanMetrics(ctx: AuthContext, input: z.infer<typeof
 }
 
 // ===== VSM =====
-export async function listVsm(ctx: AuthContext) {
+export async function listVsm(ctx: AuthContext, page: number, pageSize: number) {
   if (!can(ctx, "lean.read")) throw new ForbiddenError();
   const where: any = {};
   if (ctx.resolvedSites !== "*") {
     where.OR = [{ siteId: { in: [...ctx.resolvedSites] } }, { siteId: null }];
   }
-  return db.valueStreamMap.findMany({ where, orderBy: { code: "asc" }, include: { _count: { select: { nodes: true } } } });
+  const [items, total] = await Promise.all([
+    db.valueStreamMap.findMany({
+      where,
+      orderBy: { code: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: { _count: { select: { nodes: true } } },
+    }),
+    db.valueStreamMap.count({ where }),
+  ]);
+  return { items, total, page, pageSize };
 }
 export async function createVsm(ctx: AuthContext, input: z.infer<typeof CreateVsmSchema>) {
   if (!can(ctx, "lean.vsm.create")) throw new ForbiddenError();

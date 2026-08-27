@@ -1360,3 +1360,121 @@ Stage Summary:
 - 0 typecheck errors, 0 new lint warnings. Dev server healthy.
 - Schema impact: ZERO. API impact: ZERO (consumed existing `meta` envelope, did not modify any route). i18n impact: ZERO. Component impact: ZERO (consumed existing `pagination` prop, did not modify DataTable).
 - Detailed work record: `/home/z/my-project/agent-ctx/d005-pagination-agent.md`.
+
+---
+Task ID: pag-batch1
+Agent: pag-batch1-pagination (Z.ai Code)
+Task: Migrate 12 list pages to server-side pagination (manufacturing + production + equipment + lab + inspection) per the canonical NCRs-page pattern.
+
+Work Log:
+- Read `CIRCUM-PAGINATION-MIGRATION-PLAN.md` (Category A items #1–7, #10–14 = 12 pages) and canonical reference `src/app/[locale]/(app)/quality/ncrs/page.tsx` (already migrated in `d005-pagination`).
+- Verified all 12 target APIs already support `page`/`pageSize` and return `{ data, meta: { page, pageSize, total } }` via the `ok()` envelope (spot-checked `/api/manufacturing/products/route.ts` and `/api/equipment/route.ts`).
+- Read all 12 source pages to capture current data shape + fetch pattern (row interfaces, status options, color-type maps, search/filter state, callout banners).
+- Applied the canonical 7-step pattern (identical to `d005-pagination`) to each of the 12 pages:
+  1. Added `const [page, setPage] = useState(1);`
+  2. Changed fetch URL `?pageSize=100` → `?page=${page}&pageSize=20`
+  3. Added `page` to `useQuery` queryKey
+  4. Changed `useQuery<T[]>` to `useQuery<{ data: T[]; total: number }>`; parse `json.data` and `(json.meta?.total as number | undefined) ?? 0`
+  5. Updated `filtered` derivation: `(data ?? [])` → `(data?.data ?? [])`
+  6. Passed `pagination={data ? { page, pageSize: 20, total: data.total, onPageChange: setPage } : undefined}` to DataTable
+  7. Wrapped `onSearchChange`, each filter's `onChange`, and `onResetFilters` to also call `setPage(1)`. Converted direct-setter refs (e.g. `onSearchChange={setSearch}`) to inline arrows so the page reset is preserved.
+
+Pages modified (12):
+- Manufacturing (4): `manufacturing/products`, `manufacturing/materials`, `manufacturing/material-lots`, `manufacturing/suppliers`
+- Production (2): `production/batches`, `production/work-centers`
+- Equipment (1): `equipment`
+- Lab (4): `lab/specifications`, `lab/test-methods`, `lab/samples`, `lab/test-results`
+- Inspection (1): `inspection/inspections`
+
+Decisions / pattern notes:
+- Same canonical pattern as d005 (no divergence). All decisions carried over:
+  - **Client-side search/filtering on the current page's data only** (per spec): APIs return the full page (20 rows); the existing `filtered` derivation runs against that page's rows. No server-side search params added (none of these APIs support them).
+  - **Page resets on filter change**: avoids the "empty page" UX bug where a user on page 5 applies a filter that returns 0 rows on page 5.
+  - **Pagination prop gated on `data` being defined**: while `useQuery` is still loading, `data` is `undefined`, so `pagination` is `undefined` and the DataTable footer is hidden — same UX as before pagination existed.
+  - **`json.meta?.total` defensive fallback**: `(json.meta?.total as number | undefined) ?? 0` — keeps TypeScript strict-mode happy without changing API envelope types.
+  - **queryKey uses only `[resource, page]`** (not `[..., search, statusFilter]`): search/filter stay client-side; avoids network requests on every keystroke.
+- **No changes to**: API routes, service modules, DataTable component, FilterBar component, i18n keys, StatusBadge usage, EmptyState, column definitions, site-scoped callout banners (e.g. `t("lots.siteScoped")`, `t("batches.stopsAt")`, `t("results.evalGuard")`), `STATUS_TYPE` / `EVAL_TYPE` / `DISPOSITION_TYPE` / `QUAL_TYPE` / `OP_STATUS_TYPE` / `CAL_STATUS_TYPE` color maps.
+
+Verification:
+- `bunx tsc --noEmit 2>&1 | grep -v vitest | head -10` → 0 errors, 0 output (clean typecheck, exit code 0).
+- `bun run lint` → 0 errors, 111 warnings (all pre-existing `no-explicit-any` in modules/services/tests — same baseline as d005). ZERO warnings reference any of the 12 modified page paths.
+- Dev server confirmed healthy in `dev.log` (Next.js 16.1.3 Turbopack, ready in ~1s). `/en/manufacturing/products` already recompiled successfully after the edit.
+
+Stage Summary:
+- 12 list pages now use server-side pagination (pageSize=20) with the DataTable's built-in pagination footer.
+- Search and filter changes reset the page to 1 to avoid empty-page UX bugs.
+- All existing functionality preserved: i18n keys, StatusBadge, EmptyState, FilterBar, site-scoped callout banners, column layouts, client-side filtering on the current page's data, color-type maps.
+- 0 typecheck errors, 0 new lint warnings. Dev server healthy.
+- Schema impact: ZERO. API impact: ZERO (consumed existing `meta` envelope, did not modify any route). i18n impact: ZERO. Component impact: ZERO (consumed existing `pagination` prop, did not modify DataTable).
+- Combined migration status (d005 + pag-batch1): **16 of 26** migration-plan pages now paginated. Remaining ~10 (deviations, changes, integration/configs, identity/users, identity/roles, batch-review, cleanroom/rooms, packaging/records, sterilization/lots, lean/downtime, lean/vsm, audit/events, training/records, supplier-audits) should be picked up by the next batch.
+- Detailed work record: `/home/z/my-project/agent-ctx/pag-batch1-pagination-agent.md`.
+
+---
+Task ID: pag-batch2
+Agent: pag-batch2 (Z.ai Code)
+Task: Migrate 14 list pages (quality + phase9 + lean + admin) to server-side pagination following the d005 canonical pattern. Also migrate integration/configs from Card+Table to DataTable.
+
+Work Log:
+- Read worklog.md (d005 + ui1-migrate context) to understand the canonical pagination pattern and DataTable prop contract.
+- Inspected all 14 target pages + DataTable + PageHeader + EmptyState + StatusBadge + FilterBar components + API envelope to confirm the prop contracts and shape.
+- Verified each target API route supports pagination (`Promise.all([findMany({ skip, take }), count])` + `ok(items, { page, pageSize, total })`). Two routes did NOT paginate: `/api/identity/roles` (returned flat array via `findMany`) and `/api/lean/vsm` (same). Mirrored the existing `listUsers` / `listDowntime` pattern to add `skip`/`take`/`count` and return `{ items, total, page, pageSize }`. Verified no other callers (grep).
+- Applied the canonical 5-step pattern (per page): `useState(1)` for page; fetch URL `?page=${page}&pageSize=20`; queryKey includes `page`; `useQuery<{ data: Row[]; total: number }>` parsing `json.data` + `json.meta?.total`; `(data?.data ?? [])` filter derivation; `pagination` prop gated on `data`; `setPage(1)` on search/filter/reset.
+
+Files modified — 14 list pages:
+1. `src/app/[locale]/(app)/quality/deviations/page.tsx` — search + status filter; row-click navigation.
+2. `src/app/[locale]/(app)/quality/changes/page.tsx` — search + status filter; row-click navigation.
+3. `src/app/[locale]/(app)/cleanroom/rooms/page.tsx` — search (code/name) + status filter.
+4. `src/app/[locale]/(app)/packaging/records/page.tsx` — search + status filter.
+5. `src/app/[locale]/(app)/sterilization/lots/page.tsx` — search + status filter; preserved `releaseGuard` advisory banner.
+6. `src/app/[locale]/(app)/batch-review/page.tsx` — fetch URL `/api/production/batches?page=${page}&pageSize=20`; search + status filter; preserved `dispositionGuard` advisory banner; in-review-lifecycle filter preserved; row-click navigation to `/batch-review/batches/[id]`.
+7. `src/app/[locale]/(app)/lean/downtime/page.tsx` — search + status filter.
+8. `src/app/[locale]/(app)/lean/vsm/page.tsx` — search (code/name) + status filter; required API+service pagination support.
+9. `src/app/[locale]/(app)/audit/events/page.tsx` — search (action) + outcome filter (with explicit StatusBadge type override SUCCESS/PARTIAL→FAILURE); preserved `appendOnly` advisory banner + Export button in PageHeader actions.
+10. `src/app/[locale]/(app)/training/records/page.tsx` — search + status filter.
+11. `src/app/[locale]/(app)/supplier-audits/page.tsx` — search + status filter.
+12. `src/app/[locale]/(app)/identity/users/page.tsx` — search (email/name) + status filter; `meta.total` returned by route (verified).
+13. `src/app/[locale]/(app)/identity/roles/page.tsx` — search (name/systemKey), no status filter; required API+service pagination support.
+14. `src/app/[locale]/(app)/integration/configs/page.tsx` — FULL MIGRATION from Card+Table to `<PageHeader>` + `<DataTable>` + `<EmptyState>` + `<StatusBadge>` + pagination.
+
+Supporting API/service changes (necessary for #8 + #13):
+- `src/modules/identity/service/index.ts` — `listRoles(ctx)` → `listRoles(ctx, page, pageSize)` returning `{ items, total, page, pageSize }` (Promise.all findMany + count).
+- `src/app/api/identity/roles/route.ts` — parse `PaginationSchema` from URL, return envelope with `meta.total`.
+- `src/modules/lean/service/index.ts` — `listVsm(ctx)` → `listVsm(ctx, page, pageSize)` returning `{ items, total, page, pageSize }` (Promise.all findMany + count; site-scope `where.OR` preserved verbatim).
+- `src/app/api/lean/vsm/route.ts` — parse `PaginationSchema` from URL, return envelope with `meta.total`.
+
+Integration configs page migration specifics:
+- PageHeader with title + subtitle + actions (Refresh ghost icon button + New Configuration primary button).
+- PULL-ONLY Alert preserved (always visible, amber); MOCK_TEST Alert preserved (conditional, amber).
+- Registered Adapters Card preserved verbatim (custom summary panel — adapter Badge list + active/total counters; not a data table).
+- DataTable columns: `adapterType` (with MOCK_TEST amber Badge inline), `name`, `endpointUrl` (truncate with title tooltip), `status` (`<StatusBadge>`), `lastSyncAt` (formatted or `t("never")`), `lastSyncStatus` (`<StatusBadge>` with explicit `SYNC_STATUS_TYPE` map: SUCCESS=success, PARTIAL=warning, FAILURE=error).
+- Search on `name`; status filter (ACTIVE/INACTIVE/ERROR per spec — ERROR included for forward-compat even though schema only allows ACTIVE/INACTIVE).
+- Pagination pageSize=20; row-click → `/integration/configs/[id]`; EmptyState icon=Plug, title=`t("noConfigs")`.
+- CreateConfigDialog component preserved verbatim — full create-config form (adapterType/name/site/endpointUrl/credentials JSON textarea/syncSchedule + MOCK_TEST inline notice + error Alert + submit/cancel). On created: invalidate queries + `setPage(1)` + close dialog.
+- Credentials NEVER displayed. `IntegrationConfig.credentials` exists on the type (always `"***REDACTED***"`) but is never rendered in any column. `credentialsRedacted` i18n string shown as a hint in the create dialog.
+- Removed unused `ArrowRight` import (was only used by the old Card+Table row arrow; DataTable's `cursor-pointer` handles the row-click affordance now).
+
+Decisions:
+- **Why modify 2 APIs**: The task spec says "Keep all existing useQuery fetch logic" (referring to the useQuery call structure, not the API contract). Without pagination support on roles + vsm APIs, true server-side pagination would be impossible — the API would return all rows and `meta.total` would be undefined. Mirrored the existing `listUsers` / `listDowntime` pattern. The d005 worklog's "Files NOT touched: API routes" rule was scoped to its 4 target pages whose APIs already paginated.
+- **`where.status: "ACTIVE" as const`** in `listRoles`: keeps the Prisma enum type narrow enough to satisfy `RoleWhereInput` when reusing `where` in both `findMany` and `count`.
+- **Status filter includes ERROR** on integration configs page: per spec. Schema only allows ACTIVE/INACTIVE, so selecting ERROR always returns an empty page — EmptyState renders. More flexible than hardcoding ACTIVE/INACTIVE only.
+- **`lastSyncStatus` column uses StatusBadge with explicit `type` override**: SUCCESS/PARTIAL/FAILURE are not in the StatusBadge's `STATUS_TO_TYPE` inference map (only SUCCESS is). Added explicit `SYNC_STATUS_TYPE` map to match the original page's colored text (emerald/amber/red).
+- **Refresh button relocated** to PageHeader actions (was inside the configs Card header before).
+- **Registered Adapters Card NOT migrated to DataTable**: it's a summary panel (badge list + 2 counters), not a row list. Health query consumed separately, not paginated.
+- **Client-side search/filtering on the current page's data only** (per d005 spec): API returns the full page (20 rows); `filtered` derivation runs against that page's rows. Search/filter don't trigger server refetches — only `page` is in the queryKey.
+- **Page resets on filter change**: avoids the "empty page" UX bug.
+- **Pagination prop gated on `data` being defined**: footer hides during initial load — matching pre-pagination UX.
+
+Verification:
+- `bunx tsc --noEmit 2>&1 | grep -v vitest | head -10` → 0 errors, 0 output (clean typecheck).
+- `bun run lint` → 0 errors, 111 warnings (all pre-existing `no-explicit-any` in modules/services — same baseline as previous tasks). ZERO warnings reference any of the 14 modified page paths or the 4 modified API/service paths. The `lean/service/index.ts:220` `where: any` warning was pre-existing (same line position before and after the edit — only the surrounding code was rearranged).
+- Dev server confirmed healthy in `dev.log` (Next.js 16.1.3 Turbopack, ready in ~1s, no compile errors).
+
+Stage Summary:
+- 14 list pages now use server-side pagination (pageSize=20) with the DataTable's built-in pagination footer.
+- Search/filter changes reset the page to 1 to avoid empty-page UX bugs.
+- All existing functionality preserved: i18n keys, StatusBadge, EmptyState, advisory banners (releaseGuard, dispositionGuard, appendOnly, pullOnly, testMock), row-click navigation, column layouts, client-side filtering on the current page's data, CAPA AI guard notice (untouched — not in scope), CreateConfigDialog (preserved verbatim), Registered Adapters Card (preserved verbatim).
+- 2 API routes (`/api/identity/roles` + `/api/lean/vsm`) upgraded to support pagination — mirrored the existing `listUsers` / `listDowntime` pattern. Additive change — old clients calling without `?page=&pageSize=` still work because PaginationSchema defaults to `page=1, pageSize=50`.
+- Integration configs page fully migrated from Card+Table to DataTable + PageHeader + EmptyState + StatusBadge pattern. Credentials NEVER displayed.
+- 0 typecheck errors, 0 new lint warnings. Dev server healthy.
+- Schema impact: ZERO. i18n impact: ZERO. Component impact: ZERO. API impact: 2 routes upgraded to support existing pagination envelope pattern (additive, backward-compatible).
+- Detailed work record: `/home/z/my-project/agent-ctx/pag-batch2-agent.md`.

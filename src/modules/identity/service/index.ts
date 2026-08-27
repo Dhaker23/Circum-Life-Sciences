@@ -193,13 +193,20 @@ export async function resetPassword(ctx: AuthContext, id: string, newPassword: s
 
 // --- Roles & permissions (read) ---
 
-export async function listRoles(ctx: AuthContext) {
+export async function listRoles(ctx: AuthContext, page: number, pageSize: number) {
   if (!can(ctx, "identity.role.read")) throw new ForbiddenError();
-  return db.role.findMany({
-    where: { status: "ACTIVE" },
-    include: { permissions: { include: { permission: { select: { key: true, module: true } } } } },
-    orderBy: { name: "asc" },
-  });
+  const where = { status: "ACTIVE" as const };
+  const [items, total] = await Promise.all([
+    db.role.findMany({
+      where,
+      include: { permissions: { include: { permission: { select: { key: true, module: true } } } } },
+      orderBy: { name: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    db.role.count({ where }),
+  ]);
+  return { items, total, page, pageSize };
 }
 
 export async function listPermissions(ctx: AuthContext) {

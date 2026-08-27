@@ -30,20 +30,27 @@ export default function SamplesPage() {
   const tCommon = useTranslations("common");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<SampleRow[]>({
-    queryKey: ["samples"],
+  const { data, isLoading } = useQuery<{
+    data: SampleRow[];
+    total: number;
+  }>({
+    queryKey: ["samples", page],
     queryFn: async () => {
-      const res = await fetch("/api/lab/samples?pageSize=100", {
+      const res = await fetch(`/api/lab/samples?page=${page}&pageSize=20`, {
         credentials: "same-origin",
       });
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as SampleRow[];
+      return {
+        data: json.data as SampleRow[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
   });
 
-  const filtered = (data ?? []).filter((s) => {
+  const filtered = (data?.data ?? []).filter((s) => {
     const matchesSearch = s.code
       .toLowerCase()
       .includes(search.trim().toLowerCase());
@@ -86,22 +93,39 @@ export default function SamplesPage() {
         data={filtered}
         loading={isLoading}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         searchPlaceholder={tCommon("search.placeholder")}
         filters={[
           {
             key: "status",
             label: tCommon("status"),
             value: status,
-            onChange: setStatus,
+            onChange: (v) => {
+              setStatus(v);
+              setPage(1);
+            },
             options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
           },
         ]}
         onResetFilters={() => {
           setSearch("");
           setStatus("");
+          setPage(1);
         }}
         activeFilterCount={activeFilterCount}
+        pagination={
+          data
+            ? {
+                page,
+                pageSize: 20,
+                total: data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
         emptyState={<EmptyState icon={TestTube} title={t("samples.noData")} />}
       />
     </div>

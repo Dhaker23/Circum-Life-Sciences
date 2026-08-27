@@ -25,20 +25,30 @@ export default function WorkCentersPage() {
   const tCommon = useTranslations("common");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<WorkCenterRow[]>({
-    queryKey: ["work-centers"],
+  const { data, isLoading } = useQuery<{
+    data: WorkCenterRow[];
+    total: number;
+  }>({
+    queryKey: ["work-centers", page],
     queryFn: async () => {
-      const res = await fetch("/api/production/work-centers?pageSize=100", {
-        credentials: "same-origin",
-      });
+      const res = await fetch(
+        `/api/production/work-centers?page=${page}&pageSize=20`,
+        {
+          credentials: "same-origin",
+        },
+      );
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as WorkCenterRow[];
+      return {
+        data: json.data as WorkCenterRow[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
   });
 
-  const filtered = (data ?? []).filter((wc) => {
+  const filtered = (data?.data ?? []).filter((wc) => {
     const q = search.trim().toLowerCase();
     const matchesSearch =
       !q ||
@@ -89,22 +99,39 @@ export default function WorkCentersPage() {
         data={filtered}
         loading={isLoading}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         searchPlaceholder={tCommon("search.placeholder")}
         filters={[
           {
             key: "status",
             label: tCommon("status"),
             value: status,
-            onChange: setStatus,
+            onChange: (v) => {
+              setStatus(v);
+              setPage(1);
+            },
             options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
           },
         ]}
         onResetFilters={() => {
           setSearch("");
           setStatus("");
+          setPage(1);
         }}
         activeFilterCount={activeFilterCount}
+        pagination={
+          data
+            ? {
+                page,
+                pageSize: 20,
+                total: data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
         emptyState={<EmptyState icon={Factory} title={t("workCenters.noData")} />}
       />
     </div>

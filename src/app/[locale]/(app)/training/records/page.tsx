@@ -26,20 +26,27 @@ export default function TrainingRecordsPage() {
   const tCommon = useTranslations("common");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<TrainingRecordRow[]>({
-    queryKey: ["training-records"],
+  const { data, isLoading } = useQuery<{
+    data: TrainingRecordRow[];
+    total: number;
+  }>({
+    queryKey: ["training-records", page],
     queryFn: async () => {
-      const res = await fetch("/api/training/records?pageSize=100", {
+      const res = await fetch(`/api/training/records?page=${page}&pageSize=20`, {
         credentials: "same-origin",
       });
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as TrainingRecordRow[];
+      return {
+        data: json.data as TrainingRecordRow[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
   });
 
-  const filtered = (data ?? []).filter((r) => {
+  const filtered = (data?.data ?? []).filter((r) => {
     const q = search.trim().toLowerCase();
     const matchesSearch = !q || r.code.toLowerCase().includes(q);
     const matchesStatus = !status || r.status === status;
@@ -86,22 +93,39 @@ export default function TrainingRecordsPage() {
         data={filtered}
         loading={isLoading}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         searchPlaceholder={tCommon("search.placeholder")}
         filters={[
           {
             key: "status",
             label: tCommon("status"),
             value: status,
-            onChange: setStatus,
+            onChange: (v) => {
+              setStatus(v);
+              setPage(1);
+            },
             options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
           },
         ]}
         onResetFilters={() => {
           setSearch("");
           setStatus("");
+          setPage(1);
         }}
         activeFilterCount={activeFilterCount}
+        pagination={
+          data
+            ? {
+                page,
+                pageSize: 20,
+                total: data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
         emptyState={
           <EmptyState icon={GraduationCap} title={t("records.noData")} />
         }

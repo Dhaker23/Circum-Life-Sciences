@@ -35,20 +35,27 @@ export default function AuditEventsPage() {
   const tCommon = useTranslations("common");
   const [search, setSearch] = useState("");
   const [outcome, setOutcome] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<AuditEventRow[]>({
-    queryKey: ["audit-events"],
+  const { data, isLoading } = useQuery<{
+    data: AuditEventRow[];
+    total: number;
+  }>({
+    queryKey: ["audit-events", page],
     queryFn: async () => {
-      const res = await fetch("/api/audit/events?pageSize=100", {
+      const res = await fetch(`/api/audit/events?page=${page}&pageSize=20`, {
         credentials: "same-origin",
       });
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as AuditEventRow[];
+      return {
+        data: json.data as AuditEventRow[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
   });
 
-  const filtered = (data ?? []).filter((e) => {
+  const filtered = (data?.data ?? []).filter((e) => {
     const q = search.trim().toLowerCase();
     const matchesSearch = !q || e.action.toLowerCase().includes(q);
     const matchesOutcome = !outcome || e.outcome === outcome;
@@ -127,22 +134,39 @@ export default function AuditEventsPage() {
         data={filtered}
         loading={isLoading}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         searchPlaceholder={tCommon("search.placeholder")}
         filters={[
           {
             key: "outcome",
             label: t("outcome"),
             value: outcome,
-            onChange: setOutcome,
+            onChange: (v) => {
+              setOutcome(v);
+              setPage(1);
+            },
             options: OUTCOME_OPTIONS.map((o) => ({ value: o, label: o })),
           },
         ]}
         onResetFilters={() => {
           setSearch("");
           setOutcome("");
+          setPage(1);
         }}
         activeFilterCount={activeFilterCount}
+        pagination={
+          data
+            ? {
+                page,
+                pageSize: 20,
+                total: data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
         emptyState={<EmptyState icon={ScrollText} title={t("noData")} />}
       />
     </div>

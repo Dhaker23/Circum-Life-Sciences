@@ -46,21 +46,28 @@ export default function MaterialLotsPage() {
   const tCommon = useTranslations("common");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<MaterialLotRow[]>({
-    queryKey: ["material-lots"],
+  const { data, isLoading } = useQuery<{
+    data: MaterialLotRow[];
+    total: number;
+  }>({
+    queryKey: ["material-lots", page],
     queryFn: async () => {
       const res = await fetch(
-        "/api/manufacturing/material-lots?pageSize=100",
+        `/api/manufacturing/material-lots?page=${page}&pageSize=20`,
         { credentials: "same-origin" },
       );
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as MaterialLotRow[];
+      return {
+        data: json.data as MaterialLotRow[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
   });
 
-  const filtered = (data ?? []).filter((l) => {
+  const filtered = (data?.data ?? []).filter((l) => {
     const q = search.trim().toLowerCase();
     const matchesSearch = !q || l.lotCode.toLowerCase().includes(q);
     const matchesStatus = !status || l.status === status;
@@ -129,22 +136,39 @@ export default function MaterialLotsPage() {
         data={filtered}
         loading={isLoading}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         searchPlaceholder={tCommon("search.placeholder")}
         filters={[
           {
             key: "status",
             label: tCommon("status"),
             value: status,
-            onChange: setStatus,
+            onChange: (v) => {
+              setStatus(v);
+              setPage(1);
+            },
             options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
           },
         ]}
         onResetFilters={() => {
           setSearch("");
           setStatus("");
+          setPage(1);
         }}
         activeFilterCount={activeFilterCount}
+        pagination={
+          data
+            ? {
+                page,
+                pageSize: 20,
+                total: data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
         emptyState={<EmptyState icon={Layers} title={t("lots.noData")} />}
       />
     </div>

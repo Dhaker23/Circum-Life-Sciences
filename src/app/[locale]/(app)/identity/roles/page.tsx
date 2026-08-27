@@ -24,20 +24,27 @@ export default function RolesPage() {
   const t = useTranslations("roles");
   const tCommon = useTranslations("common");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<RoleRow[]>({
-    queryKey: ["roles"],
+  const { data, isLoading } = useQuery<{
+    data: RoleRow[];
+    total: number;
+  }>({
+    queryKey: ["roles", page],
     queryFn: async () => {
-      const res = await fetch("/api/identity/roles", {
+      const res = await fetch(`/api/identity/roles?page=${page}&pageSize=20`, {
         credentials: "same-origin",
       });
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as RoleRow[];
+      return {
+        data: json.data as RoleRow[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
   });
 
-  const filtered = (data ?? []).filter((r) => {
+  const filtered = (data?.data ?? []).filter((r) => {
     const q = search.trim().toLowerCase();
     const matchesSearch =
       !q ||
@@ -94,10 +101,26 @@ export default function RolesPage() {
         data={filtered}
         loading={isLoading}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         searchPlaceholder={tCommon("search.placeholder")}
-        onResetFilters={() => setSearch("")}
+        onResetFilters={() => {
+          setSearch("");
+          setPage(1);
+        }}
         activeFilterCount={activeFilterCount}
+        pagination={
+          data
+            ? {
+                page,
+                pageSize: 20,
+                total: data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
         emptyState={<EmptyState icon={ShieldCheck} title={t("noData")} />}
       />
     </div>

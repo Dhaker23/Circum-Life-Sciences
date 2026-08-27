@@ -25,20 +25,27 @@ export default function VsmPage() {
   const tCommon = useTranslations("common");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<VsmRow[]>({
-    queryKey: ["vsm"],
+  const { data, isLoading } = useQuery<{
+    data: VsmRow[];
+    total: number;
+  }>({
+    queryKey: ["vsm", page],
     queryFn: async () => {
-      const res = await fetch("/api/lean/vsm", {
+      const res = await fetch(`/api/lean/vsm?page=${page}&pageSize=20`, {
         credentials: "same-origin",
       });
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as VsmRow[];
+      return {
+        data: json.data as VsmRow[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
   });
 
-  const filtered = (data ?? []).filter((v) => {
+  const filtered = (data?.data ?? []).filter((v) => {
     const q = search.trim().toLowerCase();
     const matchesSearch =
       !q ||
@@ -76,22 +83,39 @@ export default function VsmPage() {
         data={filtered}
         loading={isLoading}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         searchPlaceholder={tCommon("search.placeholder")}
         filters={[
           {
             key: "status",
             label: tCommon("status"),
             value: status,
-            onChange: setStatus,
+            onChange: (v) => {
+              setStatus(v);
+              setPage(1);
+            },
             options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
           },
         ]}
         onResetFilters={() => {
           setSearch("");
           setStatus("");
+          setPage(1);
         }}
         activeFilterCount={activeFilterCount}
+        pagination={
+          data
+            ? {
+                page,
+                pageSize: 20,
+                total: data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
         emptyState={<EmptyState icon={Workflow} title={t("vsm.noData")} />}
       />
     </div>

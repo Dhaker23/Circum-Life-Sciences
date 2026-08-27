@@ -32,20 +32,30 @@ export default function SuppliersPage() {
   const tCommon = useTranslations("common");
   const [search, setSearch] = useState("");
   const [qualification, setQualification] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<SupplierRow[]>({
-    queryKey: ["suppliers"],
+  const { data, isLoading } = useQuery<{
+    data: SupplierRow[];
+    total: number;
+  }>({
+    queryKey: ["suppliers", page],
     queryFn: async () => {
-      const res = await fetch("/api/manufacturing/suppliers?pageSize=100", {
-        credentials: "same-origin",
-      });
+      const res = await fetch(
+        `/api/manufacturing/suppliers?page=${page}&pageSize=20`,
+        {
+          credentials: "same-origin",
+        },
+      );
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as SupplierRow[];
+      return {
+        data: json.data as SupplierRow[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
   });
 
-  const filtered = (data ?? []).filter((s) => {
+  const filtered = (data?.data ?? []).filter((s) => {
     const q = search.trim().toLowerCase();
     const matchesSearch =
       !q ||
@@ -102,22 +112,39 @@ export default function SuppliersPage() {
         data={filtered}
         loading={isLoading}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         searchPlaceholder={tCommon("search.placeholder")}
         filters={[
           {
             key: "qualification",
             label: t("suppliers.qualification"),
             value: qualification,
-            onChange: setQualification,
+            onChange: (v) => {
+              setQualification(v);
+              setPage(1);
+            },
             options: QUAL_OPTIONS.map((q) => ({ value: q, label: q })),
           },
         ]}
         onResetFilters={() => {
           setSearch("");
           setQualification("");
+          setPage(1);
         }}
         activeFilterCount={activeFilterCount}
+        pagination={
+          data
+            ? {
+                page,
+                pageSize: 20,
+                total: data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
         emptyState={<EmptyState icon={Truck} title={t("suppliers.noData")} />}
       />
     </div>

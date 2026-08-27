@@ -32,20 +32,27 @@ export default function SupplierAuditsPage() {
   const tCommon = useTranslations("common");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery<SupplierAuditRow[]>({
-    queryKey: ["supplier-audits"],
+  const { data, isLoading } = useQuery<{
+    data: SupplierAuditRow[];
+    total: number;
+  }>({
+    queryKey: ["supplier-audits", page],
     queryFn: async () => {
-      const res = await fetch("/api/supplier-audits?pageSize=100", {
+      const res = await fetch(`/api/supplier-audits?page=${page}&pageSize=20`, {
         credentials: "same-origin",
       });
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as SupplierAuditRow[];
+      return {
+        data: json.data as SupplierAuditRow[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
   });
 
-  const filtered = (data ?? []).filter((a) => {
+  const filtered = (data?.data ?? []).filter((a) => {
     const q = search.trim().toLowerCase();
     const matchesSearch = !q || a.code.toLowerCase().includes(q);
     const matchesStatus = !status || a.status === status;
@@ -85,22 +92,39 @@ export default function SupplierAuditsPage() {
         data={filtered}
         loading={isLoading}
         searchValue={search}
-        onSearchChange={setSearch}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
         searchPlaceholder={tCommon("search.placeholder")}
         filters={[
           {
             key: "status",
             label: tCommon("status"),
             value: status,
-            onChange: setStatus,
+            onChange: (v) => {
+              setStatus(v);
+              setPage(1);
+            },
             options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
           },
         ]}
         onResetFilters={() => {
           setSearch("");
           setStatus("");
+          setPage(1);
         }}
         activeFilterCount={activeFilterCount}
+        pagination={
+          data
+            ? {
+                page,
+                pageSize: 20,
+                total: data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
         emptyState={<EmptyState icon={Factory} title={t("noData")} />}
       />
     </div>

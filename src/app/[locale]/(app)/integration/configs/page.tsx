@@ -5,13 +5,13 @@
 // The page only calls the already-built integration API routes.
 // All strings come from useTranslations("integration").
 //
-// Layout:
-//   - Page header + New Configuration button
+// Layout (migrated to shared PageHeader + DataTable + EmptyState + StatusBadge):
+//   - PageHeader + New Configuration / Refresh actions
 //   - PULL-ONLY amber Alert (always visible)
 //   - MOCK_TEST amber Alert (visible when any MOCK_TEST configs exist)
-//   - Registered adapters row (badges)
-//   - Active / Total counters
-//   - Configs table (adapterType, name, endpointUrl, status, lastSync, lastSyncStatus)
+//   - Registered adapters Card (badges) + Active / Total counters
+//   - DataTable (adapterType, name, endpointUrl, status, lastSyncAt, lastSyncStatus)
+//     with search (on name), status filter, and server-side pagination (pageSize=20).
 //   - Click row -> /integration/configs/[id]
 //
 // See: src/modules/integration/service/index.ts for the backend contract.
@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Plug, Plus, AlertTriangle, Loader2, ShieldAlert, ArrowRight, RefreshCw,
+  Plug, Plus, AlertTriangle, Loader2, ShieldAlert, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,15 +32,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/app/page-header";
+import { DataTable, type Column } from "@/components/app/data-table";
+import { EmptyState } from "@/components/app/empty-state";
+import { StatusBadge, type StatusType } from "@/components/app/status-badge";
 
 // ---------------------------------------------------------------------------
 // Types — mirror the API contract
@@ -104,15 +105,12 @@ function formatDateTime(iso: string | null | undefined): string {
   }
 }
 
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  ACTIVE: "default",
-  INACTIVE: "secondary",
-};
+const STATUS_OPTIONS = ["ACTIVE", "INACTIVE", "ERROR"];
 
-const SYNC_STATUS_CLASS: Record<string, string> = {
-  SUCCESS: "text-emerald-600",
-  PARTIAL: "text-amber-600",
-  FAILURE: "text-destructive",
+const SYNC_STATUS_TYPE: Record<string, StatusType> = {
+  SUCCESS: "success",
+  PARTIAL: "warning",
+  FAILURE: "error",
 };
 
 // ---------------------------------------------------------------------------
@@ -121,19 +119,29 @@ const SYNC_STATUS_CLASS: Record<string, string> = {
 
 export default function IntegrationConfigsPage() {
   const t = useTranslations("integration");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const qc = useQueryClient();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
 
-  // Configs list
-  const configsQ = useQuery<IntegrationConfig[]>({
-    queryKey: ["integration", "configs"],
+  // Configs list (server-side paginated)
+  const configsQ = useQuery<{
+    data: IntegrationConfig[];
+    total: number;
+  }>({
+    queryKey: ["integration", "configs", page],
     queryFn: async () => {
-      const res = await fetch("/api/integration/configs?page=1&pageSize=50", { credentials: "same-origin" });
+      const res = await fetch(`/api/integration/configs?page=${page}&pageSize=20`, { credentials: "same-origin" });
       if (!res.ok) throw new Error("Failed to load configs");
       const json = await res.json();
-      return (json.data ?? []) as IntegrationConfig[];
+      return {
+        data: (json.data ?? []) as IntegrationConfig[],
+        total: (json.meta?.total as number | undefined) ?? 0,
+      };
     },
     refetchInterval: 60_000,
   });
@@ -163,43 +171,125 @@ export default function IntegrationConfigsPage() {
   });
 
   const hasMockConfigs = useMemo(
-    () => (configsQ.data ?? []).some((c) => c.adapterType === "MOCK_TEST"),
+    () => (configsQ.data?.data ?? []).some((c) => c.adapterType === "MOCK_TEST"),
     [configsQ.data],
   );
 
-  const handleRowClick = useCallback(
-    (id: string) => {
-      router.push(`/integration/configs/${id}`);
-    },
-    [router],
-  );
+  const handleRefresh = useCallback(() => {
+    qc.invalidateQueries({ queryKey: ["integration", "configs"] });
+    qc.invalidateQueries({ queryKey: ["integration", "health"] });
+  }, [qc]);
 
   const handleCreated = useCallback(() => {
     qc.invalidateQueries({ queryKey: ["integration", "configs"] });
     qc.invalidateQueries({ queryKey: ["integration", "health"] });
     setCreateOpen(false);
+    setPage(1);
   }, [qc]);
+
+  const filtered = (configsQ.data?.data ?? []).filter((c) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch = !q || c.name.toLowerCase().includes(q);
+    const matchesStatus = !status || c.status === status;
+    return matchesSearch && matchesStatus;
+  });
+
+  const columns: Column<IntegrationConfig>[] = [
+    {
+      key: "adapterType",
+      header: t("adapterType"),
+      render: (c) => {
+        const isMock = c.adapterType === "MOCK_TEST";
+        return (
+          <span className="whitespace-nowrap text-xs">
+            <span className="font-mono">{c.adapterType}</span>
+            {isMock && (
+              <Badge
+                variant="outline"
+                className="ml-2 border-amber-400 text-amber-700 dark:border-amber-700 dark:text-amber-300"
+              >
+                {t("testMockBadge")}
+              </Badge>
+            )}
+          </span>
+        );
+      },
+    },
+    {
+      key: "name",
+      header: t("name"),
+      render: (c) => <span className="text-xs font-medium">{c.name}</span>,
+    },
+    {
+      key: "endpointUrl",
+      header: t("endpointUrl"),
+      render: (c) => (
+        <span
+          className="block max-w-xs truncate text-xs text-muted-foreground"
+          title={c.endpointUrl}
+        >
+          {c.endpointUrl}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: t("status"),
+      render: (c) => <StatusBadge status={c.status} />,
+    },
+    {
+      key: "lastSyncAt",
+      header: t("lastSync"),
+      render: (c) => (
+        <span className="whitespace-nowrap text-xs text-muted-foreground">
+          {c.lastSyncAt ? formatDateTime(c.lastSyncAt) : t("never")}
+        </span>
+      ),
+    },
+    {
+      key: "lastSyncStatus",
+      header: t("lastSyncStatus"),
+      render: (c) =>
+        c.lastSyncStatus ? (
+          <StatusBadge
+            status={c.lastSyncStatus}
+            type={SYNC_STATUS_TYPE[c.lastSyncStatus]}
+          />
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
+        ),
+    },
+  ];
+
+  const activeFilterCount = (search ? 1 : 0) + (status ? 1 : 0);
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Plug className="h-6 w-6 text-primary" />
-            {t("title")}
-          </h1>
-          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-        </div>
-        <Button
-          onClick={() => setCreateOpen(true)}
-          className="gap-1.5"
-          aria-label={t("newConfig")}
-        >
-          <Plus className="h-4 w-4" />
-          {t("newConfig")}
-        </Button>
-      </div>
+      <PageHeader
+        title={t("title")}
+        subtitle={t("subtitle")}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              aria-label={tCommon("search.placeholder")}
+              className="gap-1.5"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              onClick={() => setCreateOpen(true)}
+              className="gap-1.5"
+              aria-label={t("newConfig")}
+            >
+              <Plus className="h-4 w-4" />
+              {t("newConfig")}
+            </Button>
+          </div>
+        }
+      />
 
       {/* PULL-ONLY notice (always visible) */}
       <Alert className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
@@ -268,109 +358,48 @@ export default function IntegrationConfigsPage() {
         </CardContent>
       </Card>
 
-      {/* Configs table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center justify-between gap-2">
-            <span>{t("configs")}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                qc.invalidateQueries({ queryKey: ["integration", "configs"] });
-                qc.invalidateQueries({ queryKey: ["integration", "health"] });
-              }}
-              aria-label="Refresh"
-              className="h-8 gap-1.5"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {configsQ.isLoading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          ) : configsQ.data && configsQ.data.length > 0 ? (
-            <div className="max-h-[36rem] overflow-auto rounded-md border">
-              <Table>
-                <TableHeader className="sticky top-0 bg-card z-10">
-                  <TableRow>
-                    <TableHead>{t("adapterType")}</TableHead>
-                    <TableHead>{t("name")}</TableHead>
-                    <TableHead>{t("endpointUrl")}</TableHead>
-                    <TableHead>{t("status")}</TableHead>
-                    <TableHead>{t("lastSync")}</TableHead>
-                    <TableHead>{t("lastSyncStatus")}</TableHead>
-                    <TableHead className="w-[40px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {configsQ.data.map((c) => {
-                    const isMock = c.adapterType === "MOCK_TEST";
-                    return (
-                      <TableRow
-                        key={c.id}
-                        onClick={() => handleRowClick(c.id)}
-                        className="cursor-pointer hover:bg-muted/50"
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            handleRowClick(c.id);
-                          }
-                        }}
-                      >
-                        <TableCell className="whitespace-nowrap text-xs">
-                          <span className="font-mono">{c.adapterType}</span>
-                          {isMock && (
-                            <Badge
-                              variant="outline"
-                              className="ml-2 border-amber-400 text-amber-700 dark:border-amber-700 dark:text-amber-300"
-                            >
-                              {t("testMockBadge")}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-xs font-medium">{c.name}</TableCell>
-                        <TableCell className="max-w-xs truncate text-xs text-muted-foreground" title={c.endpointUrl}>
-                          {c.endpointUrl}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={STATUS_VARIANT[c.status] ?? "outline"}>
-                            {c.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                          {c.lastSyncAt ? formatDateTime(c.lastSyncAt) : t("never")}
-                        </TableCell>
-                        <TableCell>
-                          {c.lastSyncStatus ? (
-                            <span className={cn("text-xs font-medium", SYNC_STATUS_CLASS[c.lastSyncStatus] ?? "")}>
-                              {c.lastSyncStatus}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <ArrowRight className="h-4 w-4 text-muted-foreground" aria-hidden />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground py-6 text-center">{t("noConfigs")}</p>
-          )}
-        </CardContent>
-      </Card>
+      {/* Configs DataTable */}
+      <DataTable<IntegrationConfig>
+        columns={columns}
+        data={filtered}
+        loading={configsQ.isLoading}
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
+        searchPlaceholder={tCommon("search.placeholder")}
+        filters={[
+          {
+            key: "status",
+            label: t("status"),
+            value: status,
+            onChange: (v) => {
+              setStatus(v);
+              setPage(1);
+            },
+            options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
+          },
+        ]}
+        onResetFilters={() => {
+          setSearch("");
+          setStatus("");
+          setPage(1);
+        }}
+        activeFilterCount={activeFilterCount}
+        pagination={
+          configsQ.data
+            ? {
+                page,
+                pageSize: 20,
+                total: configsQ.data.total,
+                onPageChange: setPage,
+              }
+            : undefined
+        }
+        emptyState={<EmptyState icon={Plug} title={t("noConfigs")} />}
+        onRowClick={(c) => router.push(`/integration/configs/${c.id}`)}
+      />
 
       {/* Create dialog */}
       <CreateConfigDialog
