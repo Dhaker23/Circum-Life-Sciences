@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { ActivityTimeline } from "@/components/app/activity-timeline";
 
 // ---------------------------------------------------------------------------
 // Types — mirror the API contract
@@ -279,6 +280,9 @@ export default function CapaDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Activity Timeline */}
+      <ActivityTimeline entityType="CAPA" entityId={capa.id} />
     </div>
   );
 }

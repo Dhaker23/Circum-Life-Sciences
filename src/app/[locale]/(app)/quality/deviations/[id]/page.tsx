@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { ActivityTimeline } from "@/components/app/activity-timeline";
 
 // ---------------------------------------------------------------------------
 // Types — mirror the API contract
@@ -247,6 +248,9 @@ export default function DeviationDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Activity Timeline */}
+      <ActivityTimeline entityType="Deviation" entityId={dev.id} />
     </div>
   );
 }

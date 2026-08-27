@@ -1478,3 +1478,53 @@ Stage Summary:
 - 0 typecheck errors, 0 new lint warnings. Dev server healthy.
 - Schema impact: ZERO. i18n impact: ZERO. Component impact: ZERO. API impact: 2 routes upgraded to support existing pagination envelope pattern (additive, backward-compatible).
 - Detailed work record: `/home/z/my-project/agent-ctx/pag-batch2-agent.md`.
+
+---
+Task ID: ui3-integrate
+Agent: ui3-integrate (Z.ai Code)
+Task: Integrate new ActivityTimeline and QuickViewDrawer components into 5 detail pages + the NCR list page.
+
+Work Log:
+- Read worklog.md (ui1 + d005 + pag-batch1 + pag-batch2 context) to understand the project's existing patterns.
+- Inspected the new shared components (`src/components/app/activity-timeline.tsx` + `src/components/app/quick-view-drawer.tsx`) to verify their prop contracts:
+  - ActivityTimeline: `<ActivityTimeline entityType entityId title? maxItems? />` — fetches `/api/audit/events?entityType=X&entityId=Y&pageSize=20`, renders a vertical timeline (Card with ScrollArea). Uses `useTranslations("common")` for `common.activityTimeline` + `common.noActivity`. Verified both i18n keys exist in `src/messages/en.json` (lines 69-70).
+  - QuickViewDrawer: `<QuickViewDrawer open onOpenChange recordId entityType fields title detailHref fetchUrl />` — slide-in Sheet from the right, fetches record details from the provided URL, renders fields in a `<dl>`, includes "View Full Details" button + StatusBadge.
+- Read all 5 target detail pages + the NCR list page to confirm: variable names (`ncr`/`dev`/`capa`/`change`/`batch`), the page container closing `</div>` location (immediately after the transitions/actions card), the existing imports block layout, and the existing NCR list page's `onRowClick={(n) => router.push(...)}` call.
+
+Files modified — Task 1 (ActivityTimeline added to 5 detail pages):
+1. `src/app/[locale]/(app)/quality/ncrs/[id]/page.tsx` — added import; appended `<ActivityTimeline entityType="NCR" entityId={ncr.id} />` after the transitions Card.
+2. `src/app/[locale]/(app)/quality/deviations/[id]/page.tsx` — `<ActivityTimeline entityType="Deviation" entityId={dev.id} />` (variable is `dev`, NOT `deviation`).
+3. `src/app/[locale]/(app)/quality/capas/[id]/page.tsx` — `<ActivityTimeline entityType="CAPA" entityId={capa.id} />`.
+4. `src/app/[locale]/(app)/quality/changes/[id]/page.tsx` — `<ActivityTimeline entityType="ChangeControl" entityId={change.id} />`.
+5. `src/app/[locale]/(app)/batch-review/batches/[id]/page.tsx` — `<ActivityTimeline entityType="ManufacturingBatch" entityId={batch.id} />`.
+
+Files modified — Task 2 (QuickViewDrawer added to NCR list page):
+6. `src/app/[locale]/(app)/quality/ncrs/page.tsx` — added `QuickViewDrawer` + `QuickViewField` type import; added `const [quickViewId, setQuickViewId] = useState<string | null>(null);`; changed `onRowClick={(n) => router.push(`/quality/ncrs/${n.id}`)}` to `onRowClick={(n) => setQuickViewId(n.id)}`; removed the now-unused `useRouter` import; added the `<QuickViewDrawer>` block after the DataTable with the 5 specified fields (`code`, `status`, `severity`, `description`, `concernsEntityType`); typed the `fields` array via `satisfies QuickViewField[]` to keep the imported `QuickViewField` type non-unused.
+
+Supporting component fixes (necessary for typecheck to pass):
+- `src/components/app/quick-view-drawer.tsx`:
+  - The `QuickViewField` interface was declared but NOT exported. The page imports `type QuickViewField` from this module, so added `export type { QuickViewField };` after the interface declaration.
+  - The `SheetContent side="end"` prop was invalid — the local `SheetContent` only accepts `"top" | "right" | "bottom" | "left"`. The intent of the spec ("slide-in Sheet from the right") matches `side="right"`. Changed `side="end"` → `side="right"`.
+  - Removed the unused `Badge` import (`@typescript-eslint/no-unused-vars` warning).
+
+Decisions:
+- **Variable name fidelity**: The task spec used the conventional names (`deviation`, `capa`, `change`, `batch`) but the actual code uses the short forms (`dev`, `capa`, `change`, `batch`). Verified each by reading the page source and used the actual variable name in each `entityId={...}` prop.
+- **`satisfies QuickViewField[]` on the fields array**: the spec explicitly imports `type QuickViewField` but doesn't directly reference the type in the body. With `verbatimModuleSyntax`-friendly imports, an unused type-only import would be silently dropped — but the spec mandates the import. Using `satisfies QuickViewField[]` makes the import used AND adds compile-time type safety on the field shape (catches typos in `key`/`label`/`render`).
+- **`side="right"` instead of `side="end"`**: the spec described the desired UX ("slide-in Sheet from the right"); `end` is a logical-direction alias that the local shadcn `SheetContent` doesn't support. `right` is the physical-direction value that matches both the spec's intent and the existing `SheetContent` API.
+- **`Badge` import removed**: QuickViewDrawer uses `StatusBadge` (not the raw `Badge`) for the status pill, and the `record.code` is rendered as plain text. The `Badge` import was dead code.
+- **ActivityTimeline placement**: placed inside the page's root `<div className="space-y-6">`, after the existing transitions/actions Card, before the closing `</div>`. The `space-y-6` class on the parent provides the correct vertical spacing automatically — no extra wrapper needed.
+- **No RBAC concerns**: ActivityTimeline fetches from `/api/audit/events` which requires `audit.read`. The spec explicitly notes that viewing a detail page already requires a higher permission (e.g. `quality.ncr.read`), so users on these detail pages are guaranteed to have `audit.read` transitively. No new auth checks needed.
+- **No changes to**: existing transitions, dialogs, forms, transition state machines, AI/Human-only notices, status variant maps, disposition options, fetch logic, i18n keys (the `activityTimeline` + `noActivity` keys already exist in `en.json`), RBAC middleware, API routes, Prisma schema, or the underlying DataTable/PageHeader/EmptyState/StatusBadge components.
+
+Verification:
+- `bunx tsc --noEmit 2>&1 | grep -v vitest | head -10` → 0 errors, 0 output (clean typecheck, exit code 0).
+- `bun run lint` → 0 errors, 111 warnings (down from 112 — the unused-`Badge` warning was eliminated; all remaining warnings are pre-existing `no-explicit-any` in modules/services/tests — same baseline as pag-batch2). Verified via grep: ZERO warnings reference any of the 6 modified page/component paths.
+- Dev server confirmed healthy in `dev.log` (Next.js 16.1.3 Turbopack, ready in 913ms, no compile errors, only `/api/health` probe in the log).
+
+Stage Summary:
+- 5 detail pages now display the `<ActivityTimeline>` component at the bottom of the page — NCRs, Deviations, CAPAs, Change Controls, and Batch Reviews. Each renders a vertical timeline of audit events (status changes, transitions, approvals, etc.) for the specific entity, fetched from `/api/audit/events?entityType=X&entityId=Y`.
+- NCR list page now opens a `<QuickViewDrawer>` slide-in panel when a row is clicked (instead of navigating directly to the detail page). The drawer shows status + 5 fields (code, status, severity, description, concernsEntityType); the user can still navigate to the full detail page via the "View Full Details" button in the drawer.
+- 2 small bugs in the pre-existing `quick-view-drawer.tsx` component fixed (un-exported `QuickViewField` type + invalid `side="end"` prop value).
+- 0 typecheck errors, 0 new lint warnings. Dev server healthy.
+- Schema impact: ZERO. API impact: ZERO (consumed existing `/api/audit/events` + `/api/quality/ncrs/[id]` routes, did not modify any route). i18n impact: ZERO (used existing `common.activityTimeline` + `common.noActivity` keys). Component impact: 1 small fix to `quick-view-drawer.tsx` (export type + valid `side` value + remove dead import).
+- Detailed work record: `/home/z/my-project/agent-ctx/ui3-integrate-agent.md`.

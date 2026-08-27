@@ -9,7 +9,12 @@
     "create": "إنشاء",
     "update": "تعديل",
     "delete": "حذف",
-    "search": "بحث",
+    "search": {
+      "placeholder": "بحث...",
+      "navigation": "التنقل",
+      "settings": "الإعدادات",
+      "noResults": "لا توجد نتائج"
+    },
     "filter": "تصفية",
     "noData": "لا توجد بيانات متاحة",
     "actions": "إجراءات",
@@ -42,12 +47,6 @@
     "no": "لا",
     "never": "أبدًا",
     "refresh": "تحديث",
-    "search": {
-      "placeholder": "بحث...",
-      "navigation": "التنقل",
-      "settings": "الإعدادات",
-      "noResults": "لا توجد نتائج"
-    },
     "filters": {
       "active": "{count} نشط",
       "reset": "إعادة تعيين"
@@ -66,7 +65,11 @@
     "empty": {
       "noData": "لا توجد بيانات",
       "noDataDescription": "لا توجد سجلات لعرضها."
-    }
+    },
+    "activityTimeline": "سجل النشاط",
+    "noActivity": "لا يوجد نشاط مسجل",
+    "quickView": "عرض سريع",
+    "viewFullDetails": "عرض التفاصيل الكاملة"
   },
   "auth": {
     "signIn": "تسجيل الدخول",

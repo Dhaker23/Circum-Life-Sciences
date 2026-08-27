@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { ActivityTimeline } from "@/components/app/activity-timeline";
 
 // ---------------------------------------------------------------------------
 // Types — mirror the API contract (Prisma NCR + relations)
@@ -262,6 +263,9 @@ export default function NcrDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Activity Timeline */}
+      <ActivityTimeline entityType="NCR" entityId={ncr.id} />
     </div>
   );
 }

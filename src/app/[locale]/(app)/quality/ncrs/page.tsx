@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { FileWarning } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { DataTable, type Column } from "@/components/app/data-table";
 import { EmptyState } from "@/components/app/empty-state";
 import { StatusBadge, type StatusType } from "@/components/app/status-badge";
+import { QuickViewDrawer, type QuickViewField } from "@/components/app/quick-view-drawer";
 
 interface NcrRow {
   id: string;
@@ -40,11 +40,11 @@ const SEVERITY_TYPE: Record<string, StatusType> = {
 export default function NcrsPage() {
   const t = useTranslations("quality");
   const tCommon = useTranslations("common");
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [severity, setSeverity] = useState("");
   const [page, setPage] = useState(1);
+  const [quickViewId, setQuickViewId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery<{
     data: NcrRow[];
@@ -179,7 +179,24 @@ export default function NcrsPage() {
         emptyState={
           <EmptyState icon={FileWarning} title={t("ncrs.noData")} />
         }
-        onRowClick={(n) => router.push(`/quality/ncrs/${n.id}`)}
+        onRowClick={(n) => setQuickViewId(n.id)}
+      />
+
+      <QuickViewDrawer
+        open={!!quickViewId}
+        onOpenChange={(v) => !v && setQuickViewId(null)}
+        recordId={quickViewId}
+        entityType="NCR"
+        title="NCR"
+        detailHref={(id) => `/quality/ncrs/${id}`}
+        fetchUrl={(id) => `/api/quality/ncrs/${id}`}
+        fields={[
+          { key: "code", label: "Code" },
+          { key: "status", label: "Status" },
+          { key: "severity", label: "Severity" },
+          { key: "description", label: "Description" },
+          { key: "concernsEntityType", label: "Concerns" },
+        ] satisfies QuickViewField[]}
       />
     </div>
   );

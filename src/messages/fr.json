@@ -9,7 +9,12 @@
     "create": "Creer",
     "update": "Modifier",
     "delete": "Supprimer",
-    "search": "Rechercher",
+    "search": {
+      "placeholder": "Rechercher...",
+      "navigation": "Navigation",
+      "settings": "Parametres",
+      "noResults": "Aucun resultat"
+    },
     "filter": "Filtrer",
     "noData": "Aucune donnee disponible",
     "actions": "Actions",
@@ -42,12 +47,6 @@
     "no": "Non",
     "never": "Jamais",
     "refresh": "Rafraichir",
-    "search": {
-      "placeholder": "Rechercher...",
-      "navigation": "Navigation",
-      "settings": "Parametres",
-      "noResults": "Aucun resultat"
-    },
     "filters": {
       "active": "{count} actif(s)",
       "reset": "Reinitialiser"
@@ -66,7 +65,11 @@
     "empty": {
       "noData": "Aucune donnee",
       "noDataDescription": "Aucun enregistrement a afficher."
-    }
+    },
+    "activityTimeline": "Journal d'activité",
+    "noActivity": "Aucune activité enregistrée",
+    "quickView": "Aperçu rapide",
+    "viewFullDetails": "Voir les détails complets"
   },
   "auth": {
     "signIn": "Se connecter",
