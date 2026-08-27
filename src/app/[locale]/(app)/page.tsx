@@ -12,10 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
-  AlertTriangle,
-  Wrench,
   ClipboardList,
-  ScrollText,
   Plus,
   Activity,
   BarChart3,
@@ -215,7 +212,7 @@ export default async function DashboardPage({
   // --- KPI cards configuration --------------------------------------------
   const kpiCards = [
     canSeeNcrs && {
-      icon: AlertTriangle,
+      icon: "alert-triangle" as const,
       label: t("kpis.openNcrs"),
       value: openNcrs,
       accent: "error" as const,
@@ -223,7 +220,7 @@ export default async function DashboardPage({
       deltaLabel: t("kpis.openNcrsDelta"),
     },
     canSeeCapas && {
-      icon: Wrench,
+      icon: "wrench" as const,
       label: t("kpis.openCapas"),
       value: openCapas,
       accent: "warning" as const,
@@ -231,7 +228,7 @@ export default async function DashboardPage({
       deltaLabel: t("kpis.openCapasDelta"),
     },
     canSeeWorkOrders && {
-      icon: ClipboardList,
+      icon: "clipboard-list" as const,
       label: t("kpis.activeWorkOrders"),
       value: activeWorkOrders,
       accent: "primary" as const,
@@ -239,7 +236,7 @@ export default async function DashboardPage({
       deltaLabel: t("kpis.activeWorkOrdersDelta"),
     },
     canSeeAudit && {
-      icon: ScrollText,
+      icon: "scroll-text" as const,
       label: t("kpis.recentAudit"),
       value: audit7d,
       accent: "neutral" as const,
@@ -247,7 +244,7 @@ export default async function DashboardPage({
       deltaLabel: t("kpis.recentAuditDelta"),
     },
   ].filter(Boolean) as {
-    icon: typeof AlertTriangle;
+    icon: "alert-triangle" | "wrench" | "clipboard-list" | "scroll-text";
     label: string;
     value: number;
     accent: "error" | "warning" | "primary" | "neutral";

@@ -2,12 +2,30 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import {
+  AlertTriangle,
+  Activity,
+  ArrowDownRight,
+  ArrowUpRight,
+  Building2,
+  ClipboardList,
+  Package,
+  ScrollText,
+  ShieldCheck,
+  TrendingDown,
+  TrendingUp,
+  Users,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 /**
  * StatCard — KPI display card with icon, label, value, optional delta and link.
+ *
+ * Icon is passed as a STRING name (serializable across Server→Client boundary).
+ * The icon is resolved locally via the ICON_REGISTRY below.
  *
  * Strings (label, delta.label) are passed in by the caller (already i18n-resolved),
  * so this component does not call useTranslations() itself.
@@ -22,6 +40,33 @@ export type StatCardAccent =
   | "error"
   | "neutral";
 
+export type StatCardIconName =
+  | "alert-triangle"
+  | "wrench"
+  | "clipboard-list"
+  | "scroll-text"
+  | "users"
+  | "building"
+  | "shield-check"
+  | "package"
+  | "activity"
+  | "trending-up"
+  | "trending-down";
+
+const ICON_REGISTRY: Record<StatCardIconName, LucideIcon> = {
+  "alert-triangle": AlertTriangle,
+  wrench: Wrench,
+  "clipboard-list": ClipboardList,
+  "scroll-text": ScrollText,
+  users: Users,
+  building: Building2,
+  "shield-check": ShieldCheck,
+  package: Package,
+  activity: Activity,
+  "trending-up": TrendingUp,
+  "trending-down": TrendingDown,
+};
+
 export interface StatCardDelta {
   /** Signed percentage change, e.g. +12 or -5. */
   value: number;
@@ -30,7 +75,8 @@ export interface StatCardDelta {
 }
 
 export interface StatCardProps {
-  icon: React.ComponentType<{ className?: string }>;
+  /** Icon name (serializable string, resolved via ICON_REGISTRY). */
+  icon: StatCardIconName;
   label: string;
   value: string | number;
   delta?: StatCardDelta;
@@ -47,7 +93,7 @@ const ACCENT_ICON_CLASS: Record<StatCardAccent, string> = {
 };
 
 export function StatCard({
-  icon: Icon,
+  icon: iconName,
   label,
   value,
   delta,
@@ -56,6 +102,7 @@ export function StatCard({
 }: StatCardProps) {
   const iconClass = ACCENT_ICON_CLASS[accent];
   const isInteractive = Boolean(href);
+  const Icon = ICON_REGISTRY[iconName] ?? AlertTriangle;
 
   const inner = (
     <Card
