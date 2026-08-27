@@ -66,16 +66,20 @@ export interface NavItem {
 
 export interface NavGroup {
   section: string;
+  /** i18n key (top-level, e.g. "nav.identity") resolving to a section label. Optional — used by the topbar breadcrumb. */
+  sectionLabelKey?: string;
   items: NavItem[];
 }
 
 export const NAV: NavGroup[] = [
   {
     section: "main",
+    sectionLabelKey: "nav.dashboard",
     items: [{ href: "/", labelKey: "nav.dashboard", icon: LayoutDashboard }],
   },
   {
     section: "identity",
+    sectionLabelKey: "nav.identity",
     items: [
       { href: "/identity/users", labelKey: "nav.users", icon: Users, permission: "identity.user.read" },
       { href: "/identity/roles", labelKey: "nav.roles", icon: ShieldCheck, permission: "identity.role.read" },
@@ -83,6 +87,7 @@ export const NAV: NavGroup[] = [
   },
   {
     section: "organization",
+    sectionLabelKey: "nav.organization",
     items: [
       { href: "/organization/sites", labelKey: "nav.sites", icon: Building2, permission: "org.site.read" },
       { href: "/organization/departments", labelKey: "nav.departments", icon: FolderTree, permission: "org.department.read" },
@@ -90,6 +95,7 @@ export const NAV: NavGroup[] = [
   },
   {
     section: "manufacturing",
+    sectionLabelKey: "nav.manufacturing",
     items: [
       { href: "/manufacturing/products", labelKey: "nav.products", icon: Package, permission: "manufacturing.product.read" },
       { href: "/manufacturing/materials", labelKey: "nav.materials", icon: Boxes, permission: "manufacturing.material.read" },
@@ -99,6 +105,7 @@ export const NAV: NavGroup[] = [
   },
   {
     section: "production",
+    sectionLabelKey: "nav.production",
     items: [
       { href: "/production/work-orders", labelKey: "nav.workOrders", icon: ClipboardList, permission: "production.workorder.read" },
       { href: "/production/batches", labelKey: "nav.batches", icon: Factory, permission: "production.batch.read" },
@@ -108,6 +115,7 @@ export const NAV: NavGroup[] = [
   },
   {
     section: "quality",
+    sectionLabelKey: "nav.quality",
     items: [
       { href: "/quality/ncrs", labelKey: "nav.ncrs", icon: AlertTriangle, permission: "quality.ncr.read" },
       { href: "/quality/deviations", labelKey: "nav.deviations", icon: GitBranch, permission: "quality.deviation.read" },
@@ -119,6 +127,7 @@ export const NAV: NavGroup[] = [
   },
   {
     section: "traceability",
+    sectionLabelKey: "nav.traceabilitySection",
     items: [
       { href: "/traceability/trace", labelKey: "nav.traceTrace", icon: Network, permission: "traceability.read" },
       { href: "/traceability/impact", labelKey: "nav.traceImpact", icon: AlertCircle, permission: "traceability.read" },
@@ -127,6 +136,7 @@ export const NAV: NavGroup[] = [
   },
   {
     section: "laboratory",
+    sectionLabelKey: "nav.laboratorySection",
     items: [
       { href: "/lab/specifications", labelKey: "nav.specifications", icon: FlaskConical, permission: "lab.specification.read" },
       { href: "/lab/test-methods", labelKey: "nav.testMethods", icon: Microscope, permission: "lab.testmethod.read" },
@@ -137,6 +147,7 @@ export const NAV: NavGroup[] = [
   },
   {
     section: "lean",
+    sectionLabelKey: "nav.leanSection",
     items: [
       { href: "/lean/downtime", labelKey: "nav.leanDowntime", icon: TrendingDown, permission: "lean.read" },
       { href: "/lean/oee", labelKey: "nav.leanOee", icon: Scale, permission: "lean.read" },
@@ -145,6 +156,7 @@ export const NAV: NavGroup[] = [
   },
   {
     section: "analytics",
+    sectionLabelKey: "nav.analyticsSection",
     items: [
       { href: "/analytics/dashboards", labelKey: "nav.analyticsDashboards", icon: BarChart3, permission: "analytics.read" },
       { href: "/analytics/reports", labelKey: "nav.analyticsReports", icon: FileBarChart, permission: "analytics.read" },
@@ -154,18 +166,21 @@ export const NAV: NavGroup[] = [
   },
   {
     section: "ai",
+    sectionLabelKey: "nav.aiSection",
     items: [
       { href: "/ai-assistant", labelKey: "nav.aiAssistant", icon: Activity, permission: "ai.chat" },
     ],
   },
   {
     section: "integration",
+    sectionLabelKey: "nav.integration",
     items: [
       { href: "/integration/configs", labelKey: "nav.integration", icon: Plug, permission: "integration.read" },
     ],
   },
   {
     section: "phase9",
+    sectionLabelKey: "nav.phase9Section",
     items: [
       { href: "/cleanroom/rooms", labelKey: "nav.cleanroom", icon: Wind, permission: "cleanroom.read" },
       { href: "/packaging/records", labelKey: "nav.packaging", icon: PackageCheck, permission: "packaging.read" },
@@ -175,34 +190,40 @@ export const NAV: NavGroup[] = [
   },
   {
     section: "equipmentNav",
+    sectionLabelKey: "nav.equipment",
     items: [
       { href: "/equipment", labelKey: "nav.equipment", icon: Cog, permission: "equipment.read" },
     ],
   },
   {
     section: "documents",
+    sectionLabelKey: "nav.documents",
     items: [
       { href: "/docs/documents", labelKey: "nav.documents", icon: FileText, permission: "docs.document.read" },
     ],
   },
   {
     section: "training",
+    sectionLabelKey: "nav.trainingRecords",
     items: [
       { href: "/training/records", labelKey: "nav.trainingRecords", icon: GraduationCap, permission: "training.record.read" },
     ],
   },
   {
     section: "supplierAudits",
+    sectionLabelKey: "nav.supplierAudits",
     items: [
       { href: "/supplier-audits", labelKey: "nav.supplierAudits", icon: ClipboardCheck, permission: "supplieraudit.read" },
     ],
   },
   {
     section: "audit",
+    sectionLabelKey: "nav.audit",
     items: [{ href: "/audit/events", labelKey: "nav.events", icon: ScrollText, permission: "audit.read" }],
   },
   {
     section: "system",
+    sectionLabelKey: "nav.settings",
     items: [{ href: "/settings", labelKey: "nav.settings", icon: Settings }],
   },
 ];

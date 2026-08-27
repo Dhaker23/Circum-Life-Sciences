@@ -1,13 +1,157 @@
 "use client";
+
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-const EVAL_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = { PASS: "default", FAIL: "destructive", NOT_EVALUABLE: "secondary" };
-const RESULT_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = { SAMPLE_RECEIVED: "outline", IN_PROGRESS: "secondary", RESULT_ENTERED: "default", REVIEWED: "default", DISPOSITIONED: "secondary" };
+import { ClipboardList } from "lucide-react";
+import { PageHeader } from "@/components/app/page-header";
+import { DataTable, type Column } from "@/components/app/data-table";
+import { EmptyState } from "@/components/app/empty-state";
+import { StatusBadge, type StatusType } from "@/components/app/status-badge";
+
+interface TestResultRow {
+  id: string;
+  code: string;
+  status: string;
+  evaluatedResult: string | null;
+  disposition: string | null;
+  measuredValue: string | null;
+  specification: { code: string; parameter: string };
+}
+
+const STATUS_OPTIONS = [
+  "SAMPLE_RECEIVED",
+  "IN_PROGRESS",
+  "RESULT_ENTERED",
+  "REVIEWED",
+  "DISPOSITIONED",
+];
+
+const EVAL_TYPE: Record<string, StatusType> = {
+  PASS: "success",
+  FAIL: "error",
+  NOT_EVALUABLE: "warning",
+};
+
+const DISPOSITION_TYPE: Record<string, StatusType> = {
+  PASS_RELEASE: "success",
+  CONDITIONAL_RELEASE: "warning",
+  FAIL_HOLD: "warning",
+  FAIL_REJECT: "error",
+};
+
 export default function TestResultsPage() {
   const t = useTranslations("lab");
-  const { data, isLoading } = useQuery({ queryKey: ["test-results"], queryFn: async () => { const res = await fetch("/api/lab/test-results?pageSize=100", { credentials: "same-origin" }); if (!res.ok) throw new Error("Failed"); const json = await res.json(); return json.data as Array<{ id: string; code: string; status: string; evaluatedResult: string | null; disposition: string | null; measuredValue: string | null; specification: { code: string; parameter: string } }>; } });
-  return (<div className="space-y-6"><div><h1 className="text-2xl font-bold tracking-tight">{t("results.title")}</h1><p className="text-sm text-muted-foreground">{t("results.subtitle")}</p></div><div className="rounded-md border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">{t("results.evalGuard")}</div><Card><CardHeader><CardTitle className="text-base">{t("results.title")}</CardTitle></CardHeader><CardContent>{isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : data && data.length > 0 ? (<div className="max-h-[32rem] overflow-auto rounded-md border"><Table><TableHeader className="sticky top-0 bg-card"><TableRow><TableHead>{t("results.code")}</TableHead><TableHead>{t("results.spec")}</TableHead><TableHead>{t("results.measured")}</TableHead><TableHead>{t("results.evaluated")}</TableHead><TableHead>{t("results.disposition")}</TableHead><TableHead>{t("common.status")}</TableHead></TableRow></TableHeader><TableBody>{data.map((r) => (<TableRow key={r.id}><TableCell className="font-mono text-xs">{r.code}</TableCell><TableCell className="text-xs font-mono">{r.specification.code}</TableCell><TableCell className="text-xs">{r.measuredValue ?? "-"}</TableCell><TableCell>{r.evaluatedResult ? <Badge variant={EVAL_VARIANT[r.evaluatedResult] ?? "outline"}>{r.evaluatedResult}</Badge> : "-"}</TableCell><TableCell className="text-xs">{r.disposition ?? "-"}</TableCell><TableCell><Badge variant={RESULT_VARIANT[r.status] ?? "outline"}>{r.status}</Badge></TableCell></TableRow>))}</TableBody></Table></div>) : <p className="text-sm text-muted-foreground">{t("results.noData")}</p>}</CardContent></Card></div>);
+  const tCommon = useTranslations("common");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+
+  const { data, isLoading } = useQuery<TestResultRow[]>({
+    queryKey: ["test-results"],
+    queryFn: async () => {
+      const res = await fetch("/api/lab/test-results?pageSize=100", {
+        credentials: "same-origin",
+      });
+      if (!res.ok) throw new Error("Failed");
+      const json = await res.json();
+      return json.data as TestResultRow[];
+    },
+  });
+
+  const filtered = (data ?? []).filter((r) => {
+    const matchesSearch = r.code
+      .toLowerCase()
+      .includes(search.trim().toLowerCase());
+    const matchesStatus = !status || r.status === status;
+    return matchesSearch && matchesStatus;
+  });
+
+  const columns: Column<TestResultRow>[] = [
+    {
+      key: "code",
+      header: t("results.code"),
+      render: (r) => <span className="font-mono text-xs">{r.code}</span>,
+    },
+    {
+      key: "status",
+      header: tCommon("status"),
+      render: (r) => <StatusBadge status={r.status} />,
+    },
+    {
+      key: "disposition",
+      header: t("results.disposition"),
+      render: (r) =>
+        r.disposition ? (
+          <StatusBadge
+            status={r.disposition}
+            type={DISPOSITION_TYPE[r.disposition]}
+          />
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
+        ),
+    },
+    {
+      key: "specification",
+      header: t("results.spec"),
+      render: (r) => (
+        <span className="font-mono text-xs">{r.specification.code}</span>
+      ),
+    },
+    {
+      key: "measuredValue",
+      header: t("results.measured"),
+      render: (r) => (
+        <span className="text-xs">{r.measuredValue ?? "-"}</span>
+      ),
+    },
+    {
+      key: "evaluatedResult",
+      header: t("results.evaluated"),
+      render: (r) =>
+        r.evaluatedResult ? (
+          <StatusBadge
+            status={r.evaluatedResult}
+            type={EVAL_TYPE[r.evaluatedResult]}
+          />
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
+        ),
+    },
+  ];
+
+  const activeFilterCount = (search ? 1 : 0) + (status ? 1 : 0);
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title={t("results.title")} subtitle={t("results.subtitle")} />
+      <div className="rounded-md border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
+        {t("results.evalGuard")}
+      </div>
+      <DataTable<TestResultRow>
+        columns={columns}
+        data={filtered}
+        loading={isLoading}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={tCommon("search.placeholder")}
+        filters={[
+          {
+            key: "status",
+            label: tCommon("status"),
+            value: status,
+            onChange: setStatus,
+            options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
+          },
+        ]}
+        onResetFilters={() => {
+          setSearch("");
+          setStatus("");
+        }}
+        activeFilterCount={activeFilterCount}
+        emptyState={
+          <EmptyState icon={ClipboardList} title={t("results.noData")} />
+        }
+      />
+    </div>
+  );
 }

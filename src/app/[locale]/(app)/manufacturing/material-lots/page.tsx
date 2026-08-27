@@ -1,69 +1,152 @@
 "use client";
+
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Layers } from "lucide-react";
+import { PageHeader } from "@/components/app/page-header";
+import { DataTable, type Column } from "@/components/app/data-table";
+import { EmptyState } from "@/components/app/empty-state";
+import { StatusBadge, type StatusType } from "@/components/app/status-badge";
 
-const LOT_STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  RECEIVED: "secondary", QUARANTINE: "outline", APPROVED: "default", IN_USE: "default", EXHAUSTED: "secondary", REJECTED: "destructive",
+interface MaterialLotRow {
+  id: string;
+  lotCode: string;
+  status: string;
+  quantityReceived: string;
+  quantityAvailable: string;
+  unit: string;
+  material: { code: string; name: string };
+  supplier: { code: string; name: string };
+  site: { code: string; name: string };
+}
+
+const STATUS_OPTIONS = [
+  "RECEIVED",
+  "QUARANTINE",
+  "APPROVED",
+  "IN_USE",
+  "EXHAUSTED",
+  "REJECTED",
+];
+
+// Use the StatusBadge type override for statuses not present in the default
+// mapping table (e.g. RECEIVED, IN_USE, EXHAUSTED, QUARANTINE).
+const STATUS_TYPE: Record<string, StatusType> = {
+  RECEIVED: "info",
+  QUARANTINE: "warning",
+  APPROVED: "success",
+  IN_USE: "success",
+  EXHAUSTED: "neutral",
+  REJECTED: "error",
 };
 
 export default function MaterialLotsPage() {
   const t = useTranslations("manufacturing");
-  const { data, isLoading } = useQuery({
+  const tCommon = useTranslations("common");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+
+  const { data, isLoading } = useQuery<MaterialLotRow[]>({
     queryKey: ["material-lots"],
     queryFn: async () => {
-      const res = await fetch("/api/manufacturing/material-lots?pageSize=100", { credentials: "same-origin" });
+      const res = await fetch(
+        "/api/manufacturing/material-lots?pageSize=100",
+        { credentials: "same-origin" },
+      );
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as Array<{
-        id: string; lotCode: string; status: string; quantityReceived: string; quantityAvailable: string; unit: string;
-        material: { code: string; name: string }; supplier: { code: string; name: string }; site: { code: string; name: string };
-      }>;
+      return json.data as MaterialLotRow[];
     },
   });
+
+  const filtered = (data ?? []).filter((l) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch = !q || l.lotCode.toLowerCase().includes(q);
+    const matchesStatus = !status || l.status === status;
+    return matchesSearch && matchesStatus;
+  });
+
+  const columns: Column<MaterialLotRow>[] = [
+    {
+      key: "lotCode",
+      header: t("lots.lotCode"),
+      render: (l) => <span className="font-mono text-xs">{l.lotCode}</span>,
+    },
+    {
+      key: "material",
+      header: t("lots.material"),
+      render: (l) => (
+        <span className="text-xs">
+          <span className="font-mono">{l.material.code}</span>
+          <span className="ms-2 text-muted-foreground">{l.material.name}</span>
+        </span>
+      ),
+    },
+    {
+      key: "supplier",
+      header: t("lots.supplier"),
+      render: (l) => (
+        <span className="text-xs">
+          <span className="font-mono">{l.supplier.code}</span>
+          <span className="ms-2 text-muted-foreground">{l.supplier.name}</span>
+        </span>
+      ),
+    },
+    {
+      key: "site",
+      header: tCommon("site"),
+      render: (l) => <span className="font-mono text-xs">{l.site.code}</span>,
+    },
+    {
+      key: "quantity",
+      header: t("lots.quantity"),
+      render: (l) => (
+        <span className="text-xs">
+          {l.quantityAvailable} / {l.quantityReceived} {l.unit}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: tCommon("status"),
+      render: (l) => (
+        <StatusBadge status={l.status} type={STATUS_TYPE[l.status]} />
+      ),
+    },
+  ];
+
+  const activeFilterCount = (search ? 1 : 0) + (status ? 1 : 0);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("lots.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("lots.subtitle")}</p>
+      <PageHeader title={t("lots.title")} subtitle={t("lots.subtitle")} />
+      <div className="rounded-md border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
+        {t("lots.siteScoped")}
       </div>
-      <div className="rounded-md border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">{t("lots.siteScoped")}</div>
-      <Card>
-        <CardHeader><CardTitle className="text-base">{t("lots.title")}</CardTitle></CardHeader>
-        <CardContent>
-          {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> :
-           data && data.length > 0 ? (
-            <div className="max-h-[32rem] overflow-auto rounded-md border">
-              <Table>
-                <TableHeader className="sticky top-0 bg-card">
-                  <TableRow>
-                    <TableHead>{t("lots.lotCode")}</TableHead>
-                    <TableHead>{t("lots.material")}</TableHead>
-                    <TableHead>{t("lots.supplier")}</TableHead>
-                    <TableHead>{t("lots.site")}</TableHead>
-                    <TableHead>{t("lots.quantity")}</TableHead>
-                    <TableHead>{t("common.status")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.map((l) => (
-                    <TableRow key={l.id}>
-                      <TableCell className="font-mono text-xs">{l.lotCode}</TableCell>
-                      <TableCell className="text-xs"><span className="font-mono">{l.material.code}</span><span className="ms-2 text-muted-foreground">{l.material.name}</span></TableCell>
-                      <TableCell className="text-xs">{l.supplier.code}</TableCell>
-                      <TableCell className="text-xs font-mono">{l.site.code}</TableCell>
-                      <TableCell className="text-xs">{l.quantityAvailable} / {l.quantityReceived} {l.unit}</TableCell>
-                      <TableCell><Badge variant={LOT_STATUS_VARIANT[l.status] ?? "outline"}>{l.status}</Badge></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : <p className="text-sm text-muted-foreground">{t("lots.noData")}</p>}
-        </CardContent>
-      </Card>
+      <DataTable<MaterialLotRow>
+        columns={columns}
+        data={filtered}
+        loading={isLoading}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={tCommon("search.placeholder")}
+        filters={[
+          {
+            key: "status",
+            label: tCommon("status"),
+            value: status,
+            onChange: setStatus,
+            options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
+          },
+        ]}
+        onResetFilters={() => {
+          setSearch("");
+          setStatus("");
+        }}
+        activeFilterCount={activeFilterCount}
+        emptyState={<EmptyState icon={Layers} title={t("lots.noData")} />}
+      />
     </div>
   );
 }

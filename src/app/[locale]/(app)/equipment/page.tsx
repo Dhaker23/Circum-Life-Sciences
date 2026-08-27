@@ -1,13 +1,142 @@
 "use client";
+
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-const OP_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = { OPERATIONAL: "default", MAINTENANCE: "secondary", OUT_OF_SERVICE: "destructive" };
-const CAL_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = { VALID: "default", EXPIRING: "secondary", EXPIRED: "destructive", OUT_OF_SERVICE: "destructive" };
+import { Cog } from "lucide-react";
+import { PageHeader } from "@/components/app/page-header";
+import { DataTable, type Column } from "@/components/app/data-table";
+import { EmptyState } from "@/components/app/empty-state";
+import { StatusBadge, type StatusType } from "@/components/app/status-badge";
+
+interface EquipmentRow {
+  id: string;
+  code: string;
+  name: string;
+  equipmentType: string;
+  operationalStatus: string;
+  calibrationStatus: string;
+  workCenter: { code: string; name: string } | null;
+  site: { code: string };
+}
+
+const OPERATIONAL_OPTIONS = ["OPERATIONAL", "MAINTENANCE", "OUT_OF_SERVICE"];
+
+const OP_STATUS_TYPE: Record<string, StatusType> = {
+  OPERATIONAL: "success",
+  MAINTENANCE: "warning",
+  OUT_OF_SERVICE: "error",
+};
+
+const CAL_STATUS_TYPE: Record<string, StatusType> = {
+  VALID: "success",
+  EXPIRING: "warning",
+  EXPIRED: "error",
+  OUT_OF_SERVICE: "error",
+};
+
 export default function EquipmentPage() {
   const t = useTranslations("equipment");
-  const { data, isLoading } = useQuery({ queryKey: ["equipment"], queryFn: async () => { const res = await fetch("/api/equipment?pageSize=100", { credentials: "same-origin" }); if (!res.ok) throw new Error("Failed"); const json = await res.json(); return json.data as Array<{ id: string; code: string; name: string; equipmentType: string; operationalStatus: string; calibrationStatus: string; workCenter: { code: string; name: string } | null; site: { code: string } }>; } });
-  return (<div className="space-y-6"><div><h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1><p className="text-sm text-muted-foreground">{t("subtitle")}</p></div><Card><CardHeader><CardTitle className="text-base">{t("title")}</CardTitle></CardHeader><CardContent>{isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : data && data.length > 0 ? (<div className="max-h-[32rem] overflow-auto rounded-md border"><Table><TableHeader className="sticky top-0 bg-card"><TableRow><TableHead>Code</TableHead><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>WorkCenter</TableHead><TableHead>Op. Status</TableHead><TableHead>Cal. Status</TableHead></TableRow></TableHeader><TableBody>{data.map((e) => (<TableRow key={e.id}><TableCell className="font-mono text-xs">{e.code}</TableCell><TableCell className="text-xs">{e.name}</TableCell><TableCell className="text-xs">{e.equipmentType}</TableCell><TableCell className="text-xs">{e.workCenter?.code ?? "-"}</TableCell><TableCell><Badge variant={OP_VARIANT[e.operationalStatus] ?? "outline"}>{e.operationalStatus}</Badge></TableCell><TableCell><Badge variant={CAL_VARIANT[e.calibrationStatus] ?? "outline"}>{e.calibrationStatus}</Badge></TableCell></TableRow>))}</TableBody></Table></div>) : <p className="text-sm text-muted-foreground">No equipment found</p>}</CardContent></Card></div>);
+  const tCommon = useTranslations("common");
+  const [search, setSearch] = useState("");
+  const [operational, setOperational] = useState("");
+
+  const { data, isLoading } = useQuery<EquipmentRow[]>({
+    queryKey: ["equipment"],
+    queryFn: async () => {
+      const res = await fetch("/api/equipment?pageSize=100", {
+        credentials: "same-origin",
+      });
+      if (!res.ok) throw new Error("Failed");
+      const json = await res.json();
+      return json.data as EquipmentRow[];
+    },
+  });
+
+  const filtered = (data ?? []).filter((e) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      e.code.toLowerCase().includes(q) ||
+      e.name.toLowerCase().includes(q);
+    const matchesOp = !operational || e.operationalStatus === operational;
+    return matchesSearch && matchesOp;
+  });
+
+  const columns: Column<EquipmentRow>[] = [
+    {
+      key: "code",
+      header: tCommon("code"),
+      render: (e) => <span className="font-mono text-xs">{e.code}</span>,
+    },
+    {
+      key: "name",
+      header: tCommon("name"),
+      render: (e) => <span className="text-xs">{e.name}</span>,
+    },
+    {
+      key: "equipmentType",
+      header: "Type",
+      render: (e) => <span className="text-xs">{e.equipmentType}</span>,
+    },
+    {
+      key: "site",
+      header: tCommon("site"),
+      render: (e) => <span className="font-mono text-xs">{e.site.code}</span>,
+    },
+    {
+      key: "operationalStatus",
+      header: "Op. Status",
+      render: (e) => (
+        <StatusBadge
+          status={e.operationalStatus}
+          type={OP_STATUS_TYPE[e.operationalStatus]}
+        />
+      ),
+    },
+    {
+      key: "calibrationStatus",
+      header: "Cal. Status",
+      render: (e) => (
+        <StatusBadge
+          status={e.calibrationStatus}
+          type={CAL_STATUS_TYPE[e.calibrationStatus]}
+        />
+      ),
+    },
+  ];
+
+  const activeFilterCount = (search ? 1 : 0) + (operational ? 1 : 0);
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+      <DataTable<EquipmentRow>
+        columns={columns}
+        data={filtered}
+        loading={isLoading}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={tCommon("search.placeholder")}
+        filters={[
+          {
+            key: "operational",
+            label: tCommon("status"),
+            value: operational,
+            onChange: setOperational,
+            options: OPERATIONAL_OPTIONS.map((o) => ({
+              value: o,
+              label: o,
+            })),
+          },
+        ]}
+        onResetFilters={() => {
+          setSearch("");
+          setOperational("");
+        }}
+        activeFilterCount={activeFilterCount}
+        emptyState={<EmptyState icon={Cog} />}
+      />
+    </div>
+  );
 }

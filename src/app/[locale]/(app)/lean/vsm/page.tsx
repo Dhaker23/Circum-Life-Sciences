@@ -1,11 +1,99 @@
 "use client";
+
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Workflow } from "lucide-react";
+import { PageHeader } from "@/components/app/page-header";
+import { DataTable, type Column } from "@/components/app/data-table";
+import { EmptyState } from "@/components/app/empty-state";
+import { StatusBadge } from "@/components/app/status-badge";
+
+interface VsmRow {
+  id: string;
+  code: string;
+  name: string;
+  status: string;
+  totalLeadTimeMinutes: number | null;
+  valueAddedRatio: string | null;
+}
+
+const STATUS_OPTIONS = ["DRAFT", "ACTIVE", "EVALUATED", "ARCHIVED"];
+
 export default function VsmPage() {
   const t = useTranslations("lean");
-  const { data, isLoading } = useQuery({ queryKey: ["vsm"], queryFn: async () => { const res = await fetch("/api/lean/vsm", { credentials: "same-origin" }); if (!res.ok) throw new Error("Failed"); const json = await res.json(); return json.data as Array<{ id: string; code: string; name: string; status: string; totalLeadTimeMinutes: number | null; valueAddedRatio: string | null }>; } });
-  return (<div className="space-y-6"><div><h1 className="text-2xl font-bold tracking-tight">{t("vsm.title")}</h1><p className="text-sm text-muted-foreground">{t("vsm.subtitle")}</p></div><Card><CardHeader><CardTitle className="text-base">{t("vsm.title")}</CardTitle></CardHeader><CardContent>{isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : data && data.length > 0 ? (<div className="max-h-[32rem] overflow-auto rounded-md border"><Table><TableHeader className="sticky top-0 bg-card"><TableRow><TableHead>Code</TableHead><TableHead>Name</TableHead><TableHead>Lead Time</TableHead><TableHead>VA Ratio</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{data.map((v) => (<TableRow key={v.id}><TableCell className="font-mono text-xs">{v.code}</TableCell><TableCell className="text-xs">{v.name}</TableCell><TableCell className="text-xs">{v.totalLeadTimeMinutes ? `${v.totalLeadTimeMinutes}m` : "-"}</TableCell><TableCell className="text-xs">{v.valueAddedRatio ? `${(parseFloat(v.valueAddedRatio) * 100).toFixed(1)}%` : "-"}</TableCell><TableCell><Badge variant={v.status === "ACTIVE" ? "default" : "secondary"}>{v.status}</Badge></TableCell></TableRow>))}</TableBody></Table></div>) : <p className="text-sm text-muted-foreground">No VSMs found</p>}</CardContent></Card></div>);
+  const tCommon = useTranslations("common");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+
+  const { data, isLoading } = useQuery<VsmRow[]>({
+    queryKey: ["vsm"],
+    queryFn: async () => {
+      const res = await fetch("/api/lean/vsm", {
+        credentials: "same-origin",
+      });
+      if (!res.ok) throw new Error("Failed");
+      const json = await res.json();
+      return json.data as VsmRow[];
+    },
+  });
+
+  const filtered = (data ?? []).filter((v) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      v.code.toLowerCase().includes(q) ||
+      v.name.toLowerCase().includes(q);
+    const matchesStatus = !status || v.status === status;
+    return matchesSearch && matchesStatus;
+  });
+
+  const columns: Column<VsmRow>[] = [
+    {
+      key: "code",
+      header: tCommon("code"),
+      render: (v) => <span className="font-mono text-xs">{v.code}</span>,
+    },
+    {
+      key: "name",
+      header: tCommon("name"),
+      render: (v) => <span className="text-sm">{v.name}</span>,
+    },
+    {
+      key: "status",
+      header: tCommon("status"),
+      render: (v) => <StatusBadge status={v.status} />,
+    },
+  ];
+
+  const activeFilterCount = (search ? 1 : 0) + (status ? 1 : 0);
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title={t("vsm.title")} subtitle={t("vsm.subtitle")} />
+      <DataTable<VsmRow>
+        columns={columns}
+        data={filtered}
+        loading={isLoading}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={tCommon("search.placeholder")}
+        filters={[
+          {
+            key: "status",
+            label: tCommon("status"),
+            value: status,
+            onChange: setStatus,
+            options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
+          },
+        ]}
+        onResetFilters={() => {
+          setSearch("");
+          setStatus("");
+        }}
+        activeFilterCount={activeFilterCount}
+        emptyState={<EmptyState icon={Workflow} title={t("vsm.noData")} />}
+      />
+    </div>
+  );
 }

@@ -1,101 +1,150 @@
 "use client";
+
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollText } from "lucide-react";
+import { PageHeader } from "@/components/app/page-header";
+import { DataTable, type Column } from "@/components/app/data-table";
+import { EmptyState } from "@/components/app/empty-state";
+import { StatusBadge, type StatusType } from "@/components/app/status-badge";
+import { Button } from "@/components/ui/button";
+
+interface AuditEventRow {
+  id: string;
+  occurredAt: string;
+  actorUserId: string | null;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  outcome: string;
+  reason: string | null;
+  ipAddress: string | null;
+}
+
+const OUTCOME_OPTIONS = ["SUCCESS", "FAILURE", "DENIED"];
+
+const OUTCOME_TYPE: Record<string, StatusType> = {
+  SUCCESS: "success",
+  FAILURE: "warning",
+  DENIED: "error",
+};
 
 export default function AuditEventsPage() {
   const t = useTranslations("audit");
-  const { data, isLoading } = useQuery({
+  const tCommon = useTranslations("common");
+  const [search, setSearch] = useState("");
+  const [outcome, setOutcome] = useState("");
+
+  const { data, isLoading } = useQuery<AuditEventRow[]>({
     queryKey: ["audit-events"],
     queryFn: async () => {
-      const res = await fetch("/api/audit/events?pageSize=100", { credentials: "same-origin" });
+      const res = await fetch("/api/audit/events?pageSize=100", {
+        credentials: "same-origin",
+      });
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as Array<{
-        id: string;
-        occurredAt: string;
-        actorUserId: string | null;
-        action: string;
-        entityType: string;
-        entityId: string | null;
-        outcome: string;
-        reason: string | null;
-        ipAddress: string | null;
-      }>;
+      return json.data as AuditEventRow[];
     },
   });
 
-  const OUTCOME_VARIANT: Record<string, string> = {
-    SUCCESS: "text-emerald-600",
-    FAILURE: "text-amber-600",
-    DENIED: "text-destructive",
-  };
+  const filtered = (data ?? []).filter((e) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch = !q || e.action.toLowerCase().includes(q);
+    const matchesOutcome = !outcome || e.outcome === outcome;
+    return matchesSearch && matchesOutcome;
+  });
+
+  const columns: Column<AuditEventRow>[] = [
+    {
+      key: "action",
+      header: t("action"),
+      render: (e) => <span className="font-mono text-xs">{e.action}</span>,
+    },
+    {
+      key: "entityType",
+      header: t("entity"),
+      render: (e) => (
+        <span className="text-xs">
+          <span className="font-mono">{e.entityType}</span>
+          {e.entityId ? (
+            <span className="text-muted-foreground">
+              {" "}
+              / {e.entityId.slice(-8)}
+            </span>
+          ) : null}
+        </span>
+      ),
+    },
+    {
+      key: "outcome",
+      header: t("outcome"),
+      render: (e) => (
+        <StatusBadge
+          status={e.outcome}
+          type={OUTCOME_TYPE[e.outcome]}
+        />
+      ),
+    },
+    {
+      key: "occurredAt",
+      header: t("occurredAt"),
+      render: (e) => (
+        <span className="whitespace-nowrap text-xs text-muted-foreground">
+          {new Date(e.occurredAt).toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      key: "actorUserId",
+      header: t("actor"),
+      render: (e) => (
+        <span className="font-mono text-xs text-muted-foreground">
+          {e.actorUserId ? e.actorUserId.slice(-8) : "-"}
+        </span>
+      ),
+    },
+  ];
+
+  const activeFilterCount = (search ? 1 : 0) + (outcome ? 1 : 0);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-        </div>
-        <a href="/api/audit/export" className="inline-flex h-8 items-center rounded-md border bg-card px-3 text-xs font-medium hover:bg-muted">
-          {t("export")}
-        </a>
-      </div>
+      <PageHeader
+        title={t("title")}
+        subtitle={t("subtitle")}
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <a href="/api/audit/export">{t("export")}</a>
+          </Button>
+        }
+      />
       <div className="rounded-md border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
         {t("appendOnly")}
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t("title")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
-          ) : data && data.length > 0 ? (
-            <div className="max-h-[32rem] overflow-auto rounded-md border">
-              <Table>
-                <TableHeader className="sticky top-0 bg-card">
-                  <TableRow>
-                    <TableHead>{t("occurredAt")}</TableHead>
-                    <TableHead>{t("action")}</TableHead>
-                    <TableHead>{t("entity")}</TableHead>
-                    <TableHead>{t("outcome")}</TableHead>
-                    <TableHead>{t("reason")}</TableHead>
-                    <TableHead>{t("ipAddress")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.map((e) => (
-                    <TableRow key={e.id}>
-                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                        {new Date(e.occurredAt).toLocaleString()}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{e.action}</TableCell>
-                      <TableCell className="text-xs">
-                        {e.entityType}
-                        {e.entityId ? ` / ${e.entityId.slice(-8)}` : ""}
-                      </TableCell>
-                      <TableCell className={`text-xs font-medium ${OUTCOME_VARIANT[e.outcome] ?? ""}`}>
-                        {t(e.outcome.toLowerCase())}
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
-                        {e.reason ?? "-"}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        {e.ipAddress ?? "-"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No audit events</p>
-          )}
-        </CardContent>
-      </Card>
+      <DataTable<AuditEventRow>
+        columns={columns}
+        data={filtered}
+        loading={isLoading}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={tCommon("search.placeholder")}
+        filters={[
+          {
+            key: "outcome",
+            label: t("outcome"),
+            value: outcome,
+            onChange: setOutcome,
+            options: OUTCOME_OPTIONS.map((o) => ({ value: o, label: o })),
+          },
+        ]}
+        onResetFilters={() => {
+          setSearch("");
+          setOutcome("");
+        }}
+        activeFilterCount={activeFilterCount}
+        emptyState={<EmptyState icon={ScrollText} title={t("noData")} />}
+      />
     </div>
   );
 }

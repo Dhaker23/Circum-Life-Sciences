@@ -34,6 +34,15 @@ export async function listUsers(ctx: AuthContext, page: number, pageSize: number
         preferredLocale: true,
         lastSignInAt: true,
         createdAt: true,
+        // Include the primary ACTIVE role assignment (if any) so list pages can show a role column.
+        assignments: {
+          where: { status: "ACTIVE" },
+          take: 1,
+          orderBy: { createdAt: "asc" },
+          select: {
+            role: { select: { id: true, systemKey: true, name: true } },
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,

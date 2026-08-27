@@ -136,7 +136,11 @@
     "analyticsSection": "Analytics",
     "aiAssistant": "AI Assistant",
     "aiSection": "AI",
-    "integration": "Integrations"
+    "integration": "Integrations",
+    "traceabilitySection": "Traceability",
+    "laboratorySection": "Laboratory",
+    "leanSection": "Lean",
+    "phase9Section": "Sterile & Cleanroom"
   },
   "users": {
     "title": "Users",
@@ -161,8 +165,10 @@
     "subtitle": "Least-privilege role catalog and permission grants",
     "role": "Role",
     "permissions": "Permissions",
+    "systemKey": "System key",
     "systemRole": "System role",
-    "customRole": "Custom role"
+    "customRole": "Custom role",
+    "noData": "No roles found"
   },
   "sites": {
     "title": "Sites",
@@ -197,7 +203,8 @@
     "success": "Success",
     "failure": "Failure",
     "denied": "Denied",
-    "appendOnly": "Append-only: audit events cannot be modified or deleted"
+    "appendOnly": "Append-only: audit events cannot be modified or deleted",
+    "noData": "No audit events"
   },
   "settings": {
     "title": "Settings",
@@ -210,13 +217,39 @@
   "dashboard": {
     "title": "Dashboard",
     "welcome": "Welcome to Circum",
-    "subtitle": "Phase 1: Identity, Organization, RBAC, Audit foundation",
+    "subtitle": "Operational overview of quality, production and compliance activity",
     "stats": {
       "users": "Users",
       "sites": "Sites",
       "roles": "Roles",
       "auditEvents": "Audit events"
-    }
+    },
+    "kpis": {
+      "openNcrs": "Open NCRs",
+      "openCapas": "Open CAPAs",
+      "activeWorkOrders": "Active Work Orders",
+      "recentAudit": "Audit Events (7d)",
+      "openNcrsDelta": "vs last week",
+      "openCapasDelta": "vs last week",
+      "activeWorkOrdersDelta": "in production",
+      "recentAuditDelta": "last 7 days"
+    },
+    "recentActivity": "Recent Quality Activity",
+    "recentActivitySubtitle": "Latest NCRs, deviations and CAPAs across your sites",
+    "quickActions": "Quick Actions",
+    "quickActionsSubtitle": "Common workflows",
+    "productionOverview": "Production Overview",
+    "productionOverviewSubtitle": "Active and recently completed batches",
+    "noRecentActivity": "No recent activity",
+    "viewAll": "View all",
+    "newNcr": "New NCR",
+    "newWorkOrder": "New Work Order",
+    "viewAnalytics": "View Analytics",
+    "aiAssistant": "AI Assistant",
+    "activeBatches": "Active batches",
+    "completedBatches": "Completed (7d)",
+    "completionRate": "Completion rate",
+    "noActiveBatches": "No active batches"
   },
   "errors": {
     "unauthorized": "Authentication required",
@@ -380,6 +413,9 @@
     "investigations": {
       "title": "Investigations (RCA)",
       "subtitle": "Root-cause analyses linked to NCRs or Deviations",
+      "code": "Code",
+      "source": "Source",
+      "methodology": "Methodology",
       "noData": "No investigations found"
     },
     "capas": {
@@ -462,6 +498,11 @@
     "risks": {
       "title": "Risk Assessments",
       "subtitle": "Hazard assessments (severity x probability = RPN, 1-25)",
+      "code": "Code",
+      "subjectType": "Subject",
+      "severity": "Severity",
+      "probability": "Probability",
+      "rpn": "RPN",
       "noData": "No risk assessments found"
     }
   },
@@ -472,6 +513,8 @@
       "code": "Code",
       "parameter": "Parameter",
       "criterion": "Criterion",
+      "criterionType": "Criterion Type",
+      "criterionValue": "Criterion Value",
       "noData": "No specs"
     },
     "methods": {
@@ -534,6 +577,11 @@
     "queryLog": {
       "title": "Traceability Query Log",
       "subtitle": "Audit record of who queried what genealogy, when",
+      "action": "Action",
+      "entityType": "Entity Type",
+      "occurredAt": "Occurred At",
+      "actor": "Actor",
+      "scenario": "Scenario",
       "noData": "No queries logged"
     }
   },
@@ -544,12 +592,17 @@
   "training": {
     "records": {
       "title": "Training Records",
-      "subtitle": "Employee training and competency records (site-owned)"
+      "subtitle": "Employee training and competency records (site-owned)",
+      "employee": "Employee",
+      "trainedAt": "Trained at",
+      "noData": "No training records found"
     }
   },
   "supplierAudit": {
     "title": "Supplier Audits",
-    "subtitle": "Formal supplier quality audits (site-owned, CAPA-linked)"
+    "subtitle": "Formal supplier quality audits (site-owned, CAPA-linked)",
+    "supplier": "Supplier",
+    "noData": "No supplier audits found"
   },
   "equipment": {
     "title": "Equipment",
@@ -557,16 +610,23 @@
   },
   "cleanroom": {
     "title": "Cleanroom Monitoring",
-    "subtitle": "Environmental monitoring with configurable limits (site-owned)"
+    "subtitle": "Environmental monitoring with configurable limits (site-owned)",
+    "classification": "Classification",
+    "noData": "No cleanrooms found"
   },
   "packaging": {
     "title": "Packaging Records",
-    "subtitle": "Packaging process records (site-owned)"
+    "subtitle": "Packaging process records (site-owned)",
+    "target": "Target",
+    "noData": "No packaging records found"
   },
   "sterilization": {
     "title": "Sterilization Lots",
     "subtitle": "Sterilization cycle tracking (site-owned, human-only release)",
-    "releaseGuard": "RELEASED status is HUMAN-ONLY. AI must never release sterile product."
+    "releaseGuard": "RELEASED status is HUMAN-ONLY. AI must never release sterile product.",
+    "method": "Method",
+    "releaseStatus": "Release status",
+    "noData": "No sterilization lots found"
   },
   "batchReview": {
     "title": "Batch Review",
@@ -611,15 +671,22 @@
   "lean": {
     "downtime": {
       "title": "Downtime Events",
-      "subtitle": "Equipment downtime tracking for OEE availability"
+      "subtitle": "Equipment downtime tracking for OEE availability",
+      "equipment": "Equipment",
+      "category": "Category",
+      "duration": "Duration",
+      "noData": "No downtime events"
     },
     "oee": {
       "title": "OEE",
-      "subtitle": "Overall Equipment Effectiveness computation"
+      "subtitle": "Overall Equipment Effectiveness computation",
+      "info": "OEE computation API is available. Dashboard visualizations are delivered in the analytics module (Phase 11). Use the Analytics → OEE dashboard for live KPIs and trend analysis.",
+      "noData": "No OEE records"
     },
     "vsm": {
       "title": "Value Stream Maps",
-      "subtitle": "Value stream mapping and analysis"
+      "subtitle": "Value stream mapping and analysis",
+      "noData": "No VSMs found"
     }
   },
   "analytics": {

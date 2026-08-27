@@ -2,7 +2,8 @@
 import { useSession, signOut } from "next-auth/react";
 import { useTranslations, useLocale } from "next-intl";
 import { useRouter, usePathname } from "next/navigation";
-import { LogOut, Globe, Menu, Search } from "lucide-react";
+import Link from "next/link";
+import { LogOut, Globe, Menu, Search, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,8 +13,45 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { ThemeToggle } from "./theme-toggle";
 import { useUIStore } from "@/lib/ui-store";
+import { NAV, type NavGroup, type NavItem } from "./nav-config";
+
+/**
+ * Resolve the active nav group + item from the current pathname.
+ *
+ * Picks the longest matching `href` so a sub-route like `/quality/ncrs/[id]`
+ * still maps to the `nav.ncrs` item rather than `nav.dashboard`.
+ */
+function useBreadcrumbMatch(): {
+  group: NavGroup | null;
+  item: NavItem | null;
+  isRoot: boolean;
+} {
+  const pathname = usePathname();
+  const path = pathname.replace(/^\/(en|fr|ar)/, "") || "/";
+
+  let best: { group: NavGroup; item: NavItem } | null = null;
+  for (const group of NAV) {
+    for (const item of group.items) {
+      const matches = path === item.href || path.startsWith(item.href + "/");
+      if (!matches) continue;
+      if (!best || item.href.length > best.item.href.length) {
+        best = { group, item };
+      }
+    }
+  }
+  if (!best) return { group: null, item: null, isRoot: path === "/" };
+  return { group: best.group, item: best.item, isRoot: best.item.href === "/" };
+}
 
 export function AppTopbar() {
   const { data: session } = useSession();
@@ -24,6 +62,8 @@ export function AppTopbar() {
 
   const setSidebarMobileOpen = useUIStore((s) => s.setSidebarMobileOpen);
   const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
+
+  const { group, item, isRoot } = useBreadcrumbMatch();
 
   const switchLocale = (next: string) => {
     const path = pathname.replace(/^\/(en|fr|ar)/, "") || "/";
@@ -37,9 +77,12 @@ export function AppTopbar() {
     .slice(0, 2)
     .toUpperCase();
 
+  const sectionLabel = group?.sectionLabelKey ? t(group.sectionLabelKey) : null;
+  const itemLabel = item ? t(item.labelKey) : null;
+
   return (
     <header className="flex h-14 items-center justify-between gap-2 border-b bg-card px-4">
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-2 min-w-0 flex-1">
         {/* Mobile (<md): sidebar drawer trigger */}
         <Button
           variant="ghost"
@@ -51,10 +94,49 @@ export function AppTopbar() {
           <Menu className="h-5 w-5" />
         </Button>
 
+        {/* Breadcrumb: section / current page (md+) or compact item label (mobile) */}
+        <div className="min-w-0 flex-1 md:flex-none">
+          {/* Mobile: compact page label only */}
+          {itemLabel && (
+            <span className="md:hidden text-sm font-medium text-foreground truncate block">
+              {itemLabel}
+            </span>
+          )}
+          {/* md+: full breadcrumb with section + item */}
+          <Breadcrumb className="hidden md:block">
+            <BreadcrumbList className="text-sm">
+              {sectionLabel && !isRoot ? (
+                <>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link
+                        href={item ? item.href.split("/").slice(0, 2).join("/") : "/"}
+                        aria-label={sectionLabel}
+                      >
+                        {sectionLabel}
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator>
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </BreadcrumbSeparator>
+                </>
+              ) : null}
+              {itemLabel ? (
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="font-medium">
+                    {itemLabel}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              ) : null}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+
         {/* md+: command palette search trigger */}
         <Button
           variant="outline"
-          className="hidden md:flex w-full max-w-xs justify-start gap-2 text-muted-foreground font-normal"
+          className="hidden md:flex ms-auto w-full max-w-xs justify-start gap-2 text-muted-foreground font-normal"
           onClick={() => setCommandPaletteOpen(true)}
           aria-label={t("common.search.placeholder")}
         >
@@ -64,11 +146,6 @@ export function AppTopbar() {
             ⌘K
           </kbd>
         </Button>
-
-        {/* Visible page title on mobile only (search trigger hidden) */}
-        <span className="md:hidden text-sm font-medium text-muted-foreground truncate">
-          {t("dashboard.title")}
-        </span>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">

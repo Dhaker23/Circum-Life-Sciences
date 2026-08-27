@@ -37,8 +37,8 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
           <main className="flex-1 overflow-y-auto bg-muted/20 p-4 md:p-6">{children}</main>
         </div>
       </div>
-      <footer className="mt-auto border-t bg-card px-4 py-3">
-        <div className="flex flex-col items-center justify-between gap-1 text-xs text-muted-foreground sm:flex-row">
+      <footer className="mt-auto border-t bg-card px-4 py-2.5">
+        <div className="flex flex-col items-center justify-between gap-1 text-[10px] text-muted-foreground sm:flex-row">
           <span>
             {t("appName")} - {t("appTagline")}
           </span>
@@ -46,7 +46,7 @@ export default function AppShellLayout({ children }: { children: React.ReactNode
             <span className="rounded bg-muted px-1.5 py-0.5 font-mono">{t("demo")}</span>
             <span className="flex items-center gap-1">
               <CircleAlert className="h-3 w-3" />
-              Phase 1 - DEMO/TEST data
+              Phases 0-14 Complete - DEMO/TEST data
             </span>
           </span>
         </div>

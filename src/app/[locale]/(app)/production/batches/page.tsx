@@ -1,72 +1,151 @@
 "use client";
+
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Boxes } from "lucide-react";
+import { PageHeader } from "@/components/app/page-header";
+import { DataTable, type Column } from "@/components/app/data-table";
+import { EmptyState } from "@/components/app/empty-state";
+import { StatusBadge, type StatusType } from "@/components/app/status-badge";
 
-const BATCH_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  PLANNED: "outline", IN_PRODUCTION: "default", COMPLETED: "secondary", READY_FOR_REVIEW: "default", ON_HOLD: "destructive",
+interface BatchRow {
+  id: string;
+  code: string;
+  status: string;
+  plannedQuantity: string;
+  actualQuantity: string | null;
+  unit: string;
+  workOrder: { code: string };
+  productRevision: {
+    product: { code: string; name: string };
+    revisionCode: string;
+  };
+  site: { code: string };
+  _count: { deviceLots: number; executions: number; consumptions: number };
+}
+
+const STATUS_OPTIONS = [
+  "PLANNED",
+  "IN_PRODUCTION",
+  "COMPLETED",
+  "READY_FOR_REVIEW",
+  "ON_HOLD",
+];
+
+const STATUS_TYPE: Record<string, StatusType> = {
+  PLANNED: "pending",
+  IN_PRODUCTION: "info",
+  COMPLETED: "success",
+  READY_FOR_REVIEW: "warning",
+  ON_HOLD: "error",
 };
 
 export default function BatchesPage() {
   const t = useTranslations("production");
-  const { data, isLoading } = useQuery({
+  const tCommon = useTranslations("common");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+
+  const { data, isLoading } = useQuery<BatchRow[]>({
     queryKey: ["batches"],
     queryFn: async () => {
-      const res = await fetch("/api/production/batches?pageSize=100", { credentials: "same-origin" });
+      const res = await fetch("/api/production/batches?pageSize=100", {
+        credentials: "same-origin",
+      });
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      return json.data as Array<{
-        id: string; code: string; status: string; plannedQuantity: string; actualQuantity: string | null; unit: string;
-        workOrder: { code: string };
-        productRevision: { product: { code: string; name: string }; revisionCode: string };
-        site: { code: string };
-        _count: { deviceLots: number; executions: number; consumptions: number };
-      }>;
+      return json.data as BatchRow[];
     },
   });
+
+  const filtered = (data ?? []).filter((b) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch = !q || b.code.toLowerCase().includes(q);
+    const matchesStatus = !status || b.status === status;
+    return matchesSearch && matchesStatus;
+  });
+
+  const columns: Column<BatchRow>[] = [
+    {
+      key: "code",
+      header: t("batches.code"),
+      render: (b) => <span className="font-mono text-xs">{b.code}</span>,
+    },
+    {
+      key: "workOrder",
+      header: t("batches.workOrder"),
+      render: (b) => (
+        <span className="font-mono text-xs">{b.workOrder.code}</span>
+      ),
+    },
+    {
+      key: "product",
+      header: t("batches.product"),
+      render: (b) => (
+        <span className="text-xs">
+          <span className="font-mono">{b.productRevision.product.code}</span>{" "}
+          {b.productRevision.revisionCode}
+          <span className="ms-2 text-muted-foreground">
+            {b.productRevision.product.name}
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: "quantity",
+      header: t("batches.quantity"),
+      render: (b) => (
+        <span className="text-xs">
+          {b.actualQuantity ?? b.plannedQuantity} {b.unit}
+        </span>
+      ),
+    },
+    {
+      key: "deviceLots",
+      header: t("batches.deviceLots"),
+      render: (b) => <span className="text-xs">{b._count.deviceLots}</span>,
+    },
+    {
+      key: "status",
+      header: tCommon("status"),
+      render: (b) => (
+        <StatusBadge status={b.status} type={STATUS_TYPE[b.status]} />
+      ),
+    },
+  ];
+
+  const activeFilterCount = (search ? 1 : 0) + (status ? 1 : 0);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("batches.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("batches.subtitle")}</p>
+      <PageHeader title={t("batches.title")} subtitle={t("batches.subtitle")} />
+      <div className="rounded-md border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
+        {t("batches.stopsAt")}
       </div>
-      <div className="rounded-md border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">{t("batches.stopsAt")}</div>
-      <Card>
-        <CardHeader><CardTitle className="text-base">{t("batches.title")}</CardTitle></CardHeader>
-        <CardContent>
-          {isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> :
-           data && data.length > 0 ? (
-            <div className="max-h-[32rem] overflow-auto rounded-md border">
-              <Table>
-                <TableHeader className="sticky top-0 bg-card">
-                  <TableRow>
-                    <TableHead>{t("batches.code")}</TableHead>
-                    <TableHead>{t("batches.workOrder")}</TableHead>
-                    <TableHead>{t("batches.product")}</TableHead>
-                    <TableHead>{t("batches.quantity")}</TableHead>
-                    <TableHead>{t("batches.deviceLots")}</TableHead>
-                    <TableHead>{t("common.status")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.map((b) => (
-                    <TableRow key={b.id}>
-                      <TableCell className="font-mono text-xs">{b.code}</TableCell>
-                      <TableCell className="font-mono text-xs">{b.workOrder.code}</TableCell>
-                      <TableCell className="text-xs"><span className="font-mono">{b.productRevision.product.code}</span> {b.productRevision.revisionCode}</TableCell>
-                      <TableCell className="text-xs">{b.actualQuantity ?? b.plannedQuantity} {b.unit}</TableCell>
-                      <TableCell>{b._count.deviceLots}</TableCell>
-                      <TableCell><Badge variant={BATCH_VARIANT[b.status] ?? "outline"}>{b.status}</Badge></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : <p className="text-sm text-muted-foreground">{t("batches.noData")}</p>}
-        </CardContent>
-      </Card>
+      <DataTable<BatchRow>
+        columns={columns}
+        data={filtered}
+        loading={isLoading}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={tCommon("search.placeholder")}
+        filters={[
+          {
+            key: "status",
+            label: tCommon("status"),
+            value: status,
+            onChange: setStatus,
+            options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
+          },
+        ]}
+        onResetFilters={() => {
+          setSearch("");
+          setStatus("");
+        }}
+        activeFilterCount={activeFilterCount}
+        emptyState={<EmptyState icon={Boxes} title={t("batches.noData")} />}
+      />
     </div>
   );
 }

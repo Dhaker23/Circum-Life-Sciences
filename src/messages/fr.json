@@ -136,7 +136,11 @@
     "analyticsSection": "Analytique",
     "aiAssistant": "Assistant IA",
     "aiSection": "IA",
-    "integration": "Intégrations"
+    "integration": "Intégrations",
+    "traceabilitySection": "Traçabilité",
+    "laboratorySection": "Laboratoire",
+    "leanSection": "Lean",
+    "phase9Section": "Stérile & Salle Blanche"
   },
   "users": {
     "title": "Utilisateurs",
@@ -161,8 +165,10 @@
     "subtitle": "Catalogue de roles a moindre privilege et attributions de permissions",
     "role": "Role",
     "permissions": "Permissions",
+    "systemKey": "Cle systeme",
     "systemRole": "Role systeme",
-    "customRole": "Role personnalise"
+    "customRole": "Role personnalise",
+    "noData": "Aucun role trouve"
   },
   "sites": {
     "title": "Sites",
@@ -197,7 +203,8 @@
     "success": "Succes",
     "failure": "Echec",
     "denied": "Refuse",
-    "appendOnly": "Ajout seule: les evenements d'audit ne peuvent etre modifies ni supprimes"
+    "appendOnly": "Ajout seule: les evenements d'audit ne peuvent etre modifies ni supprimes",
+    "noData": "Aucun evenement d'audit"
   },
   "settings": {
     "title": "Parametres",
@@ -210,13 +217,39 @@
   "dashboard": {
     "title": "Tableau de bord",
     "welcome": "Bienvenue dans Circum",
-    "subtitle": "Phase 1: fondation Identite, Organisation, RBAC, Audit",
+    "subtitle": "Vue operationnelle de l'activite qualite, production et conformite",
     "stats": {
       "users": "Utilisateurs",
       "sites": "Sites",
       "roles": "Roles",
       "auditEvents": "Evenements d'audit"
-    }
+    },
+    "kpis": {
+      "openNcrs": "NCQ ouvertes",
+      "openCapas": "CAPA ouverts",
+      "activeWorkOrders": "Ordres de fabrication actifs",
+      "recentAudit": "Evenements d'audit (7j)",
+      "openNcrsDelta": "vs semaine derniere",
+      "openCapasDelta": "vs semaine derniere",
+      "activeWorkOrdersDelta": "en production",
+      "recentAuditDelta": "7 derniers jours"
+    },
+    "recentActivity": "Activite qualite recente",
+    "recentActivitySubtitle": "Dernieres NCQ, deviations et CAPA sur vos sites",
+    "quickActions": "Actions rapides",
+    "quickActionsSubtitle": "Flux de travail courants",
+    "productionOverview": "Apercu production",
+    "productionOverviewSubtitle": "Lots actifs et recemment completes",
+    "noRecentActivity": "Aucune activite recente",
+    "viewAll": "Voir tout",
+    "newNcr": "Nouvelle NCQ",
+    "newWorkOrder": "Nouvel OF",
+    "viewAnalytics": "Voir analytique",
+    "aiAssistant": "Assistant IA",
+    "activeBatches": "Lots actifs",
+    "completedBatches": "Completes (7j)",
+    "completionRate": "Taux de completion",
+    "noActiveBatches": "Aucun lot actif"
   },
   "errors": {
     "unauthorized": "Authentification requise",
@@ -380,6 +413,9 @@
     "investigations": {
       "title": "Investigations (RCA)",
       "subtitle": "Analyses de cause racine liees aux NCR ou deviations",
+      "code": "Code",
+      "source": "Source",
+      "methodology": "Methodologie",
       "noData": "Aucune investigation trouvee"
     },
     "capas": {
@@ -462,6 +498,11 @@
     "risks": {
       "title": "Evaluations des risques",
       "subtitle": "Evaluations des dangers (severite x probabilite = RPN, 1-25)",
+      "code": "Code",
+      "subjectType": "Sujet",
+      "severity": "Severite",
+      "probability": "Probabilite",
+      "rpn": "RPN",
       "noData": "Aucune evaluation de risque trouvee"
     }
   },
@@ -472,6 +513,8 @@
       "code": "Code",
       "parameter": "Parametre",
       "criterion": "Critere",
+      "criterionType": "Type de critere",
+      "criterionValue": "Valeur du critere",
       "noData": "Aucune spec"
     },
     "methods": {
@@ -534,6 +577,11 @@
     "queryLog": {
       "title": "Journal des requetes",
       "subtitle": "Audit de qui a interroge quelle genealogie",
+      "action": "Action",
+      "entityType": "Type d'entite",
+      "occurredAt": "Effectuee le",
+      "actor": "Acteur",
+      "scenario": "Scenario",
       "noData": "Aucune requete"
     }
   },
@@ -544,12 +592,17 @@
   "training": {
     "records": {
       "title": "Dossiers de Formation",
-      "subtitle": "Dossiers de formation (site)"
+      "subtitle": "Dossiers de formation (site)",
+      "employee": "Employe",
+      "trainedAt": "Forme le",
+      "noData": "Aucun dossier de formation trouve"
     }
   },
   "supplierAudit": {
     "title": "Audits Fournisseurs",
-    "subtitle": "Audits qualite fournisseurs (site)"
+    "subtitle": "Audits qualite fournisseurs (site)",
+    "supplier": "Fournisseur",
+    "noData": "Aucun audit fournisseur trouve"
   },
   "equipment": {
     "title": "Equipement",
@@ -557,16 +610,23 @@
   },
   "cleanroom": {
     "title": "Surveillance Salle Blanche",
-    "subtitle": "Surveillance environnementale (site)"
+    "subtitle": "Surveillance environnementale (site)",
+    "classification": "Classification",
+    "noData": "Aucune salle blanche trouvee"
   },
   "packaging": {
     "title": "Dossiers Conditionnement",
-    "subtitle": "Dossiers de conditionnement (site)"
+    "subtitle": "Dossiers de conditionnement (site)",
+    "target": "Cible",
+    "noData": "Aucun dossier de conditionnement trouve"
   },
   "sterilization": {
     "title": "Lots Sterilisation",
     "subtitle": "Suivi cycles sterilisation (site)",
-    "releaseGuard": "Le statut RELEASED est HUMAIN uniquement."
+    "releaseGuard": "Le statut RELEASED est HUMAIN uniquement.",
+    "method": "Methode",
+    "releaseStatus": "Statut de liberation",
+    "noData": "Aucun lot de sterilisation trouve"
   },
   "batchReview": {
     "title": "Revue de Lot",
@@ -611,15 +671,22 @@
   "lean": {
     "downtime": {
       "title": "Evenements Arret",
-      "subtitle": "Suivi des arrets pour disponibilite OEE"
+      "subtitle": "Suivi des arrets pour disponibilite OEE",
+      "equipment": "Equipement",
+      "category": "Categorie",
+      "duration": "Duree",
+      "noData": "Aucun evenement d'arret"
     },
     "oee": {
       "title": "TRS",
-      "subtitle": "Calcul du Taux de Rendement Synthetique"
+      "subtitle": "Calcul du Taux de Rendement Synthetique",
+      "info": "L'API de calcul du TRS est disponible. Les visualisations du tableau de bord sont fournies dans le module d'analyses (Phase 11). Utilisez le tableau de bord Analyses → TRS pour les KPIs en temps reel et l'analyse des tendances.",
+      "noData": "Aucun enregistrement TRS"
     },
     "vsm": {
       "title": "Cartes Flux Valeur",
-      "subtitle": "Cartographie et analyse du flux de valeur"
+      "subtitle": "Cartographie et analyse du flux de valeur",
+      "noData": "Aucune carte de flux de valeur trouvee"
     }
   },
   "analytics": {

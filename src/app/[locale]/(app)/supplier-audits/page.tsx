@@ -1,13 +1,108 @@
 "use client";
+
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-const SA_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = { SCHEDULED: "outline", IN_PROGRESS: "secondary", COMPLETED: "default", CLOSED: "secondary" };
-const RESULT_VARIANT: Record<string, "default" | "secondary" | "destructive"> = { PASS: "default", CONDITIONAL_PASS: "secondary", FAIL: "destructive" };
+import { Factory } from "lucide-react";
+import { PageHeader } from "@/components/app/page-header";
+import { DataTable, type Column } from "@/components/app/data-table";
+import { EmptyState } from "@/components/app/empty-state";
+import { StatusBadge } from "@/components/app/status-badge";
+
+interface SupplierAuditRow {
+  id: string;
+  code: string;
+  auditType: string;
+  status: string;
+  result: string | null;
+  qualificationImpact: string;
+  supplier: { code: string; name: string };
+  site: { code: string };
+}
+
+const STATUS_OPTIONS = [
+  "SCHEDULED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CLOSED",
+];
+
 export default function SupplierAuditsPage() {
   const t = useTranslations("supplierAudit");
-  const { data, isLoading } = useQuery({ queryKey: ["supplier-audits"], queryFn: async () => { const res = await fetch("/api/supplier-audits?pageSize=100", { credentials: "same-origin" }); if (!res.ok) throw new Error("Failed"); const json = await res.json(); return json.data as Array<{ id: string; code: string; auditType: string; status: string; result: string | null; qualificationImpact: string; supplier: { code: string; name: string }; site: { code: string } }>; } });
-  return (<div className="space-y-6"><div><h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1><p className="text-sm text-muted-foreground">{t("subtitle")}</p></div><Card><CardHeader><CardTitle className="text-base">{t("title")}</CardTitle></CardHeader><CardContent>{isLoading ? <p className="text-sm text-muted-foreground">Loading...</p> : data && data.length > 0 ? (<div className="max-h-[32rem] overflow-auto rounded-md border"><Table><TableHeader className="sticky top-0 bg-card"><TableRow><TableHead>Code</TableHead><TableHead>Supplier</TableHead><TableHead>Type</TableHead><TableHead>Result</TableHead><TableHead>Qual. Impact</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{data.map((a) => (<TableRow key={a.id}><TableCell className="font-mono text-xs">{a.code}</TableCell><TableCell className="text-xs"><span className="font-mono">{a.supplier.code}</span> {a.supplier.name}</TableCell><TableCell className="text-xs">{a.auditType}</TableCell><TableCell>{a.result ? <Badge variant={RESULT_VARIANT[a.result] ?? "outline"}>{a.result}</Badge> : "-"}</TableCell><TableCell className="text-xs">{a.qualificationImpact}</TableCell><TableCell><Badge variant={SA_VARIANT[a.status] ?? "outline"}>{a.status}</Badge></TableCell></TableRow>))}</TableBody></Table></div>) : <p className="text-sm text-muted-foreground">No supplier audits found</p>}</CardContent></Card></div>);
+  const tCommon = useTranslations("common");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+
+  const { data, isLoading } = useQuery<SupplierAuditRow[]>({
+    queryKey: ["supplier-audits"],
+    queryFn: async () => {
+      const res = await fetch("/api/supplier-audits?pageSize=100", {
+        credentials: "same-origin",
+      });
+      if (!res.ok) throw new Error("Failed");
+      const json = await res.json();
+      return json.data as SupplierAuditRow[];
+    },
+  });
+
+  const filtered = (data ?? []).filter((a) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch = !q || a.code.toLowerCase().includes(q);
+    const matchesStatus = !status || a.status === status;
+    return matchesSearch && matchesStatus;
+  });
+
+  const columns: Column<SupplierAuditRow>[] = [
+    {
+      key: "code",
+      header: tCommon("code"),
+      render: (a) => <span className="font-mono text-xs">{a.code}</span>,
+    },
+    {
+      key: "supplier",
+      header: t("supplier"),
+      render: (a) => (
+        <span className="text-xs">
+          <span className="font-mono">{a.supplier.code}</span>{" "}
+          {a.supplier.name}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: tCommon("status"),
+      render: (a) => <StatusBadge status={a.status} />,
+    },
+  ];
+
+  const activeFilterCount = (search ? 1 : 0) + (status ? 1 : 0);
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
+      <DataTable<SupplierAuditRow>
+        columns={columns}
+        data={filtered}
+        loading={isLoading}
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={tCommon("search.placeholder")}
+        filters={[
+          {
+            key: "status",
+            label: tCommon("status"),
+            value: status,
+            onChange: setStatus,
+            options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
+          },
+        ]}
+        onResetFilters={() => {
+          setSearch("");
+          setStatus("");
+        }}
+        activeFilterCount={activeFilterCount}
+        emptyState={<EmptyState icon={Factory} title={t("noData")} />}
+      />
+    </div>
+  );
 }
